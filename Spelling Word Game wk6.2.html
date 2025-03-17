@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Safari Adventure</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        #game-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            position: relative;
+        }
+        #letter-buttons {
+            margin-top: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        #message {
+            font-size: 20px;
+            margin-top: 10px;
+        }
+        .correct {
+            background: #2ecc71;
+        }
+        .incorrect {
+            background: #e74c3c;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <h1>Spelling Safari Adventure</h1>
+    <div id="game-container">
+        <p id="word-hint" aria-live="polite">Spell the word: _ _ _ _</p>
+        <div id="letter-buttons" role="group" aria-label="Letter choices"></div>
+        <p id="message" aria-live="assertive"></p>
+        <button id="replay-button" onclick="replayWord()" aria-label="Replay word pronunciation">🔊 Replay Word</button>
+    </div>
+    <script>
+        const words = ["after", "barber", "camera", "difference", "birthday", "swirling", "thirteen", "chirping", "burden", "furnace", "hamburger", "turtle", "marker", "parcel", "ramparts", "safari", "informer", "organize", "perform", "war"]
+        let currentIndex = 0;
+        let currentWord = "";
+        let guessedWord = "";
+        let currentLetterIndex;
+
+        function showWord() {
+            if (currentIndex < words.length) {
+                currentWord = words[currentIndex];
+                guessedWord = "_".repeat(currentWord.length);
+                currentLetterIndex = 0;
+                updateWordDisplay();
+                displayLetterButtons();
+                document.getElementById("message").innerText = "";
+                sayWordAndSentence(currentWord);
+            } else {
+                document.getElementById("game-container").innerHTML = "<h2>🎉 Congratulations! You finished all words! 🎉</h2>";
+            }
+        }
+
+        function updateWordDisplay() {
+            document.getElementById("word-hint").innerText = "Spell the word: " + guessedWord.split('').join(' ');
+        }
+
+        function displayLetterButtons() {
+            let letterContainer = document.getElementById("letter-buttons");
+            letterContainer.innerHTML = "";
+            let letters = currentWord.split('');
+            let extraLetters = shuffleArray('abcdefghijklmnopqrstuvwxyz'.split('')).slice(0, 3);
+            let allLetters = letters.concat(extraLetters).sort(() => Math.random() - 0.5);
+            allLetters.forEach(letter => {
+                let button = document.createElement("button");
+                button.innerText = letter;
+                button.onclick = () => guessLetter(letter, button);
+                letterContainer.appendChild(button);
+            });
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function sayWordAndSentence(word) {
+            if ('speechSynthesis' in window) {
+                let speech = new SpeechSynthesisUtterance(word);
+                speech.lang = "en-US";
+                window.speechSynthesis.speak(speech);
+            } else {
+                console.warn('Speech synthesis not supported');
+                document.getElementById("message").innerText = "Speech not supported in your browser";
+            }
+        }
+
+        function replayWord() {
+            if (currentWord) {
+                sayWordAndSentence(currentWord);
+            }
+        }
+
+        function guessLetter(letter, button) {
+            if (letter === currentWord[currentLetterIndex]) {
+                let newGuessedWord = guessedWord.split('');
+                newGuessedWord[currentLetterIndex] = letter;
+                guessedWord = newGuessedWord.join('');
+                updateWordDisplay();
+                button.disabled = true;
+                button.classList.add('correct');
+                currentLetterIndex++;
+                checkCompletion();
+            } else {
+                document.getElementById("message").innerText = "❌ Try again! The next letter is incorrect.";
+                button.classList.add('incorrect');
+                setTimeout(() => button.classList.remove('incorrect'), 1000);
+            }
+        }
+
+        function checkCompletion() {
+            if (guessedWord === currentWord) {
+                document.getElementById("message").innerText = "✅ Correct!";
+                confetti();
+                currentIndex++;
+                setTimeout(showWord, 2000);
+            }
+        }
+
+        function restartGame() {
+            currentIndex = 0;
+            showWord();
+        }
+
+        showWord();
+    </script>
+</body>
+</html>
