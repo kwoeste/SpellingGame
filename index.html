@@ -61,7 +61,32 @@
         <button id="replay-button" onclick="replayWord()" aria-label="Replay word pronunciation">🔊 Replay Word</button>
     </div>
     <script>
-        const words = ["after", "barber", "camera", "difference", "birthday", "swirling", "thirteen", "chirping", "burden", "furnace", "hamburger", "turtle", "marker", "parcel", "ramparts", "safari", "informer", "organize", "perform", "war"]
+        const words = ["revenge", "large", "judge", "fudge", "nudge", "huge", "nation", "attention", "direction", "fraction", "locomotion", "stations", "option", "action", "change", "range", "cottage", "addition", "caption", "Europe"];
+
+        // Add sentences for each word
+        const wordSentences = {
+            "revenge": "The hero sought revenge against the villain.",
+            "large": "The elephant is very large.",
+            "judge": "The judge listened carefully to both sides.",
+            "fudge": "I love to eat chocolate fudge.",
+            "nudge": "Give your friend a gentle nudge if they fall asleep.",
+            "huge": "The dinosaur was huge.",
+            "nation": "Our nation celebrates its independence day.",
+            "attention": "Please pay attention to the teacher.",
+            "direction": "Can you point me in the right direction?",
+            "fraction": "One half is a fraction.",
+            "locomotion": "The train moves by locomotion.",
+            "stations": "Buses stop at different stations.",
+            "option": "You have the option to choose your favorite color.",
+            "action": "The movie was full of action.",
+            "change": "Don't forget to change your clothes.",
+            "range": "Mountains range across the landscape.",
+            "cottage": "We stayed in a cozy cottage.",
+            "addition": "In addition to reading, I also like writing.",
+            "caption": "The photo had a funny caption.",
+            "Europe": "France is a country in Europe."
+        };
+
         let currentIndex = 0;
         let currentWord = "";
         let guessedWord = "";
@@ -109,9 +134,19 @@
 
         function sayWordAndSentence(word) {
             if ('speechSynthesis' in window) {
-                let speech = new SpeechSynthesisUtterance(word);
-                speech.lang = "en-US";
-                window.speechSynthesis.speak(speech);
+                // First speak the word
+                let speechWord = new SpeechSynthesisUtterance(word);
+                speechWord.lang = "en-US";
+                
+                // Then speak the sentence after a short delay
+                let speechSentence = new SpeechSynthesisUtterance(wordSentences[word]);
+                speechSentence.lang = "en-US";
+                
+                // Use setTimeout to create a pause between word and sentence
+                window.speechSynthesis.speak(speechWord);
+                setTimeout(() => {
+                    window.speechSynthesis.speak(speechSentence);
+                }, 1000); // 1 second delay between word and sentence
             } else {
                 console.warn('Speech synthesis not supported');
                 document.getElementById("message").innerText = "Speech not supported in your browser";
