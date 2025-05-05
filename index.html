@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mrs. Montague 2nd Grade Spelling Words Test 5.1</title>
+    <title>Mrs. Montague 2nd Grade Spelling Words Test May 8</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -53,7 +53,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    <h1>Mrs. Montague 2nd Grade Spelling Words 5.1.2025</h1>
+    <h1>Mrs. Montague 2nd Grade Spelling Words May 8, 2025</h1>
     <div id="game-container">
         <p id="word-hint" aria-live="polite">Spell the word: _ _ _ _</p>
         <div id="letter-buttons" role="group" aria-label="Letter choices"></div>
@@ -63,30 +63,32 @@
     <h3>Created by: Mae Woeste</h3>
     
     <script>
-        const words = ["ransacked", "White House", "harbor", "flag", "stripes", "ship", "commander", "rockets", "McHenry", "brave", "poem", "anthem", "dawn", "giant", "port", "construct", "burned", "stitching", "fifteen", "bomb"];
+        const words = [
+            "general", "peace", "traders", "drains", "streak", "mortar", "treaty", "river", "orphan", "defend", "ragtag", "soldiers", "goods", "fired", "hickory", "knotty", "Mississippi", "highways", "proud", "New Orleans"
+        ];
 
         // Add sentences for each word
         const wordSentences = {
-            "ransacked": "The British ransacked the White House during the War of 1812.",
-            "White House": "The White House was burned by British troops in 1814.",
-            "harbor": "Ships entered the harbor during the battle.",
-            "flag": "The American flag flew over Fort McHenry.",
-            "stripes": "The American flag has stripes representing the original colonies.",
-            "ship": "A ship carried troops across the water during the war.",
-            "commander": "The commander gave orders to the soldiers.",
-            "rockets": "The British fired rockets at Fort McHenry.",
-            "McHenry": "Fort McHenry was defended against the British attack.",
-            "brave": "The brave soldiers fought to protect their country.",
-            "poem": "Francis Scott Key wrote a poem that became our national anthem.",
-            "anthem": "The Star-Spangled Banner is our national anthem.",
-            "dawn": "At dawn, Key could see the flag was still there.",
-            "giant": "A giant flag flew over Fort McHenry.",
-            "port": "Ships sailed into the port of Baltimore.",
-            "construct": "Workers helped construct Fort McHenry before the war.",
-            "burned": "The British burned many buildings in Washington, D.C.",
-            "stitching": "The stitching on the flag was done by hand.",
-            "fifteen": "In 1812, the United States flag had fifteen stripes.",
-            "bomb": "The bomb bursting in air is mentioned in our national anthem."
+            "general": "The general led his troops into battle.",
+            "peace": "The countries signed a peace treaty after the war.",
+            "traders": "Traders sold goods along the river.",
+            "drains": "Rainwater drains into the river near the fort.",
+            "streak": "There was a streak of light in the sky from the rockets.",
+            "mortar": "The soldiers fired a mortar at the enemy.",
+            "treaty": "The war ended with a peace treaty.",
+            "river": "The Mississippi River was important during the war.",
+            "orphan": "The orphan found a new family after the battle.",
+            "defend": "The soldiers worked hard to defend the fort.",
+            "ragtag": "A ragtag group of soldiers protected the town.",
+            "soldiers": "The soldiers marched bravely into battle.",
+            "goods": "Ships carried goods up and down the river.",
+            "fired": "Cannons were fired during the attack.",
+            "hickory": "The fort was built with strong hickory wood.",
+            "knotty": "The knotty wood made the fort walls tough.",
+            "Mississippi": "The Mississippi River was a key route in the war.",
+            "highways": "Early highways helped move supplies to the soldiers.",
+            "proud": "The people were proud of their country's victory.",
+            "New Orleans": "The Battle of New Orleans was a famous event in the war."
         };
 
         let currentIndex = 0;
