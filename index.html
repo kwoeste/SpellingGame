@@ -3,198 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mrs. Montague 2nd Grade Spelling Words Test May 8</title>
+    <title>May Wasey - 3D Print Shop & More!</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .hero {
             text-align: center;
-            background-color: #f4f4f4;
-            padding: 20px;
+            max-width: 800px;
         }
-        h1 {
-            color: #2c3e50;
-        }
-        #game-container {
+
+        .avatar {
+            width: 150px;
+            height: 150px;
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            position: relative;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            margin: 0 auto 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: float 3s ease-in-out infinite;
         }
-        #letter-buttons {
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .tagline {
+            font-size: 1.4em;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 15px;
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 25px;
+            border-radius: 30px;
+            color: white;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 700px;
             margin-top: 20px;
         }
-        button {
-            font-size: 18px;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-            background: #27ae60;
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        }
+
+        .card-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .card.shop {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .card.shop h2,
+        .card.shop p {
             color: white;
-            border: none;
-            border-radius: 5px;
         }
-        button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
+
+        .new-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            margin-left: 8px;
+            animation: pulse 1.5s infinite;
         }
-        #message {
-            font-size: 20px;
-            margin-top: 10px;
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
-        .correct {
-            background: #2ecc71;
+
+        footer {
+            margin-top: 50px;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
         }
-        .incorrect {
-            background: #e74c3c;
+
+        footer p {
+            margin: 5px 0;
+        }
+
+        .social-links {
+            margin-top: 15px;
+        }
+
+        .social-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 1.5em;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .social-links a:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .tagline {
+                font-size: 1.1em;
+            }
+
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    <h1>Mrs. Montague 2nd Grade Spelling Words May 8, 2025</h1>
-    <div id="game-container">
-        <p id="word-hint" aria-live="polite">Spell the word: _ _ _ _</p>
-        <div id="letter-buttons" role="group" aria-label="Letter choices"></div>
-        <p id="message" aria-live="assertive"></p>
-        <button id="replay-button" onclick="replayWord()" aria-label="Replay word pronunciation">🔊 Replay Word</button>
+    <div class="hero">
+        <div class="avatar">👧</div>
+        <h1>Hi, I'm May!</h1>
+        <p class="tagline">8 years old, 3rd grader, and 3D printing enthusiast!</p>
+        <div class="info-badge">✨ Welcome to maywasey.com ✨</div>
+
+        <div class="cards-container">
+            <a href="store.html" class="card shop">
+                <span class="card-icon">🖨️</span>
+                <h2>3D Print Shop <span class="new-badge">NEW!</span></h2>
+                <p>Check out my custom 3D printed creations! Pick your colors and place an order.</p>
+            </a>
+
+            <a href="spelling-game.html" class="card">
+                <span class="card-icon">📚</span>
+                <h2>Spelling Game</h2>
+                <p>Practice your spelling words with this fun interactive game I made!</p>
+            </a>
+        </div>
     </div>
-    <h3>Created by: Mae Woeste</h3>
-    
-    <script>
-        const words = [
-            "general", "peace", "traders", "drains", "streak", "mortar", "treaty", "river", "orphan", "defend", "ragtag", "soldiers", "goods", "fired", "hickory", "knotty", "Mississippi", "highways", "proud", "New Orleans"
-        ];
 
-        // Add sentences for each word
-        const wordSentences = {
-            "general": "The general led his troops into battle.",
-            "peace": "The countries signed a peace treaty after the war.",
-            "traders": "Traders sold goods along the river.",
-            "drains": "Rainwater drains into the river near the fort.",
-            "streak": "There was a streak of light in the sky from the rockets.",
-            "mortar": "The soldiers fired a mortar at the enemy.",
-            "treaty": "The war ended with a peace treaty.",
-            "river": "The Mississippi River was important during the war.",
-            "orphan": "The orphan found a new family after the battle.",
-            "defend": "The soldiers worked hard to defend the fort.",
-            "ragtag": "A ragtag group of soldiers protected the town.",
-            "soldiers": "The soldiers marched bravely into battle.",
-            "goods": "Ships carried goods up and down the river.",
-            "fired": "Cannons were fired during the attack.",
-            "hickory": "The fort was built with strong hickory wood.",
-            "knotty": "The knotty wood made the fort walls tough.",
-            "Mississippi": "The Mississippi River was a key route in the war.",
-            "highways": "Early highways helped move supplies to the soldiers.",
-            "proud": "The people were proud of their country's victory.",
-            "New Orleans": "The Battle of New Orleans was a famous event in the war."
-        };
-
-        let currentIndex = 0;
-        let currentWord = "";
-        let guessedWord = "";
-        let currentLetterIndex;
-
-        function showWord() {
-            if (currentIndex < words.length) {
-                currentWord = words[currentIndex];
-                guessedWord = "_".repeat(currentWord.length);
-                currentLetterIndex = 0;
-                updateWordDisplay();
-                displayLetterButtons();
-                document.getElementById("message").innerText = "";
-                sayWordAndSentence(currentWord);
-            } else {
-                document.getElementById("game-container").innerHTML = "<h2>🎉 Congratulations! You finished all words! 🎉</h2>";
-            }
-        }
-
-        function updateWordDisplay() {
-            document.getElementById("word-hint").innerText = "Spell the word: " + guessedWord.split('').join(' ');
-        }
-
-        function displayLetterButtons() {
-            let letterContainer = document.getElementById("letter-buttons");
-            letterContainer.innerHTML = "";
-            let letters = currentWord.split('');
-            let extraLetters = shuffleArray('abcdefghijklmnopqrstuvwxyz'.split('')).slice(0, 3);
-            let allLetters = letters.concat(extraLetters).sort(() => Math.random() - 0.5);
-            allLetters.forEach(letter => {
-                let button = document.createElement("button");
-                button.innerText = letter;
-                button.onclick = () => guessLetter(letter, button);
-                letterContainer.appendChild(button);
-            });
-        }
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        function sayWordAndSentence(word) {
-            if ('speechSynthesis' in window) {
-                // First speak the word
-                let speechWord = new SpeechSynthesisUtterance(word);
-                speechWord.lang = "en-US";
-                
-                // Then speak the sentence after a short delay
-                let speechSentence = new SpeechSynthesisUtterance(wordSentences[word]);
-                speechSentence.lang = "en-US";
-                
-                // Use setTimeout to create a pause between word and sentence
-                window.speechSynthesis.speak(speechWord);
-                setTimeout(() => {
-                    window.speechSynthesis.speak(speechSentence);
-                }, 1000); // 1 second delay between word and sentence
-            } else {
-                console.warn('Speech synthesis not supported');
-                document.getElementById("message").innerText = "Speech not supported in your browser";
-            }
-        }
-
-        function replayWord() {
-            if (currentWord) {
-                sayWordAndSentence(currentWord);
-            }
-        }
-
-        function guessLetter(letter, button) {
-            if (letter === currentWord[currentLetterIndex]) {
-                let newGuessedWord = guessedWord.split('');
-                newGuessedWord[currentLetterIndex] = letter;
-                guessedWord = newGuessedWord.join('');
-                updateWordDisplay();
-                button.disabled = true;
-                button.classList.add('correct');
-                currentLetterIndex++;
-                checkCompletion();
-            } else {
-                document.getElementById("message").innerText = "❌ Try again! The next letter is incorrect.";
-                button.classList.add('incorrect');
-                setTimeout(() => button.classList.remove('incorrect'), 1000);
-            }
-        }
-
-        function checkCompletion() {
-            if (guessedWord === currentWord) {
-                document.getElementById("message").innerText = "✅ Correct!";
-                confetti();
-                currentIndex++;
-                setTimeout(showWord, 2000);
-            }
-        }
-
-        function restartGame() {
-            currentIndex = 0;
-            showWord();
-        }
-
-        showWord();
-    </script>
+    <footer>
+        <p>Made with 💜 by May Wasey</p>
+        <p>3rd Grade Entrepreneur & Creator</p>
+    </footer>
 </body>
 </html>
