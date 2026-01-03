@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>May Wasey - 3D Print Shop & More!</title>
+    <title>Mae's 3D Print Shop | maewoeste.com</title>
     <style>
         * {
             margin: 0;
@@ -13,189 +13,757 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            min-height: 100vh;
             padding: 20px;
         }
 
-        .hero {
-            text-align: center;
-            max-width: 800px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .avatar {
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        header h1 span {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .subtitle {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        /* About Me Section */
+        .about-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .about-avatar {
             width: 150px;
             height: 150px;
-            background: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
-            margin: 0 auto 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            animation: float 3s ease-in-out infinite;
+            font-size: 70px;
+            flex-shrink: 0;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .about-content {
+            flex: 1;
+            min-width: 250px;
         }
 
-        h1 {
-            font-size: 3.5em;
-            color: white;
+        .about-content h2 {
+            color: #333;
+            font-size: 1.8em;
             margin-bottom: 15px;
+        }
+
+        .about-content p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .about-highlights {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        /* Section Title */
+        .section-title {
+            text-align: center;
+            color: white;
+            font-size: 2em;
+            margin-bottom: 25px;
             text-shadow: 2px 2px 10px rgba(0,0,0,0.2);
         }
 
-        .tagline {
-            font-size: 1.4em;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 15px;
-        }
-
-        .info-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 10px 25px;
-            border-radius: 30px;
-            color: white;
-            font-size: 1.1em;
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
             margin-bottom: 40px;
         }
 
-        .cards-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            width: 100%;
-            max-width: 700px;
-            margin-top: 20px;
-        }
-
-        .card {
+        .product-card {
             background: white;
             border-radius: 20px;
-            padding: 40px 30px;
-            text-align: center;
-            text-decoration: none;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
         }
 
-        .card-icon {
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 4em;
-            margin-bottom: 20px;
-            display: block;
+            position: relative;
         }
 
-        .card h2 {
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-info h3 {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .product-info p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .price {
             font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .color-options {
+            margin-bottom: 15px;
+        }
+
+        .color-options label {
+            display: block;
+            font-weight: 600;
             color: #333;
             margin-bottom: 10px;
         }
 
-        .card p {
-            color: #666;
-            line-height: 1.5;
+        .color-swatches {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .card.shop {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .color-swatch {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
-        .card.shop h2,
-        .card.shop p {
-            color: white;
+        .color-swatch:hover {
+            transform: scale(1.15);
         }
 
-        .new-badge {
-            display: inline-block;
-            background: #ff6b6b;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
+        .color-swatch.selected {
+            border-color: #333;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+        }
+
+        .color-swatch::after {
+            content: attr(data-color);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
             font-size: 0.7em;
-            margin-left: 8px;
-            animation: pulse 1.5s infinite;
+            color: #666;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        footer {
-            margin-top: 50px;
-            color: rgba(255,255,255,0.8);
-            text-align: center;
-        }
-
-        footer p {
-            margin: 5px 0;
-        }
-
-        .social-links {
-            margin-top: 15px;
-        }
-
-        .social-links a {
-            color: white;
-            text-decoration: none;
-            margin: 0 10px;
-            font-size: 1.5em;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-
-        .social-links a:hover {
+        .color-swatch:hover::after {
             opacity: 1;
         }
 
+        .add-to-order {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-order:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .add-to-order:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Order Form Section */
+        .order-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .order-section h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .order-section .section-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .cart-items {
+            margin-bottom: 30px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .cart-item-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .cart-item-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .cart-item-price {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .remove-item {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-total {
+            text-align: right;
+            font-size: 1.3em;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1em;
+        }
+
+        .order-form {
+            display: grid;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-order {
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-order:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-order:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 30px;
+        }
+
+        footer p {
+            opacity: 0.9;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: #d4edda;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .success-message h3 {
+            color: #28a745;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .success-message p {
+            color: #155724;
+        }
+
         @media (max-width: 600px) {
-            h1 {
-                font-size: 2.5em;
+            header h1 {
+                font-size: 1.8em;
             }
 
-            .tagline {
-                font-size: 1.1em;
-            }
-
-            .cards-container {
+            .products-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .order-section {
+                padding: 20px;
+            }
+
+            .about-section {
+                padding: 25px;
+                text-align: center;
+            }
+
+            .about-avatar {
+                margin: 0 auto;
+            }
+
+            .about-highlights {
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <div class="avatar">👧</div>
-        <h1>Hi, I'm Mae!</h1>
-        <p class="tagline">8 years old, 3rd grader, and 3D printing enthusiast!</p>
-        <div class="info-badge">✨ Welcome to maewoeste.com ✨</div>
+    <div class="container">
+        <header>
+            <h1>🖨️ <span>Mae's 3D Print Shop</span> 🎨</h1>
+            <p>Custom 3D Printed Creations Made Just For You!</p>
+            <div class="subtitle">✨ maewoeste.com ✨</div>
+        </header>
 
-        <div class="cards-container">
-            <a href="store.html" class="card shop">
-                <span class="card-icon">🖨️</span>
-                <h2>3D Print Shop <span class="new-badge">NEW!</span></h2>
-                <p>Check out my custom 3D printed creations! Pick your colors and place an order.</p>
-            </a>
+        <!-- About Me Section -->
+        <div class="about-section">
+            <div class="about-avatar">👧</div>
+            <div class="about-content">
+                <h2>Hi, I'm Mae! 👋</h2>
+                <p>I'm 8 years old and in the 3rd grade. I just got a 3D printer for Christmas and I LOVE making cool things with it!</p>
+                <p>All my creations are printed by me and come in lots of fun colors. You can order here and pay me at school when I deliver your print!</p>
+                <div class="about-highlights">
+                    <span class="highlight">🎂 8 Years Old</span>
+                    <span class="highlight">📚 3rd Grade</span>
+                    <span class="highlight">🖨️ 3D Printing Pro</span>
+                </div>
+            </div>
         </div>
+
+        <h2 class="section-title">🛍️ Shop My Creations</h2>
+
+        <div class="products-grid" id="products-grid">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <div class="order-section" id="order-section">
+            <h2>🛒 Your Order</h2>
+            <p class="section-subtitle">Add items above, then fill out the form to place your order!</p>
+            
+            <div class="cart-items" id="cart-items">
+                <div class="empty-cart">Your cart is empty. Add some cool 3D prints! 🎨</div>
+            </div>
+
+            <div class="cart-total" id="cart-total" style="display: none;">
+                Total: $<span id="total-amount">0.00</span>
+            </div>
+
+            <form class="order-form" id="order-form" action="https://api.web3forms.com/submit" method="POST">
+                <!-- Web3Forms Access Key -->
+                <input type="hidden" name="access_key" value="1b3b40d6-fd45-4915-b73d-dd53a462b16d">
+                <input type="hidden" name="subject" value="🎉 New Order from Mae's 3D Print Shop!">
+                <input type="hidden" name="from_name" value="Mae's 3D Print Shop">
+                
+                <!-- Hidden field for order details -->
+                <input type="hidden" name="order_details" id="order-details-input" value="">
+                <input type="hidden" name="order_total" id="order-total-input" value="">
+
+                <div class="form-group">
+                    <label for="customer-name">Your Name *</label>
+                    <input type="text" id="customer-name" name="customer_name" required placeholder="Enter your name">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer-email">Your Email (or Parent's Email) *</label>
+                    <input type="email" id="customer-email" name="customer_email" required placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer-grade">Your Grade/Class</label>
+                    <input type="text" id="customer-grade" name="customer_grade" placeholder="e.g., 3rd Grade - Mrs. Smith">
+                </div>
+
+                <div class="form-group">
+                    <label for="special-notes">Special Notes or Requests</label>
+                    <textarea id="special-notes" name="special_notes" rows="3" placeholder="Any special requests?"></textarea>
+                </div>
+
+                <button type="submit" class="submit-order" id="submit-btn" disabled>
+                    📧 Send My Order
+                </button>
+            </form>
+
+            <div class="success-message" id="success-message">
+                <h3>🎉 Order Sent!</h3>
+                <p>Thanks for your order! Mae will get your email and find you at school to deliver your awesome 3D prints!</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Made with 💜 by Mae Woeste | maewoeste.com</p>
+            <p>3rd Grade Entrepreneur & 3D Printing Enthusiast</p>
+        </footer>
     </div>
 
-    <footer>
-        <p>Made with 💜 by Mae Woeste</p>
-        <p>3rd Grade Entrepreneur & Creator</p>
-    </footer>
+    <script>
+        // Products
+        const products = [
+            {
+                id: 1,
+                name: "Gary the Snake",
+                description: "A super cool articulated snake that wiggles and moves! Big googly eyes and fangs make Gary the perfect desk buddy. Great for fidgeting!",
+                price: 8.00,
+                image: "images/gary-snake-blue.png",
+                colorImages: {
+                    "blue": "images/gary-snake-blue.png",
+                    "cotton candy": "images/gary-snake-cotton-candy.png"
+                },
+                colors: ["blue", "cotton candy"]
+            },
+            {
+                id: 2,
+                name: "Fidget Hexagon Twist (Small)",
+                description: "A mesmerizing spiral hexagon fidget toy! Spin and twist it for hours of satisfying fun. Perfect size to fit in your pocket!",
+                price: 3.00,
+                image: "images/hexagon-twist.png",
+                colors: ["blue", "purple", "red", "green", "orange", "yellow", "pink", "white", "black", "rainbow"]
+            },
+            {
+                id: 3,
+                name: "Fidget Hexagon Twist (Large)",
+                description: "The BIG version of our popular spiral hexagon! Even more satisfying to spin and twist. Great desk decoration when you're not fidgeting!",
+                price: 5.00,
+                image: "images/hexagon-twist.png",
+                colors: ["blue", "purple", "red", "green", "orange", "yellow", "pink", "white", "black", "rainbow"]
+            },
+            {
+                id: 4,
+                name: "Infinity Cube",
+                description: "The ultimate fidget toy! Flip and fold it forever - it never ends! Super satisfying and helps you focus. Fits perfectly in your hand.",
+                price: 4.00,
+                image: "images/infinity-cube.png",
+                colors: ["black", "pink", "blue", "purple", "red", "green", "orange", "yellow", "white"]
+            }
+        ];
+
+        // Color hex codes
+        const colorHex = {
+            red: "#e74c3c",
+            green: "#27ae60",
+            blue: "#3498db",
+            purple: "#9b59b6",
+            orange: "#e67e22",
+            yellow: "#f1c40f",
+            pink: "#ff69b4",
+            white: "#ffffff",
+            black: "#2c3e50",
+            terracotta: "#c4a484",
+            "cotton candy": "linear-gradient(135deg, #a8d8ea 0%, #f8b4c4 100%)",
+            "rainbow": "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff)"
+        };
+
+        // Shopping cart
+        let cart = [];
+
+        // Render products
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = products.map(product => `
+                <div class="product-card" data-product-id="${product.id}">
+                    <div class="product-image" id="product-image-${product.id}">
+                        ${product.image 
+                            ? `<img src="${product.image}" alt="${product.name}">` 
+                            : product.emoji}
+                    </div>
+                    <div class="product-info">
+                        <h3>${product.name}</h3>
+                        <p>${product.description}</p>
+                        <div class="price">$${product.price.toFixed(2)}</div>
+                        <div class="color-options">
+                            <label>Choose a style:</label>
+                            <div class="color-swatches">
+                                ${product.colors.map(color => {
+                                    const style = colorHex[color]?.startsWith('linear') 
+                                        ? `background: ${colorHex[color]}` 
+                                        : `background-color: ${colorHex[color] || '#ccc'}`;
+                                    return `
+                                    <div class="color-swatch" 
+                                         style="${style}" 
+                                         data-color="${color}"
+                                         data-product-id="${product.id}"
+                                         onclick="selectColor(this, ${product.id}, '${color}')"
+                                         title="${color}">
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        </div>
+                        <button class="add-to-order" 
+                                id="add-btn-${product.id}" 
+                                onclick="addToCart(${product.id})" 
+                                disabled>
+                            Select a style first
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Track selected colors for each product
+        const selectedColors = {};
+
+        function selectColor(element, productId, color) {
+            // Remove selection from other swatches in this product
+            const productCard = element.closest('.product-card');
+            productCard.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            
+            // Add selection to clicked swatch
+            element.classList.add('selected');
+            
+            // Store the selection
+            selectedColors[productId] = color;
+            
+            // Update product image if this product has color-specific images
+            const product = products.find(p => p.id === productId);
+            if (product && product.colorImages && product.colorImages[color]) {
+                const imageContainer = document.getElementById(`product-image-${productId}`);
+                imageContainer.innerHTML = `<img src="${product.colorImages[color]}" alt="${product.name} - ${color}">`;
+            }
+            
+            // Enable the add button
+            const addBtn = document.getElementById(`add-btn-${productId}`);
+            addBtn.disabled = false;
+            addBtn.textContent = `Add ${color} to Order`;
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const color = selectedColors[productId];
+            
+            if (!product || !color) return;
+
+            cart.push({
+                ...product,
+                selectedColor: color,
+                cartId: Date.now()
+            });
+
+            renderCart();
+            
+            // Reset the product card
+            const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+            productCard.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            const addBtn = document.getElementById(`add-btn-${productId}`);
+            addBtn.disabled = true;
+            addBtn.textContent = 'Select a style first';
+            delete selectedColors[productId];
+
+            // Scroll to order section
+            document.getElementById('order-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function removeFromCart(cartId) {
+            cart = cart.filter(item => item.cartId !== cartId);
+            renderCart();
+        }
+
+        function renderCart() {
+            const cartContainer = document.getElementById('cart-items');
+            const totalContainer = document.getElementById('cart-total');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<div class="empty-cart">Your cart is empty. Add some cool 3D prints! 🎨</div>';
+                totalContainer.style.display = 'none';
+                submitBtn.disabled = true;
+                return;
+            }
+
+            cartContainer.innerHTML = cart.map(item => {
+                const colorStyle = colorHex[item.selectedColor]?.startsWith('linear') 
+                    ? `background: ${colorHex[item.selectedColor]}` 
+                    : `background-color: ${colorHex[item.selectedColor] || '#ccc'}`;
+                return `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-color" style="${colorStyle}"></div>
+                        <span class="cart-item-name">${item.name} (${item.selectedColor})</span>
+                    </div>
+                    <span class="cart-item-price">$${item.price.toFixed(2)}</span>
+                    <button class="remove-item" onclick="removeFromCart(${item.cartId})">×</button>
+                </div>
+            `}).join('');
+
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('total-amount').textContent = total.toFixed(2);
+            totalContainer.style.display = 'block';
+            submitBtn.disabled = false;
+
+            // Update hidden form fields
+            const orderDetails = cart.map(item => `${item.name} (${item.selectedColor}) - $${item.price.toFixed(2)}`).join('\n');
+            document.getElementById('order-details-input').value = orderDetails;
+            document.getElementById('order-total-input').value = `$${total.toFixed(2)}`;
+        }
+
+        // Handle form submission
+        document.getElementById('order-form').addEventListener('submit', function(e) {
+            setTimeout(() => {
+                document.getElementById('success-message').style.display = 'block';
+                cart = [];
+                renderCart();
+                this.reset();
+            }, 1000);
+        });
+
+        // Initialize
+        renderProducts();
+        renderCart();
+    </script>
 </body>
 </html>
