@@ -263,7 +263,7 @@
             transform: none;
         }
 
-        /* Order Form Section */
+        /* Order Form Section - Shopify Style */
         .order-section {
             background: white;
             border-radius: 20px;
@@ -285,15 +285,30 @@
             margin-bottom: 30px;
         }
 
+        .checkout-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .checkout-left h3,
+        .checkout-right h3 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
         .cart-items {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .cart-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 12px;
             background: #f8f9fa;
             border-radius: 10px;
             margin-bottom: 10px;
@@ -302,7 +317,7 @@
         .cart-item-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .cart-item-color {
@@ -315,6 +330,7 @@
         .cart-item-name {
             font-weight: 600;
             color: #333;
+            font-size: 0.95em;
         }
 
         .cart-item-price {
@@ -326,11 +342,11 @@
             background: #ff6b6b;
             color: white;
             border: none;
-            width: 30px;
-            height: 30px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 1.2em;
+            font-size: 1em;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -436,6 +452,17 @@
             color: #155724;
         }
 
+        @media (max-width: 800px) {
+            .checkout-layout {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .checkout-right {
+                order: -1; /* Show order summary first on mobile */
+            }
+        }
+
         @media (max-width: 600px) {
             header h1 {
                 font-size: 1.8em;
@@ -494,51 +521,61 @@
         </div>
 
         <div class="order-section" id="order-section">
-            <h2>🛒 Your Order</h2>
-            <p class="section-subtitle">Add items above, then fill out the form to place your order!</p>
+            <h2>🛒 Checkout</h2>
+            <p class="section-subtitle">Fill out your info and review your order!</p>
             
-            <div class="cart-items" id="cart-items">
-                <div class="empty-cart">Your cart is empty. Add some cool 3D prints! 🎨</div>
+            <div class="checkout-layout">
+                <!-- Left Side: Customer Information -->
+                <div class="checkout-left">
+                    <h3>📝 Your Information</h3>
+                    <form class="order-form" id="order-form" action="https://api.web3forms.com/submit" method="POST">
+                        <!-- Web3Forms Access Key -->
+                        <input type="hidden" name="access_key" value="1b3b40d6-fd45-4915-b73d-dd53a462b16d">
+                        <input type="hidden" name="subject" value="🎉 New Order from Mae's 3D Print Shop!">
+                        <input type="hidden" name="from_name" value="Mae's 3D Print Shop">
+                        
+                        <!-- Hidden field for order details -->
+                        <input type="hidden" name="order_details" id="order-details-input" value="">
+                        <input type="hidden" name="order_total" id="order-total-input" value="">
+
+                        <div class="form-group">
+                            <label for="customer-name">Your Name *</label>
+                            <input type="text" id="customer-name" name="customer_name" required placeholder="Enter your name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customer-email">Your Email (or Parent's Email) *</label>
+                            <input type="email" id="customer-email" name="customer_email" required placeholder="Enter your email">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customer-grade">Your Grade/Class</label>
+                            <input type="text" id="customer-grade" name="customer_grade" placeholder="e.g., 3rd Grade - Mrs. Smith">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="special-notes">Special Notes or Requests</label>
+                            <textarea id="special-notes" name="special_notes" rows="3" placeholder="Any special requests?"></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-order" id="submit-btn" disabled>
+                            📧 Send My Order
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Side: Order Summary -->
+                <div class="checkout-right">
+                    <h3>🛍️ Order Summary</h3>
+                    <div class="cart-items" id="cart-items">
+                        <div class="empty-cart">Your cart is empty. Add some cool 3D prints above! 🎨</div>
+                    </div>
+
+                    <div class="cart-total" id="cart-total" style="display: none;">
+                        Total: $<span id="total-amount">0.00</span>
+                    </div>
+                </div>
             </div>
-
-            <div class="cart-total" id="cart-total" style="display: none;">
-                Total: $<span id="total-amount">0.00</span>
-            </div>
-
-            <form class="order-form" id="order-form" action="https://api.web3forms.com/submit" method="POST">
-                <!-- Web3Forms Access Key -->
-                <input type="hidden" name="access_key" value="1b3b40d6-fd45-4915-b73d-dd53a462b16d">
-                <input type="hidden" name="subject" value="🎉 New Order from Mae's 3D Print Shop!">
-                <input type="hidden" name="from_name" value="Mae's 3D Print Shop">
-                
-                <!-- Hidden field for order details -->
-                <input type="hidden" name="order_details" id="order-details-input" value="">
-                <input type="hidden" name="order_total" id="order-total-input" value="">
-
-                <div class="form-group">
-                    <label for="customer-name">Your Name *</label>
-                    <input type="text" id="customer-name" name="customer_name" required placeholder="Enter your name">
-                </div>
-
-                <div class="form-group">
-                    <label for="customer-email">Your Email (or Parent's Email) *</label>
-                    <input type="email" id="customer-email" name="customer_email" required placeholder="Enter your email">
-                </div>
-
-                <div class="form-group">
-                    <label for="customer-grade">Your Grade/Class</label>
-                    <input type="text" id="customer-grade" name="customer_grade" placeholder="e.g., 3rd Grade - Mrs. Smith">
-                </div>
-
-                <div class="form-group">
-                    <label for="special-notes">Special Notes or Requests</label>
-                    <textarea id="special-notes" name="special_notes" rows="3" placeholder="Any special requests?"></textarea>
-                </div>
-
-                <button type="submit" class="submit-order" id="submit-btn" disabled>
-                    📧 Send My Order
-                </button>
-            </form>
 
             <div class="success-message" id="success-message">
                 <h3>🎉 Order Sent!</h3>
