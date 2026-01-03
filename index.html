@@ -13,76 +13,61 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, #5a67d8 0%, #7c3aed 100%);
+            padding: 60px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .hero-banner h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-banner p {
+            font-size: 1.2em;
+            opacity: 0.9;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
             padding: 40px 20px;
-            background: white;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        header h1 span {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        header p {
-            color: #666;
-            font-size: 1.2em;
-        }
-
-        .subtitle {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            margin-top: 15px;
-            font-size: 0.9em;
         }
 
         /* About Me Section */
         .about-section {
             background: white;
-            border-radius: 20px;
+            border-radius: 16px;
             padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             display: flex;
             align-items: center;
-            gap: 30px;
+            gap: 40px;
             flex-wrap: wrap;
         }
 
         .about-avatar {
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #5a67d8, #7c3aed);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 70px;
             flex-shrink: 0;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
         }
 
         .about-content {
@@ -91,65 +76,69 @@
         }
 
         .about-content h2 {
-            color: #333;
-            font-size: 1.8em;
-            margin-bottom: 15px;
+            color: #1a202c;
+            font-size: 1.6em;
+            margin-bottom: 12px;
+            font-weight: 600;
         }
 
         .about-content p {
-            color: #666;
-            line-height: 1.8;
-            margin-bottom: 10px;
+            color: #4a5568;
+            line-height: 1.7;
+            margin-bottom: 8px;
+            font-size: 1.05em;
         }
 
         .about-highlights {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .highlight {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: #f0f4ff;
+            color: #5a67d8;
             padding: 8px 16px;
-            border-radius: 20px;
+            border-radius: 8px;
             font-size: 0.9em;
+            font-weight: 500;
         }
 
         /* Section Title */
         .section-title {
             text-align: center;
-            color: white;
-            font-size: 2em;
-            margin-bottom: 25px;
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            color: #1a202c;
+            font-size: 1.8em;
+            margin-bottom: 30px;
+            font-weight: 600;
         }
 
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 50px;
         }
 
         .product-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #e2e8f0;
         }
 
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
         }
 
         .product-image {
             width: 100%;
             height: 200px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: #f7fafc;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -168,33 +157,36 @@
         }
 
         .product-info h3 {
-            font-size: 1.4em;
-            color: #333;
+            font-size: 1.2em;
+            color: #1a202c;
             margin-bottom: 8px;
+            font-weight: 600;
         }
 
         .product-info p {
-            color: #666;
-            margin-bottom: 15px;
+            color: #718096;
+            margin-bottom: 16px;
             line-height: 1.5;
+            font-size: 0.95em;
         }
 
         .price {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #5a67d8;
+            margin-bottom: 16px;
         }
 
         .color-options {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
         .color-options label {
             display: block;
-            font-weight: 600;
-            color: #333;
+            font-weight: 500;
+            color: #4a5568;
             margin-bottom: 10px;
+            font-size: 0.9em;
         }
 
         .color-swatches {
@@ -204,35 +196,37 @@
         }
 
         .color-swatch {
-            width: 35px;
-            height: 35px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             cursor: pointer;
-            border: 3px solid transparent;
+            border: 2px solid #e2e8f0;
             transition: all 0.2s ease;
             position: relative;
         }
 
         .color-swatch:hover {
-            transform: scale(1.15);
+            transform: scale(1.1);
+            border-color: #a0aec0;
         }
 
         .color-swatch.selected {
-            border-color: #333;
-            box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #5a67d8;
         }
 
         .color-swatch::after {
             content: attr(data-color);
             position: absolute;
-            bottom: -25px;
+            bottom: -22px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 0.7em;
-            color: #666;
+            color: #718096;
             white-space: nowrap;
             opacity: 0;
             transition: opacity 0.2s;
+            text-transform: capitalize;
         }
 
         .color-swatch:hover::after {
@@ -242,62 +236,64 @@
         .add-to-order {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #5a67d8;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1em;
+            border-radius: 8px;
+            font-size: 0.95em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .add-to-order:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            background: #4c51bf;
         }
 
         .add-to-order:disabled {
-            background: #ccc;
+            background: #cbd5e0;
+            color: #a0aec0;
             cursor: not-allowed;
-            transform: none;
         }
 
         /* Order Form Section - Shopify Style */
         .order-section {
             background: white;
-            border-radius: 20px;
+            border-radius: 12px;
             padding: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 40px;
+            border: 1px solid #e2e8f0;
         }
 
         .order-section h2 {
             text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2em;
+            color: #1a202c;
+            margin-bottom: 8px;
+            font-size: 1.6em;
+            font-weight: 600;
         }
 
         .order-section .section-subtitle {
             text-align: center;
-            color: #666;
+            color: #718096;
             margin-bottom: 30px;
         }
 
         .checkout-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
+            gap: 50px;
         }
 
         .checkout-left h3,
         .checkout-right h3 {
-            color: #333;
-            font-size: 1.3em;
+            color: #1a202c;
+            font-size: 1.1em;
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
         }
 
         .cart-items {
@@ -308,10 +304,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            padding: 14px;
+            background: #f7fafc;
+            border-radius: 8px;
             margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
         }
 
         .cart-item-info {
@@ -321,57 +318,66 @@
         }
 
         .cart-item-color {
-            width: 25px;
-            height: 25px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            border: 2px solid #ddd;
+            border: 2px solid #e2e8f0;
         }
 
         .cart-item-name {
-            font-weight: 600;
-            color: #333;
+            font-weight: 500;
+            color: #2d3748;
             font-size: 0.95em;
         }
 
         .cart-item-price {
-            color: #667eea;
-            font-weight: bold;
+            color: #5a67d8;
+            font-weight: 600;
         }
 
         .remove-item {
-            background: #ff6b6b;
+            background: #fc8181;
             color: white;
             border: none;
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.9em;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .remove-item:hover {
+            background: #f56565;
         }
 
         .cart-total {
             text-align: right;
-            font-size: 1.3em;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-size: 1.2em;
+            padding: 16px 20px;
+            background: #1a202c;
             color: white;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
         }
 
         .empty-cart {
             text-align: center;
-            padding: 40px;
-            color: #999;
-            font-size: 1.1em;
+            padding: 40px 20px;
+            color: #a0aec0;
+            font-size: 1em;
+            background: #f7fafc;
+            border-radius: 8px;
+            border: 1px dashed #e2e8f0;
         }
 
         .order-form {
             display: grid;
-            gap: 20px;
+            gap: 18px;
         }
 
         .form-group {
@@ -380,18 +386,28 @@
         }
 
         .form-group label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 6px;
+            font-size: 0.9em;
         }
 
         .form-group input,
         .form-group textarea {
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             font-size: 1em;
-            transition: border-color 0.3s ease;
+            transition: all 0.2s ease;
+            background: #f7fafc;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #5a67d8;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
         }
 
         .form-group input:focus,
@@ -401,55 +417,58 @@
         }
 
         .submit-order {
-            padding: 18px 40px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 14px 32px;
+            background: #5a67d8;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
+            border-radius: 8px;
+            font-size: 1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            width: 100%;
         }
 
         .submit-order:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 25px rgba(102, 126, 234, 0.4);
+            background: #4c51bf;
         }
 
         .submit-order:disabled {
-            background: #ccc;
+            background: #cbd5e0;
+            color: #a0aec0;
             cursor: not-allowed;
-            transform: none;
         }
 
         footer {
             text-align: center;
-            color: white;
-            padding: 30px;
+            color: #718096;
+            padding: 40px 20px;
+            font-size: 0.95em;
         }
 
         footer p {
-            opacity: 0.9;
+            margin: 4px 0;
         }
 
         .success-message {
             display: none;
             text-align: center;
-            padding: 40px;
-            background: #d4edda;
-            border-radius: 15px;
+            padding: 30px;
+            background: #f0fff4;
+            border-radius: 8px;
             margin-top: 20px;
+            border: 1px solid #9ae6b4;
         }
 
         .success-message h3 {
-            color: #28a745;
-            font-size: 1.5em;
-            margin-bottom: 10px;
+            color: #276749;
+            font-size: 1.2em;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
 
         .success-message p {
-            color: #155724;
+            color: #2f855a;
         }
 
         @media (max-width: 800px) {
@@ -492,42 +511,41 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🖨️ <span>Mae's 3D Print Shop</span> 🎨</h1>
-            <p>Custom 3D Printed Creations Made Just For You!</p>
-            <div class="subtitle">✨ maewoeste.com ✨</div>
-        </header>
+    <div class="hero-banner">
+        <h1>Mae's 3D Print Shop</h1>
+        <p>Custom 3D Printed Creations Made Just For You</p>
+    </div>
 
+    <div class="container">
         <!-- About Me Section -->
         <div class="about-section">
-            <div class="about-avatar">👧</div>
+            <div class="about-avatar">M</div>
             <div class="about-content">
-                <h2>Hi, I'm Mae! 👋</h2>
-                <p>I'm 8 years old and in the 3rd grade. I just got a 3D printer for Christmas and I LOVE making cool things with it!</p>
-                <p>All my creations are printed by me and come in lots of fun colors. You can order here and pay me at school when I deliver your print!</p>
+                <h2>Hi, I'm Mae!</h2>
+                <p>I'm 8 years old and in the 3rd grade. I got a 3D printer for Christmas and love making cool things with it!</p>
+                <p>All my creations are printed by me and come in lots of fun colors. Order here and pay me at school when I deliver your print.</p>
                 <div class="about-highlights">
-                    <span class="highlight">🎂 8 Years Old</span>
-                    <span class="highlight">📚 3rd Grade</span>
-                    <span class="highlight">🖨️ 3D Printing Pro</span>
+                    <span class="highlight">8 Years Old</span>
+                    <span class="highlight">3rd Grade</span>
+                    <span class="highlight">3D Printing Pro</span>
                 </div>
             </div>
         </div>
 
-        <h2 class="section-title">🛍️ Shop My Creations</h2>
+        <h2 class="section-title">Shop My Creations</h2>
 
         <div class="products-grid" id="products-grid">
             <!-- Products will be loaded here -->
         </div>
 
         <div class="order-section" id="order-section">
-            <h2>🛒 Checkout</h2>
-            <p class="section-subtitle">Fill out your info and review your order!</p>
+            <h2>Checkout</h2>
+            <p class="section-subtitle">Fill out your information and review your order</p>
             
             <div class="checkout-layout">
                 <!-- Left Side: Customer Information -->
                 <div class="checkout-left">
-                    <h3>📝 Your Information</h3>
+                    <h3>Your Information</h3>
                     <form class="order-form" id="order-form" action="https://api.web3forms.com/submit" method="POST">
                         <!-- Web3Forms Access Key -->
                         <input type="hidden" name="access_key" value="1b3b40d6-fd45-4915-b73d-dd53a462b16d">
@@ -560,16 +578,16 @@
                         </div>
 
                         <button type="submit" class="submit-order" id="submit-btn" disabled>
-                            📧 Send My Order
+                            Place Order
                         </button>
                     </form>
                 </div>
 
                 <!-- Right Side: Order Summary -->
                 <div class="checkout-right">
-                    <h3>🛍️ Order Summary</h3>
+                    <h3>Order Summary</h3>
                     <div class="cart-items" id="cart-items">
-                        <div class="empty-cart">Your cart is empty. Add some cool 3D prints above! 🎨</div>
+                        <div class="empty-cart">Your cart is empty. Add items above to get started.</div>
                     </div>
 
                     <div class="cart-total" id="cart-total" style="display: none;">
@@ -579,14 +597,14 @@
             </div>
 
             <div class="success-message" id="success-message">
-                <h3>🎉 Order Sent!</h3>
-                <p>Thanks for your order! Mae will get your email and find you at school to deliver your awesome 3D prints!</p>
+                <h3>Order Sent Successfully!</h3>
+                <p>Thanks for your order! Mae will get your email and find you at school to deliver your print.</p>
             </div>
         </div>
 
         <footer>
-            <p>Made with 💜 by Mae Woeste | maewoeste.com</p>
-            <p>3rd Grade Entrepreneur & 3D Printing Enthusiast</p>
+            <p>Mae's 3D Print Shop &bull; maewoeste.com</p>
+            <p>Made by Mae Woeste, 3rd Grade</p>
         </footer>
     </div>
 
@@ -757,7 +775,7 @@
             const submitBtn = document.getElementById('submit-btn');
 
             if (cart.length === 0) {
-                cartContainer.innerHTML = '<div class="empty-cart">Your cart is empty. Add some cool 3D prints! 🎨</div>';
+                cartContainer.innerHTML = '<div class="empty-cart">Your cart is empty. Add items above to get started.</div>';
                 totalContainer.style.display = 'none';
                 submitBtn.disabled = true;
                 return;
