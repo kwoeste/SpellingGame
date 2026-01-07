@@ -185,6 +185,44 @@
             margin-bottom: 16px;
         }
 
+        .size-options {
+            margin-bottom: 16px;
+        }
+
+        .size-options label {
+            display: block;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .size-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .size-btn {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f7fafc;
+            color: #4a5568;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .size-btn:hover {
+            border-color: #a0aec0;
+        }
+
+        .size-btn.selected {
+            border-color: #5a67d8;
+            background: #5a67d8;
+            color: white;
+        }
+
         .color-options {
             margin-bottom: 16px;
         }
@@ -677,22 +715,15 @@
             },
             {
                 id: 2,
-                name: "Fidget Hexagon Twist (Small)",
-                description: "A mesmerizing spiral hexagon fidget toy! Spin and twist it for hours of satisfying fun. Perfect size to fit in your pocket!",
-                price: 3.00,
+                name: "Fidget Hexagon Twist",
+                description: "A mesmerizing spiral hexagon fidget toy! Spin and twist it for hours of satisfying fun. Available in two sizes!",
+                price: 0,
                 image: "images/hexagon-twist.png",
+                sizes: ["Small", "Large"],
                 colors: ["blue", "purple", "red", "green", "orange", "yellow", "pink", "white", "black", "rainbow"]
             },
             {
                 id: 3,
-                name: "Fidget Hexagon Twist (Large)",
-                description: "The BIG version of our popular spiral hexagon! Even more satisfying to spin and twist. Great desk decoration when you're not fidgeting!",
-                price: 5.00,
-                image: "images/hexagon-twist.png",
-                colors: ["blue", "purple", "red", "green", "orange", "yellow", "pink", "white", "black", "rainbow"]
-            },
-            {
-                id: 4,
                 name: "Infinity Cube",
                 description: "The ultimate fidget toy! Flip and fold it forever - it never ends! Super satisfying and helps you focus. Fits perfectly in your hand.",
                 price: 4.00,
@@ -726,20 +757,35 @@
             grid.innerHTML = products.map(product => `
                 <div class="product-card" data-product-id="${product.id}">
                     <div class="product-image" id="product-image-${product.id}">
-                        ${product.image 
-                            ? `<img src="${product.image}" alt="${product.name}">` 
+                        ${product.image
+                            ? `<img src="${product.image}" alt="${product.name}">`
                             : product.emoji}
                     </div>
                     <div class="product-info">
                         <h3>${product.name}</h3>
                         <p>${product.description}</p>
                         <div class="free-badge">✓ FREE</div>
+                        ${product.sizes ? `
+                        <div class="size-options">
+                            <label>Choose a size:</label>
+                            <div class="size-buttons">
+                                ${product.sizes.map(size => `
+                                    <button type="button" class="size-btn" 
+                                            data-size="${size}"
+                                            data-product-id="${product.id}"
+                                            onclick="selectSize(this, ${product.id}, '${size}')">
+                                        ${size}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="color-options">
-                            <label>Choose a style:</label>
+                            <label>Choose a color:</label>
                             <div class="color-swatches">
                                 ${product.colors.map(color => {
-                                    const style = colorHex[color]?.startsWith('linear') 
-                                        ? `background: ${colorHex[color]}` 
+                                    const style = colorHex[color]?.startsWith('linear')
+                                        ? `background: ${colorHex[color]}`
                                         : `background-color: ${colorHex[color] || '#ccc'}`;
                                     return `
                                     <div class="color-swatch" 
@@ -756,7 +802,7 @@
                                 id="add-btn-${product.id}" 
                                 onclick="addToCart(${product.id})" 
                                 disabled>
-                            Select a style first
+                            ${product.sizes ? 'Select size & color' : 'Select a color'}
                         </button>
                     </div>
                 </div>
@@ -765,6 +811,22 @@
 
         // Track selected colors for each product
         const selectedColors = {};
+        const selectedSizes = {};
+
+        function selectSize(element, productId, size) {
+            // Remove selection from other size buttons
+            const productCard = element.closest('.product-card');
+            productCard.querySelectorAll('.size-btn').forEach(s => s.classList.remove('selected'));
+            
+            // Add selection to clicked button
+            element.classList.add('selected');
+            
+            // Store the selection
+            selectedSizes[productId] = size;
+            
+            // Check if ready to add (need both size and color for products with sizes)
+            updateAddButton(productId);
+        }
 
         function selectColor(element, productId, color) {
             // Remove selection from other swatches in this product
@@ -784,17 +846,49 @@
                 imageContainer.innerHTML = `<img src="${product.colorImages[color]}" alt="${product.name} - ${color}">`;
             }
             
-            // Enable the add button
+            // Check if ready to add
+            updateAddButton(productId);
+        }
+        
+        function updateAddButton(productId) {
+            const product = products.find(p => p.id === productId);
             const addBtn = document.getElementById(`add-btn-${productId}`);
-            addBtn.disabled = false;
-            addBtn.textContent = `Add ${color} to Order`;
+            const color = selectedColors[productId];
+            const size = selectedSizes[productId];
+            
+            // Check if product needs size selection
+            if (product.sizes) {
+                if (color && size) {
+                    addBtn.disabled = false;
+                    addBtn.textContent = `Add ${size} ${color}`;
+                } else if (color) {
+                    addBtn.disabled = true;
+                    addBtn.textContent = 'Select a size';
+                } else if (size) {
+                    addBtn.disabled = true;
+                    addBtn.textContent = 'Select a color';
+                } else {
+                    addBtn.disabled = true;
+                    addBtn.textContent = 'Select size & color';
+                }
+            } else {
+                if (color) {
+                    addBtn.disabled = false;
+                    addBtn.textContent = `Add ${color}`;
+                } else {
+                    addBtn.disabled = true;
+                    addBtn.textContent = 'Select a color';
+                }
+            }
         }
 
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
             const color = selectedColors[productId];
+            const size = selectedSizes[productId];
             
             if (!product || !color) return;
+            if (product.sizes && !size) return;
             
             // Limit to one item per person
             if (cart.length >= 1) {
@@ -805,6 +899,7 @@
             cart.push({
                 ...product,
                 selectedColor: color,
+                selectedSize: size || null,
                 cartId: Date.now()
             });
 
@@ -813,10 +908,12 @@
             // Reset the product card
             const productCard = document.querySelector(`[data-product-id="${productId}"]`);
             productCard.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            productCard.querySelectorAll('.size-btn').forEach(s => s.classList.remove('selected'));
             const addBtn = document.getElementById(`add-btn-${productId}`);
             addBtn.disabled = true;
-            addBtn.textContent = 'Select a style first';
+            addBtn.textContent = product.sizes ? 'Select size & color' : 'Select a color';
             delete selectedColors[productId];
+            delete selectedSizes[productId];
 
             // Scroll to order section
             document.getElementById('order-section').scrollIntoView({ behavior: 'smooth' });
@@ -843,11 +940,12 @@
                 const colorStyle = colorHex[item.selectedColor]?.startsWith('linear') 
                     ? `background: ${colorHex[item.selectedColor]}` 
                     : `background-color: ${colorHex[item.selectedColor] || '#ccc'}`;
+                const sizeText = item.selectedSize ? ` - ${item.selectedSize}` : '';
                 return `
                 <div class="cart-item">
                     <div class="cart-item-info">
                         <div class="cart-item-color" style="${colorStyle}"></div>
-                        <span class="cart-item-name">${item.name} (${item.selectedColor})</span>
+                        <span class="cart-item-name">${item.name}${sizeText} (${item.selectedColor})</span>
                     </div>
                     <span class="cart-item-price" style="color: #48bb78; font-weight: 600;">FREE</span>
                     <button class="remove-item" onclick="removeFromCart(${item.cartId})">×</button>
@@ -860,7 +958,10 @@
             submitBtn.disabled = false;
 
             // Update hidden form fields
-            const orderDetails = cart.map(item => `${item.name} (${item.selectedColor})`).join('\n');
+            const orderDetails = cart.map(item => {
+                const sizeText = item.selectedSize ? ` - ${item.selectedSize}` : '';
+                return `${item.name}${sizeText} (${item.selectedColor})`;
+            }).join('\n');
             document.getElementById('order-details-input').value = orderDetails;
             document.getElementById('order-total-input').value = 'FREE';
         }
