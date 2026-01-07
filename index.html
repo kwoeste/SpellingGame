@@ -171,9 +171,17 @@
         }
 
         .price {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: #5a67d8;
+            display: none; /* Hidden - items are free now */
+        }
+        
+        .free-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
             margin-bottom: 16px;
         }
 
@@ -355,14 +363,50 @@
         }
 
         .cart-total {
-            text-align: right;
-            font-size: 1.2em;
-            padding: 16px 20px;
-            background: #1a202c;
+            display: none; /* Hidden - items are free now */
+        }
+        
+        .donation-section {
+            background: linear-gradient(135deg, #5a67d8, #7c3aed);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+            text-align: center;
             color: white;
+        }
+        
+        .donation-section h4 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        
+        .donation-section p {
+            font-size: 0.95em;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+        
+        .donate-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .donate-btn {
+            background: white;
+            color: #5a67d8;
+            padding: 10px 20px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            text-decoration: none;
             font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+        
+        .donate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
         .empty-cart {
@@ -513,7 +557,7 @@
 <body>
     <div class="hero-banner">
         <h1>Mae's 3D Print Shop</h1>
-        <p>Custom 3D Printed Creations Made Just For You</p>
+        <p>Free 3D Printed Creations — Made Just For You</p>
     </div>
 
     <div class="container">
@@ -521,13 +565,13 @@
         <div class="about-section">
             <div class="about-avatar">M</div>
             <div class="about-content">
-                <h2>Welcome to the Shop!</h2>
-                <p>Hi, I'm Mae! Browse around, pick your favorite items, choose your colors, and place your order. I'll 3D print it and send it your way.</p>
-                <p><strong>Don't see what you're looking for?</strong> Let me know! I can create custom prints — just describe what you want in the order notes.</p>
+                <h2>Welcome!</h2>
+                <p>Hi, I'm Mae! Everything here is <strong>free</strong> — just pick your favorite items, choose your colors, and request them. I'll 3D print it and send it your way.</p>
+                <p><strong>Don't see what you're looking for?</strong> Let me know! Just describe what you want in the request notes.</p>
                 <div class="about-highlights">
+                    <span class="highlight">100% Free</span>
                     <span class="highlight">Made to Order</span>
                     <span class="highlight">Custom Requests</span>
-                    <span class="highlight">Fast Delivery</span>
                 </div>
             </div>
         </div>
@@ -539,8 +583,8 @@
         </div>
 
         <div class="order-section" id="order-section">
-            <h2>Checkout</h2>
-            <p class="section-subtitle">Fill out your information and review your order</p>
+            <h2>Request Items</h2>
+            <p class="section-subtitle">Fill out your info and I'll get started on your free prints!</p>
             
             <div class="checkout-layout">
                 <!-- Left Side: Customer Information -->
@@ -549,7 +593,7 @@
                     <form class="order-form" id="order-form" action="https://api.web3forms.com/submit" method="POST">
                         <!-- Web3Forms Access Key -->
                         <input type="hidden" name="access_key" value="1b3b40d6-fd45-4915-b73d-dd53a462b16d">
-                        <input type="hidden" name="subject" value="🎉 New Order from Mae's 3D Print Shop!">
+                        <input type="hidden" name="subject" value="🎉 New Request from Mae's 3D Print Shop!">
                         <input type="hidden" name="from_name" value="Mae's 3D Print Shop">
                         <input type="hidden" name="redirect" value="https://maewoeste.com/thank-you.html">
                         
@@ -578,27 +622,35 @@
                         </div>
 
                         <button type="submit" class="submit-order" id="submit-btn" disabled>
-                            Place Order
+                            Send Request
                         </button>
                     </form>
                 </div>
 
                 <!-- Right Side: Order Summary -->
                 <div class="checkout-right">
-                    <h3>Order Summary</h3>
+                    <h3>Your Items</h3>
                     <div class="cart-items" id="cart-items">
-                        <div class="empty-cart">Your cart is empty. Add items above to get started.</div>
+                        <div class="empty-cart">No items yet. Add some above!</div>
                     </div>
 
                     <div class="cart-total" id="cart-total" style="display: none;">
                         Total: $<span id="total-amount">0.00</span>
                     </div>
+                    
+                    <div class="donation-section">
+                        <h4>💜 Want to Support Mae's Printing?</h4>
+                        <p>Everything is free, but donations help buy more filament to keep making cool stuff!</p>
+                        <div class="donate-buttons">
+                            <a href="#" class="donate-btn" onclick="alert('Donation link coming soon!'); return false;">Donate</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="success-message" id="success-message">
-                <h3>Order Sent Successfully!</h3>
-                <p>Thanks for your order! Mae will get started on your print and send it your way soon.</p>
+                <h3>Request Sent!</h3>
+                <p>Thanks! Mae will get started on your free print and send it your way soon.</p>
             </div>
         </div>
 
@@ -681,7 +733,7 @@
                     <div class="product-info">
                         <h3>${product.name}</h3>
                         <p>${product.description}</p>
-                        <div class="price">$${product.price.toFixed(2)}</div>
+                        <div class="free-badge">✓ FREE</div>
                         <div class="color-options">
                             <label>Choose a style:</label>
                             <div class="color-swatches">
@@ -775,7 +827,7 @@
             const submitBtn = document.getElementById('submit-btn');
 
             if (cart.length === 0) {
-                cartContainer.innerHTML = '<div class="empty-cart">Your cart is empty. Add items above to get started.</div>';
+                cartContainer.innerHTML = '<div class="empty-cart">No items yet. Add some above!</div>';
                 totalContainer.style.display = 'none';
                 submitBtn.disabled = true;
                 return;
@@ -791,7 +843,7 @@
                         <div class="cart-item-color" style="${colorStyle}"></div>
                         <span class="cart-item-name">${item.name} (${item.selectedColor})</span>
                     </div>
-                    <span class="cart-item-price">$${item.price.toFixed(2)}</span>
+                    <span class="cart-item-price" style="color: #48bb78; font-weight: 600;">FREE</span>
                     <button class="remove-item" onclick="removeFromCart(${item.cartId})">×</button>
                 </div>
             `}).join('');
@@ -802,9 +854,9 @@
             submitBtn.disabled = false;
 
             // Update hidden form fields
-            const orderDetails = cart.map(item => `${item.name} (${item.selectedColor}) - $${item.price.toFixed(2)}`).join('\n');
+            const orderDetails = cart.map(item => `${item.name} (${item.selectedColor})`).join('\n');
             document.getElementById('order-details-input').value = orderDetails;
-            document.getElementById('order-total-input').value = `$${total.toFixed(2)}`;
+            document.getElementById('order-total-input').value = 'FREE';
         }
 
         // Handle form submission
