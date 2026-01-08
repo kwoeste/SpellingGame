@@ -59,15 +59,16 @@
         .about-avatar {
             width: 120px;
             height: 120px;
-            background: linear-gradient(135deg, #5a67d8, #7c3aed);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-shrink: 0;
-            color: white;
-            font-size: 48px;
-            font-weight: bold;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .about-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .about-content {
@@ -633,7 +634,7 @@
     <div class="container">
         <!-- About Section -->
         <div class="about-section">
-            <div class="about-avatar">M</div>
+            <div class="about-avatar"><img src="images/mae-avatar.png" alt="Mae"></div>
             <div class="about-content">
                 <h2>Welcome!</h2>
                 <p>Hi, I'm Mae! Everything here is <strong>free</strong> — just pick your favorite item, choose your color, and request it. I'll 3D print it and send it your way.</p>
