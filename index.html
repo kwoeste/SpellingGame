@@ -705,7 +705,7 @@
                 id: 1,
                 name: "Gary the Snake",
                 description: "A super cool articulated snake that wiggles and moves! Big googly eyes and fangs make Gary the perfect desk buddy. Great for fidgeting!",
-                price: 8.00,
+                price: 0,
                 image: "images/gary-snake-blue.png",
                 colorImages: {
                     "blue": "images/gary-snake-blue.png",
@@ -720,32 +720,40 @@
                 price: 0,
                 image: "images/hexagon-twist.png",
                 sizes: ["Small", "Large"],
-                colors: ["blue", "purple", "red", "green", "orange", "yellow", "pink", "white", "black", "rainbow"]
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             },
             {
                 id: 3,
                 name: "Infinity Cube",
                 description: "The ultimate fidget toy! Flip and fold it forever - it never ends! Super satisfying and helps you focus. Fits perfectly in your hand.",
-                price: 4.00,
+                price: 0,
                 image: "images/infinity-cube.png",
-                colors: ["black", "pink", "blue", "purple", "red", "green", "orange", "yellow", "white"]
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             }
         ];
 
-        // Color hex codes
+        // Color hex codes - Mae's available filament colors
         const colorHex = {
-            red: "#e74c3c",
-            green: "#27ae60",
-            blue: "#3498db",
-            purple: "#9b59b6",
-            orange: "#e67e22",
-            yellow: "#f1c40f",
-            pink: "#ff69b4",
-            white: "#ffffff",
-            black: "#2c3e50",
-            terracotta: "#c4a484",
+            // Basic PLA
+            "light blue": "#a8d8ea",
+            "white": "#ffffff",
+            "black": "#2c2c2c",
+            "red": "#e74c3c",
+            "hot pink": "#ff69b4",
+            "brown": "#8b4513",
+            "gray": "#808080",
+            "blue grey": "#6b7b8a",
+            "green": "#2e8b57",
+            "light gray": "#c0c0c0",
+            "bambu green": "#4caf50",
+            "purple": "#9b59b6",
+            // Matte PLA
+            "desert tan (matte)": "#c4a77d",
+            "latte brown (matte)": "#a68b6a",
+            "nardo gray (matte)": "#6e6e6e",
+            // Special (for Gary the Snake)
             "cotton candy": "linear-gradient(135deg, #a8d8ea 0%, #f8b4c4 100%)",
-            "rainbow": "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff)"
+            "blue": "#3498db"
         };
 
         // Shopping cart
