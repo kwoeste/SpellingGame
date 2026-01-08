@@ -294,17 +294,22 @@
         }
 
         .color-swatch::after {
-            content: attr(data-color);
+            content: attr(title);
             position: absolute;
-            bottom: -22px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 0.7em;
-            color: #718096;
+            font-size: 0.75em;
+            color: #fff;
+            background: #2d3748;
+            padding: 4px 8px;
+            border-radius: 4px;
             white-space: nowrap;
             opacity: 0;
+            pointer-events: none;
             transition: opacity 0.2s;
             text-transform: capitalize;
+            z-index: 10;
         }
 
         .color-swatch:hover::after {
