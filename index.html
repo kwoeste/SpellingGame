@@ -56,16 +56,16 @@
             flex-wrap: wrap;
         }
 
-        .about-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
+        .about-video {
+            width: 200px;
+            height: 200px;
+            border-radius: 16px;
             flex-shrink: 0;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
         
-        .about-avatar img {
+        .about-video video {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -615,8 +615,10 @@
                 text-align: center;
             }
 
-            .about-avatar {
+            .about-video {
                 margin: 0 auto;
+                width: 180px;
+                height: 180px;
             }
 
             .about-highlights {
@@ -634,7 +636,11 @@
     <div class="container">
         <!-- About Section -->
         <div class="about-section">
-            <div class="about-avatar"><img src="images/grok-image-6eab7771-10cf-466c-959d-4cc642a092bf.png" alt="Mae"></div>
+            <div class="about-video">
+                <video autoplay loop muted playsinline>
+                    <source src="images/grok-video-6eab7771-10cf-466c-959d-4cc642a092bf.mp4" type="video/mp4">
+                </video>
+            </div>
             <div class="about-content">
                 <h2>Welcome!</h2>
                 <p>Hi, I'm Mae! Everything here is <strong>free</strong> — just pick your favorite item, choose your color, and request it. I'll 3D print it and send it your way.</p>
