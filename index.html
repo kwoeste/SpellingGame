@@ -380,6 +380,7 @@
 
         .cart-item {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
             padding: 14px;
@@ -387,6 +388,7 @@
             border-radius: 8px;
             margin-bottom: 10px;
             border: 1px solid #e2e8f0;
+            gap: 8px;
         }
 
         .cart-item-info {
@@ -405,6 +407,13 @@
         .cart-item-name {
             font-weight: 500;
             color: #2d3748;
+        }
+        
+        .cart-item-details {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 4px;
+            flex-basis: 100%;
             font-size: 0.95em;
         }
 
@@ -753,11 +762,11 @@
                 price: 0,
                 category: "animals",
                 image: "images/gary-snake-blue.png",
-                colorImages: {
-                    "blue": "images/gary-snake-blue.png",
-                    "cotton candy": "images/gary-snake-cotton-candy.png"
-                },
-                colors: ["blue", "cotton candy"]
+                colorParts: {
+                    "Bottom": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"],
+                    "Body": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"],
+                    "Eyes": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+                }
             },
             {
                 id: 2,
@@ -869,6 +878,29 @@
                             </div>
                         </div>
                         ` : ''}
+                        ${product.colorParts ? `
+                        ${Object.entries(product.colorParts).map(([partName, colors]) => `
+                        <div class="color-options">
+                            <label>${partName} Color:</label>
+                            <div class="color-swatches">
+                                ${colors.map(color => {
+                                    const style = colorHex[color]?.startsWith('linear')
+                                        ? `background: ${colorHex[color]}`
+                                        : `background-color: ${colorHex[color] || '#ccc'}`;
+                                    return `
+                                    <div class="color-swatch"
+                                         style="${style}"
+                                         data-color="${color}"
+                                         data-part="${partName}"
+                                         data-product-id="${product.id}"
+                                         onclick="selectPartColor(this, ${product.id}, '${partName}', '${color}')"
+                                         title="${color}">
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        </div>
+                        `).join('')}
+                        ` : `
                         <div class="color-options">
                             <label>Choose a color:</label>
                             <div class="color-swatches">
@@ -877,8 +909,8 @@
                                         ? `background: ${colorHex[color]}`
                                         : `background-color: ${colorHex[color] || '#ccc'}`;
                                     return `
-                                    <div class="color-swatch" 
-                                         style="${style}" 
+                                    <div class="color-swatch"
+                                         style="${style}"
                                          data-color="${color}"
                                          data-product-id="${product.id}"
                                          onclick="selectColor(this, ${product.id}, '${color}')"
@@ -887,11 +919,12 @@
                                 `}).join('')}
                             </div>
                         </div>
-                        <button class="add-to-order" 
-                                id="add-btn-${product.id}" 
-                                onclick="addToCart(${product.id})" 
+                        `}
+                        <button class="add-to-order"
+                                id="add-btn-${product.id}"
+                                onclick="addToCart(${product.id})"
                                 disabled>
-                            ${product.sizes ? 'Select size & color' : 'Select a color'}
+                            ${product.colorParts ? 'Select all colors' : (product.sizes ? 'Select size & color' : 'Select a color')}
                         </button>
                     </div>
                 </div>
@@ -901,6 +934,27 @@
         // Track selected colors for each product
         const selectedColors = {};
         const selectedSizes = {};
+        const selectedPartColors = {}; // For multi-part color products like Gary
+
+        function selectPartColor(element, productId, partName, color) {
+            // Remove selection from other swatches in this part section
+            const colorOptions = element.closest('.color-options');
+            colorOptions.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+
+            // Add selection to clicked swatch
+            element.classList.add('selected');
+
+            // Initialize object for this product if needed
+            if (!selectedPartColors[productId]) {
+                selectedPartColors[productId] = {};
+            }
+
+            // Store the selection for this part
+            selectedPartColors[productId][partName] = color;
+
+            // Check if ready to add
+            updateAddButton(productId);
+        }
 
         function selectSize(element, productId, size) {
             // Remove selection from other size buttons
@@ -945,8 +999,23 @@
             const color = selectedColors[productId];
             const size = selectedSizes[productId];
             
+            // Check if product has multi-part colors
+            if (product.colorParts) {
+                const partNames = Object.keys(product.colorParts);
+                const selectedParts = selectedPartColors[productId] || {};
+                const allSelected = partNames.every(part => selectedParts[part]);
+                const selectedCount = Object.keys(selectedParts).length;
+                
+                if (allSelected) {
+                    addBtn.disabled = false;
+                    addBtn.textContent = 'Add to Order';
+                } else {
+                    addBtn.disabled = true;
+                    addBtn.textContent = `Select all colors (${selectedCount}/${partNames.length})`;
+                }
+            }
             // Check if product needs size selection
-            if (product.sizes) {
+            else if (product.sizes) {
                 if (color && size) {
                     addBtn.disabled = false;
                     addBtn.textContent = `Add ${size} ${color}`;
@@ -975,9 +1044,16 @@
             const product = products.find(p => p.id === productId);
             const color = selectedColors[productId];
             const size = selectedSizes[productId];
+            const partColors = selectedPartColors[productId];
             
-            if (!product || !color) return;
-            if (product.sizes && !size) return;
+            // Validate based on product type
+            if (product.colorParts) {
+                const partNames = Object.keys(product.colorParts);
+                if (!partColors || !partNames.every(part => partColors[part])) return;
+            } else {
+                if (!product || !color) return;
+                if (product.sizes && !size) return;
+            }
             
             // Limit to one item per person
             if (cart.length >= 1) {
@@ -987,8 +1063,9 @@
 
             cart.push({
                 ...product,
-                selectedColor: color,
+                selectedColor: color || null,
                 selectedSize: size || null,
+                selectedPartColors: partColors ? {...partColors} : null,
                 cartId: Date.now()
             });
 
@@ -1000,9 +1077,14 @@
             productCard.querySelectorAll('.size-btn').forEach(s => s.classList.remove('selected'));
             const addBtn = document.getElementById(`add-btn-${productId}`);
             addBtn.disabled = true;
-            addBtn.textContent = product.sizes ? 'Select size & color' : 'Select a color';
+            if (product.colorParts) {
+                addBtn.textContent = 'Select all colors';
+            } else {
+                addBtn.textContent = product.sizes ? 'Select size & color' : 'Select a color';
+            }
             delete selectedColors[productId];
             delete selectedSizes[productId];
+            delete selectedPartColors[productId];
 
             // Scroll to order section
             document.getElementById('order-section').scrollIntoView({ behavior: 'smooth' });
@@ -1026,16 +1108,36 @@
             }
 
             cartContainer.innerHTML = cart.map(item => {
-                const colorStyle = colorHex[item.selectedColor]?.startsWith('linear') 
-                    ? `background: ${colorHex[item.selectedColor]}` 
-                    : `background-color: ${colorHex[item.selectedColor] || '#ccc'}`;
+                let colorDisplay = '';
+                let colorSwatches = '';
+                
+                if (item.selectedPartColors) {
+                    // Multi-part color product
+                    colorDisplay = Object.entries(item.selectedPartColors)
+                        .map(([part, color]) => `${part}: ${color}`)
+                        .join(', ');
+                    colorSwatches = Object.entries(item.selectedPartColors).map(([part, color]) => {
+                        const style = colorHex[color]?.startsWith('linear') 
+                            ? `background: ${colorHex[color]}` 
+                            : `background-color: ${colorHex[color] || '#ccc'}`;
+                        return `<div class="cart-item-color" style="${style}" title="${part}: ${color}"></div>`;
+                    }).join('');
+                } else {
+                    colorDisplay = item.selectedColor;
+                    const colorStyle = colorHex[item.selectedColor]?.startsWith('linear') 
+                        ? `background: ${colorHex[item.selectedColor]}` 
+                        : `background-color: ${colorHex[item.selectedColor] || '#ccc'}`;
+                    colorSwatches = `<div class="cart-item-color" style="${colorStyle}"></div>`;
+                }
+                
                 const sizeText = item.selectedSize ? ` - ${item.selectedSize}` : '';
                 return `
                 <div class="cart-item">
                     <div class="cart-item-info">
-                        <div class="cart-item-color" style="${colorStyle}"></div>
-                        <span class="cart-item-name">${item.name}${sizeText} (${item.selectedColor})</span>
+                        ${colorSwatches}
+                        <span class="cart-item-name">${item.name}${sizeText}</span>
                     </div>
+                    <div class="cart-item-details">${colorDisplay}</div>
                     <span class="cart-item-price" style="color: #48bb78; font-weight: 600;">FREE</span>
                     <button class="remove-item" onclick="removeFromCart(${item.cartId})">×</button>
                 </div>
@@ -1049,6 +1151,12 @@
             // Update hidden form fields
             const orderDetails = cart.map(item => {
                 const sizeText = item.selectedSize ? ` - ${item.selectedSize}` : '';
+                if (item.selectedPartColors) {
+                    const colorDetails = Object.entries(item.selectedPartColors)
+                        .map(([part, color]) => `${part}: ${color}`)
+                        .join(', ');
+                    return `${item.name} (${colorDetails})`;
+                }
                 return `${item.name}${sizeText} (${item.selectedColor})`;
             }).join('\n');
             document.getElementById('order-details-input').value = orderDetails;
