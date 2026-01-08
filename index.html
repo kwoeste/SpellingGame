@@ -110,8 +110,40 @@
             text-align: center;
             color: #1a202c;
             font-size: 1.8em;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             font-weight: 600;
+        }
+
+        /* Category Filter Tabs */
+        .category-filters {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            background: white;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: #5a67d8;
+            color: #5a67d8;
+        }
+
+        .filter-btn.active {
+            background: #5a67d8;
+            border-color: #5a67d8;
+            color: white;
         }
 
         .products-grid {
@@ -616,6 +648,13 @@
 
         <h2 class="section-title">Pick Your Free Item</h2>
 
+        <div class="category-filters">
+            <button class="filter-btn active" onclick="filterProducts('all')">All</button>
+            <button class="filter-btn" onclick="filterProducts('fidget')">Fidget Toys</button>
+            <button class="filter-btn" onclick="filterProducts('animals')">Animals</button>
+            <button class="filter-btn" onclick="filterProducts('toys')">Toys</button>
+        </div>
+
         <div class="products-grid" id="products-grid">
             <!-- Products will be loaded here -->
         </div>
@@ -706,6 +745,7 @@
                 name: "Gary the Snake",
                 description: "A super cool articulated snake that wiggles and moves! Big googly eyes and fangs make Gary the perfect desk buddy. Great for fidgeting!",
                 price: 0,
+                category: "animals",
                 image: "images/gary-snake-blue.png",
                 colorImages: {
                     "blue": "images/gary-snake-blue.png",
@@ -718,6 +758,7 @@
                 name: "Fidget Hexagon Twist",
                 description: "A mesmerizing spiral hexagon fidget toy! Spin and twist it for hours of satisfying fun. Available in two sizes!",
                 price: 0,
+                category: "fidget",
                 image: "images/hexagon-twist.png",
                 sizes: ["Small", "Large"],
                 colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
@@ -727,10 +768,14 @@
                 name: "Infinity Cube",
                 description: "The ultimate fidget toy! Flip and fold it forever - it never ends! Super satisfying and helps you focus. Fits perfectly in your hand.",
                 price: 0,
+                category: "fidget",
                 image: "images/infinity-cube.png",
                 colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             }
         ];
+        
+        // Current filter
+        let currentFilter = 'all';
 
         // Color hex codes - Mae's available filament colors
         const colorHex = {
@@ -759,10 +804,40 @@
         // Shopping cart
         let cart = [];
 
+        // Filter products by category
+        function filterProducts(category) {
+            currentFilter = category;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(category) || 
+                    (category === 'all' && btn.textContent === 'All') ||
+                    (category === 'fidget' && btn.textContent === 'Fidget Toys') ||
+                    (category === 'animals' && btn.textContent === 'Animals') ||
+                    (category === 'toys' && btn.textContent === 'Toys')) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            renderProducts();
+        }
+
         // Render products
         function renderProducts() {
             const grid = document.getElementById('products-grid');
-            grid.innerHTML = products.map(product => `
+            
+            // Filter products based on current category
+            const filteredProducts = currentFilter === 'all' 
+                ? products 
+                : products.filter(p => p.category === currentFilter);
+            
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">No items in this category yet. Check back soon!</p>';
+                return;
+            }
+            
+            grid.innerHTML = filteredProducts.map(product => `
                 <div class="product-card" data-product-id="${product.id}">
                     <div class="product-image" id="product-image-${product.id}">
                         ${product.image
