@@ -510,6 +510,15 @@
             object-fit: contain;
         }
 
+        .modal-image-tint {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+            transition: opacity 0.2s ease;
+        }
+
         .modal-body {
             padding: 20px 24px;
             overflow-y: auto;
@@ -1038,6 +1047,7 @@
                 <div class="modal-image" id="modal-image-container">
                     <button class="image-nav prev" id="modal-prev" onclick="modalChangeImage(-1)">‹</button>
                     <img id="modal-product-image" src="" alt="">
+                    <div class="modal-image-tint" id="modal-image-tint"></div>
                     <button class="image-nav next" id="modal-next" onclick="modalChangeImage(1)">›</button>
                     <div class="image-dots" id="modal-dots"></div>
                 </div>
@@ -1483,6 +1493,7 @@
             
             // Reset button
             updateModalButton();
+            setModalImageTint(null);
             
             // Show modal
             modal.classList.add('active');
@@ -1523,10 +1534,40 @@
             dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
         }
 
+        function setModalImageTint(color) {
+            const tint = document.getElementById('modal-image-tint');
+            if (!tint) return;
+
+            if (!color || (currentModalProduct && currentModalProduct.colorParts)) {
+                tint.style.opacity = '0';
+                tint.style.backgroundColor = '';
+                tint.style.backgroundImage = '';
+                return;
+            }
+
+            const swatch = colorHex[color];
+            if (!swatch) {
+                tint.style.opacity = '0';
+                tint.style.backgroundColor = '';
+                tint.style.backgroundImage = '';
+                return;
+            }
+
+            if (swatch.startsWith('linear')) {
+                tint.style.backgroundImage = swatch;
+                tint.style.backgroundColor = '';
+            } else {
+                tint.style.backgroundImage = '';
+                tint.style.backgroundColor = swatch;
+            }
+            tint.style.opacity = '0.35';
+        }
+
         function modalSelectColor(element, color) {
             document.querySelectorAll('#modal-colors .modal-color-swatch').forEach(s => s.classList.remove('selected'));
             element.classList.add('selected');
             modalSelectedColor = color;
+            setModalImageTint(color);
             updateModalButton();
         }
 
@@ -1535,6 +1576,7 @@
             element.closest('.modal-part-section').querySelectorAll('.modal-color-swatch-small').forEach(s => s.classList.remove('selected'));
             element.classList.add('selected');
             modalSelectedPartColors[partName] = color;
+            setModalImageTint(null);
             updateModalButton();
         }
 
