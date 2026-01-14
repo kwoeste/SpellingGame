@@ -176,12 +176,76 @@
             justify-content: center;
             font-size: 4em;
             position: relative;
+            overflow: hidden;
         }
 
         .product-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        .image-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.9);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .image-nav:hover {
+            background: white;
+            color: #5a67d8;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .image-nav.prev {
+            left: 8px;
+        }
+
+        .image-nav.next {
+            right: 8px;
+        }
+
+        .image-dots {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .image-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-dot.active {
+            background: #5a67d8;
+            border-color: #5a67d8;
+        }
+
+        .image-dot:hover {
+            background: rgba(255,255,255,0.9);
         }
 
         .product-info {
@@ -766,7 +830,7 @@
                 description: "A super cool articulated snake that wiggles and moves! Big googly eyes and fangs make Gary the perfect desk buddy. Great for fidgeting!",
                 price: 0,
                 category: "animals",
-                image: "images/gary-snake-blue.png",
+                images: ["images/gary-snake-blue.png"],
                 colorParts: {
                     "Bottom": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"],
                     "Body": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"],
@@ -779,7 +843,7 @@
                 description: "A mesmerizing spiral hexagon fidget toy! Spin and twist it for hours of satisfying fun. Available in two sizes!",
                 price: 0,
                 category: "fidget",
-                image: "images/hexagon-twist.png",
+                images: ["images/hexagon-twist.png"],
                 sizes: ["Small", "Large"],
                 colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             },
@@ -789,10 +853,148 @@
                 description: "The ultimate fidget toy! Flip and fold it forever - it never ends! Super satisfying and helps you focus. Fits perfectly in your hand.",
                 price: 0,
                 category: "fidget",
-                image: "images/infinity-cube.png",
+                images: ["images/infinity-cube.png"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 4,
+                name: "Crystal Dragon",
+                description: "An epic articulated dragon with crystal spikes! Fully flexible and posable - bend and twist it into any shape. Looks amazing on your desk!",
+                price: 0,
+                category: "animals",
+                images: ["images/crystal-dragon.jpg", "images/crystal-dragon-blue.jpg", "images/crystal-dragon-blue-side.jpg", "images/crystal-dragon-blue-full.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 5,
+                name: "Planetary Gear Spinner",
+                description: "A mesmerizing gear fidget spinner with planetary gears that all spin together! Watch all the cogs turn in perfect sync. Super satisfying to spin!",
+                price: 0,
+                category: "fidget",
+                images: ["images/planetary-gear-spinner.jpg", "images/planetary-gear-spinner-2.jpg", "images/planetary-gear-spinner-3.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 6,
+                name: "Flexi Ferret",
+                description: "The cutest articulated ferret! With big sparkly eyes and adorable little paws, this flexi friend wiggles and poses however you want. Perfect desk companion!",
+                price: 0,
+                category: "animals",
+                images: ["images/flexi-ferret.jpg", "images/flexi-ferret-2.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 7,
+                name: "Bearded Dragon",
+                description: "A super cute articulated bearded dragon! With big adorable eyes and a wiggly tail, this happy beardie is the perfect desk pet. No feeding required!",
+                price: 0,
+                category: "animals",
+                images: ["images/bearded-dragon.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 8,
+                name: "Spinning Top",
+                description: "A classic spinning top that spins for ages! Just twist the handle and let it go. Mesmerizing to watch and super fun to compete with friends!",
+                price: 0,
+                category: "toys",
+                images: ["images/spinning-top.jpg", "images/spinning-top-2.jpg", "images/spinning-top-3.jpg", "images/spinning-top-4.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 9,
+                name: "Twist Puzzle",
+                description: "A twisty puzzle that transforms into endless shapes! Bend and twist the connected pieces to make a ball, snake, dog, or whatever you can imagine!",
+                price: 0,
+                category: "fidget",
+                images: ["images/twist-puzzle.jpg", "images/twist-puzzle-2.jpg", "images/twist-puzzle-3.jpg", "images/twist-puzzle-4.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 10,
+                name: "Hexagon Spiral Top",
+                description: "A hexagon spinning top with a mesmerizing spiral pattern! Watch the optical illusion come to life when you spin it. Super satisfying to watch!",
+                price: 0,
+                category: "toys",
+                images: ["images/hexagon-spiral-top.jpg", "images/hexagon-spiral-top-2.jpg", "images/hexagon-spiral-top-3.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 11,
+                name: "Valentine 67 Buddy",
+                description: "An adorable Valentine's Day 67 character with hearts and little feet! Perfect for Valentine's gifts or year-round love!",
+                price: 0,
+                category: "toys",
+                images: ["images/valentine-67-buddy.jpg", "images/valentine-67-buddy-2.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 12,
+                name: "Valentine's Kiss",
+                description: "A sweet chocolate kiss decoration with a spiral ribbon! Perfect for Valentine's Day or as a cute desk decoration!",
+                price: 0,
+                category: "toys",
+                images: ["images/valentines-kiss.jpg", "images/valentines-kiss-2.jpg", "images/valentines-kiss-3.jpg", "images/valentines-kiss-4.jpg", "images/valentines-kiss-5.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 13,
+                name: "Valentine Spinner",
+                description: "Spread the love with these spinning Valentine's Day tops! Watch 'Happy Valentine's Day' and 'Be My Valentine' spin around in a mesmerizing display!",
+                price: 0,
+                category: "toys",
+                images: ["images/valentine-spinner.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 14,
+                name: "67 Gyro Spinner",
+                description: "A cool gyroscope spinner with the number 67 spinning inside a ring! Hold the handles and watch it spin and flip. Super satisfying fidget toy!",
+                price: 0,
+                category: "fidget",
+                images: ["images/67-gyro-spinner.jpg", "images/67-gyro-spinner-2.jpg", "images/67-gyro-spinner-3.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 15,
+                name: "Rainbow Fidget Spinner",
+                description: "A stunning rainbow fidget spinner with mesmerizing geometric patterns! Printed with multicolor filament for an amazing color gradient effect. Spins smooth and looks incredible!",
+                price: 0,
+                category: "fidget",
+                images: ["images/rainbow-fidget-spinner.jpg", "images/rainbow-fidget-spinner-2.jpg", "images/rainbow-fidget-spinner-3.jpg"],
+                colors: ["rainbow"]
+            },
+            {
+                id: 16,
+                name: "67 Pencil Topper",
+                description: "A fun 67 pencil topper to decorate your pencils! Show off your school spirit with this cool fidget topper that spins on your pencil!",
+                price: 0,
+                category: "toys",
+                images: ["images/67-pencil-topper.jpg", "images/67-pencil-topper-2.jpg", "images/67-pencil-topper-3.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 17,
+                name: "67 Buddy",
+                description: "Meet your new 67 Buddy! This adorable character has big googly eyes, posable arms with cartoon hands, and stylish shoes. The perfect desk companion!",
+                price: 0,
+                category: "toys",
+                images: ["images/67-buddy.jpg", "images/67-buddy-2.jpg", "images/67-buddy-3.jpg", "images/67-buddy-4.jpg"],
+                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+            },
+            {
+                id: 18,
+                name: "Herringbone Gear Fidget",
+                description: "A mesmerizing herringbone gear fidget with interlocking helical gears! Turn the crank and watch both gears spin in perfect sync. Super satisfying mechanical action!",
+                price: 0,
+                category: "fidget",
+                images: ["images/herringbone-gear.jpg", "images/herringbone-gear-2.jpg", "images/herringbone-gear-3.jpg", "images/herringbone-gear-4.jpg", "images/herringbone-gear-5.jpg"],
                 colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             }
         ];
+        
+        // Track current image index for each product
+        const currentImageIndex = {};
         
         // Current filter
         let currentFilter = 'all';
@@ -857,12 +1059,22 @@
                 return;
             }
             
-            grid.innerHTML = filteredProducts.map(product => `
+            grid.innerHTML = filteredProducts.map(product => {
+                const images = product.images || [product.image];
+                if (!currentImageIndex[product.id]) currentImageIndex[product.id] = 0;
+                const showNav = images.length > 1;
+                return `
                 <div class="product-card" data-product-id="${product.id}">
                     <div class="product-image" id="product-image-${product.id}">
-                        ${product.image
-                            ? `<img src="${product.image}" alt="${product.name}">`
+                        ${showNav ? `<button class="image-nav prev" onclick="changeImage(${product.id}, -1)">‹</button>` : ''}
+                        ${images[0]
+                            ? `<img src="${images[0]}" alt="${product.name}" id="product-img-${product.id}">`
                             : product.emoji}
+                        ${showNav ? `<button class="image-nav next" onclick="changeImage(${product.id}, 1)">›</button>` : ''}
+                        ${showNav ? `
+                        <div class="image-dots">
+                            ${images.map((_, i) => `<div class="image-dot ${i === 0 ? 'active' : ''}" onclick="goToImage(${product.id}, ${i})"></div>`).join('')}
+                        </div>` : ''}
                     </div>
                     <div class="product-info">
                         <h3>${product.name}</h3>
@@ -933,7 +1145,39 @@
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
+        }
+
+        // Image navigation functions
+        function changeImage(productId, direction) {
+            const product = products.find(p => p.id === productId);
+            const images = product.images || [product.image];
+            if (images.length <= 1) return;
+            
+            let newIndex = (currentImageIndex[productId] || 0) + direction;
+            if (newIndex < 0) newIndex = images.length - 1;
+            if (newIndex >= images.length) newIndex = 0;
+            
+            goToImage(productId, newIndex);
+        }
+
+        function goToImage(productId, index) {
+            const product = products.find(p => p.id === productId);
+            const images = product.images || [product.image];
+            
+            currentImageIndex[productId] = index;
+            
+            const img = document.getElementById(`product-img-${productId}`);
+            if (img) {
+                img.src = images[index];
+            }
+            
+            // Update dots
+            const container = document.getElementById(`product-image-${productId}`);
+            const dots = container.querySelectorAll('.image-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
         }
 
         // Track selected colors for each product
