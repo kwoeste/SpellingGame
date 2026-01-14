@@ -522,10 +522,10 @@
         }
 
         .modal-color-swatch {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 3px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
@@ -538,7 +538,44 @@
 
         .modal-color-swatch.selected {
             border-color: #5a67d8;
-            box-shadow: 0 0 0 2px white, 0 0 0 4px #5a67d8;
+            box-shadow: 0 0 0 2px white, 0 0 0 3px #5a67d8;
+        }
+
+        /* Smaller swatches for multi-part products */
+        .modal-color-swatch-small {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-color-swatch-small:hover {
+            transform: scale(1.1);
+            border-color: #a0aec0;
+        }
+
+        .modal-color-swatch-small.selected {
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 1px white, 0 0 0 2px #5a67d8;
+        }
+
+        .modal-part-section {
+            margin-bottom: 12px;
+        }
+
+        .modal-part-label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+
+        .modal-colors-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .modal-sizes {
@@ -1363,15 +1400,39 @@
             document.getElementById('modal-title').textContent = currentModalProduct.name;
             document.getElementById('modal-description').textContent = currentModalProduct.description;
             
-            // Render colors
+            // Render colors - handle both single colors and colorParts
+            const colorsSection = document.getElementById('modal-colors-section');
             const colorsContainer = document.getElementById('modal-colors');
-            const colors = currentModalProduct.colors || [];
-            colorsContainer.innerHTML = colors.map(color => {
-                const style = colorHex[color]?.startsWith('linear')
-                    ? `background: ${colorHex[color]}`
-                    : `background-color: ${colorHex[color] || '#ccc'}`;
-                return `<div class="modal-color-swatch" style="${style}" data-color="${color}" onclick="modalSelectColor(this, '${color}')" title="${color}"></div>`;
-            }).join('');
+            
+            if (currentModalProduct.colorParts) {
+                // Multi-part color product (like Gary the Snake)
+                let html = '';
+                for (const [partName, colors] of Object.entries(currentModalProduct.colorParts)) {
+                    html += `<div class="modal-part-section">
+                        <div class="modal-part-label">${partName}:</div>
+                        <div class="modal-colors-row">
+                            ${colors.map(color => {
+                                const style = colorHex[color]?.startsWith('linear')
+                                    ? `background: ${colorHex[color]}`
+                                    : `background-color: ${colorHex[color] || '#ccc'}`;
+                                return `<div class="modal-color-swatch-small" style="${style}" data-color="${color}" data-part="${partName}" onclick="modalSelectPartColor(this, '${partName}', '${color}')" title="${color}"></div>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
+                }
+                colorsContainer.innerHTML = html;
+                document.querySelector('#modal-colors-section .modal-section-title').textContent = 'Choose colors:';
+            } else {
+                // Single color product
+                const colors = currentModalProduct.colors || [];
+                colorsContainer.innerHTML = colors.map(color => {
+                    const style = colorHex[color]?.startsWith('linear')
+                        ? `background: ${colorHex[color]}`
+                        : `background-color: ${colorHex[color] || '#ccc'}`;
+                    return `<div class="modal-color-swatch" style="${style}" data-color="${color}" onclick="modalSelectColor(this, '${color}')" title="${color}"></div>`;
+                }).join('');
+                document.querySelector('#modal-colors-section .modal-section-title').textContent = 'Choose a color:';
+            }
             
             // Render sizes if applicable
             const sizesSection = document.getElementById('modal-sizes-section');
@@ -1434,6 +1495,14 @@
             updateModalButton();
         }
 
+        function modalSelectPartColor(element, partName, color) {
+            // Remove selection from other swatches in this part only
+            element.closest('.modal-part-section').querySelectorAll('.modal-color-swatch-small').forEach(s => s.classList.remove('selected'));
+            element.classList.add('selected');
+            modalSelectedPartColors[partName] = color;
+            updateModalButton();
+        }
+
         function modalSelectSize(element, size) {
             document.querySelectorAll('#modal-sizes .modal-size-btn').forEach(s => s.classList.remove('selected'));
             element.classList.add('selected');
@@ -1444,28 +1513,66 @@
         function updateModalButton() {
             const btn = document.getElementById('modal-add-btn');
             const needsSize = currentModalProduct.sizes && currentModalProduct.sizes.length > 0;
+            const hasColorParts = currentModalProduct.colorParts;
             
-            if (!modalSelectedColor) {
-                btn.disabled = true;
-                btn.textContent = 'Select a color';
-            } else if (needsSize && !modalSelectedSize) {
-                btn.disabled = true;
-                btn.textContent = 'Select a size';
+            if (hasColorParts) {
+                // Check if all parts have been selected
+                const partNames = Object.keys(currentModalProduct.colorParts);
+                const selectedParts = Object.keys(modalSelectedPartColors);
+                const allPartsSelected = partNames.every(part => selectedParts.includes(part));
+                
+                if (!allPartsSelected) {
+                    btn.disabled = true;
+                    const remaining = partNames.filter(p => !selectedParts.includes(p));
+                    btn.textContent = `Select ${remaining[0]} color`;
+                } else if (needsSize && !modalSelectedSize) {
+                    btn.disabled = true;
+                    btn.textContent = 'Select a size';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = 'Add to Order';
+                }
             } else {
-                btn.disabled = false;
-                btn.textContent = 'Add to Order';
+                if (!modalSelectedColor) {
+                    btn.disabled = true;
+                    btn.textContent = 'Select a color';
+                } else if (needsSize && !modalSelectedSize) {
+                    btn.disabled = true;
+                    btn.textContent = 'Select a size';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = 'Add to Order';
+                }
             }
         }
 
         function modalAddToOrder() {
-            if (!currentModalProduct || !modalSelectedColor) return;
+            if (!currentModalProduct) return;
             
-            const item = {
-                id: currentModalProduct.id,
-                name: currentModalProduct.name,
-                color: modalSelectedColor,
-                size: modalSelectedSize || null
-            };
+            let item;
+            if (currentModalProduct.colorParts) {
+                // Multi-part color product
+                const partNames = Object.keys(currentModalProduct.colorParts);
+                const allPartsSelected = partNames.every(part => modalSelectedPartColors[part]);
+                if (!allPartsSelected) return;
+                
+                item = {
+                    id: currentModalProduct.id,
+                    name: currentModalProduct.name,
+                    colorParts: {...modalSelectedPartColors},
+                    size: modalSelectedSize || null
+                };
+            } else {
+                // Single color product
+                if (!modalSelectedColor) return;
+                
+                item = {
+                    id: currentModalProduct.id,
+                    name: currentModalProduct.name,
+                    color: modalSelectedColor,
+                    size: modalSelectedSize || null
+                };
+            }
             
             orderItems.push(item);
             updateOrderDisplay();
