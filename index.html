@@ -1549,6 +1549,13 @@
         function modalAddToOrder() {
             if (!currentModalProduct) return;
             
+            // Limit to one item per person
+            if (cart.length >= 1) {
+                alert('Only 1 item per person so everyone gets a chance! Remove your current item to pick a different one.');
+                closeModal();
+                return;
+            }
+            
             let item;
             if (currentModalProduct.colorParts) {
                 // Multi-part color product
@@ -1557,25 +1564,27 @@
                 if (!allPartsSelected) return;
                 
                 item = {
-                    id: currentModalProduct.id,
-                    name: currentModalProduct.name,
-                    colorParts: {...modalSelectedPartColors},
-                    size: modalSelectedSize || null
+                    ...currentModalProduct,
+                    selectedColor: null,
+                    selectedSize: modalSelectedSize || null,
+                    selectedPartColors: {...modalSelectedPartColors},
+                    cartId: Date.now()
                 };
             } else {
                 // Single color product
                 if (!modalSelectedColor) return;
                 
                 item = {
-                    id: currentModalProduct.id,
-                    name: currentModalProduct.name,
-                    color: modalSelectedColor,
-                    size: modalSelectedSize || null
+                    ...currentModalProduct,
+                    selectedColor: modalSelectedColor,
+                    selectedSize: modalSelectedSize || null,
+                    selectedPartColors: null,
+                    cartId: Date.now()
                 };
             }
             
-            orderItems.push(item);
-            updateOrderDisplay();
+            cart.push(item);
+            updateCart();
             closeModal();
             
             // Scroll to order section
