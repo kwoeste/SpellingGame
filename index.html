@@ -406,6 +406,221 @@
             cursor: not-allowed;
         }
 
+        /* Product Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.1);
+            border: none;
+            cursor: pointer;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(0,0,0,0.2);
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            background: #f7fafc;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px 16px 0 0;
+            overflow: hidden;
+        }
+
+        .modal-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+
+        .modal-description {
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+        }
+
+        .modal-section-title {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .modal-colors {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .modal-color-swatch {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .modal-color-swatch:hover {
+            transform: scale(1.1);
+            border-color: #a0aec0;
+        }
+
+        .modal-color-swatch.selected {
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #5a67d8;
+        }
+
+        .modal-sizes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .modal-size-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .modal-size-btn:hover {
+            border-color: #a0aec0;
+        }
+
+        .modal-size-btn.selected {
+            border-color: #5a67d8;
+            background: #5a67d8;
+            color: white;
+        }
+
+        .modal-add-btn {
+            width: 100%;
+            padding: 14px;
+            background: #5a67d8;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .modal-add-btn:hover {
+            background: #4c51bf;
+        }
+
+        .modal-add-btn:disabled {
+            background: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .modal-price {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        /* Simplified product card */
+        .product-card-simple {
+            cursor: pointer;
+        }
+
+        .product-card-simple .product-info {
+            text-align: center;
+        }
+
+        .product-card-simple h3 {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .click-hint {
+            color: #a0aec0;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+
         /* Order Form Section - Shopify Style */
         .order-section {
             background: white;
@@ -746,6 +961,36 @@
             <!-- Products will be loaded here -->
         </div>
 
+        <!-- Product Modal -->
+        <div class="modal-overlay" id="product-modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <div class="modal-image" id="modal-image-container">
+                    <button class="image-nav prev" id="modal-prev" onclick="modalChangeImage(-1)">‹</button>
+                    <img id="modal-product-image" src="" alt="">
+                    <button class="image-nav next" id="modal-next" onclick="modalChangeImage(1)">›</button>
+                    <div class="image-dots" id="modal-dots"></div>
+                </div>
+                <div class="modal-body">
+                    <h2 class="modal-title" id="modal-title"></h2>
+                    <div class="modal-price" id="modal-price">✓ FREE</div>
+                    <p class="modal-description" id="modal-description"></p>
+                    
+                    <div class="modal-section" id="modal-colors-section">
+                        <div class="modal-section-title">Choose a color:</div>
+                        <div class="modal-colors" id="modal-colors"></div>
+                    </div>
+                    
+                    <div class="modal-section" id="modal-sizes-section" style="display: none;">
+                        <div class="modal-section-title">Choose a size:</div>
+                        <div class="modal-sizes" id="modal-sizes"></div>
+                    </div>
+                    
+                    <button class="modal-add-btn" id="modal-add-btn" disabled onclick="modalAddToOrder()">Select a color</button>
+                </div>
+            </div>
+        </div>
+
         <div class="order-section" id="order-section">
             <h2>Request Your Item</h2>
             <p class="section-subtitle">Fill out your info and I'll get started on your free print!</p>
@@ -1064,123 +1309,170 @@
             
             grid.innerHTML = filteredProducts.map(product => {
                 const images = product.images || [product.image];
-                if (!currentImageIndex[product.id]) currentImageIndex[product.id] = 0;
-                const showNav = images.length > 1;
+                const imageCount = images.length;
                 return `
-                <div class="product-card" data-product-id="${product.id}">
-                    <div class="product-image" id="product-image-${product.id}">
-                        ${showNav ? `<button class="image-nav prev" onclick="changeImage(${product.id}, -1)">‹</button>` : ''}
+                <div class="product-card product-card-simple" data-product-id="${product.id}" onclick="openProductModal(${product.id})">
+                    <div class="product-image">
                         ${images[0]
-                            ? `<img src="${images[0]}" alt="${product.name}" id="product-img-${product.id}">`
+                            ? `<img src="${images[0]}" alt="${product.name}">`
                             : product.emoji}
-                        ${showNav ? `<button class="image-nav next" onclick="changeImage(${product.id}, 1)">›</button>` : ''}
-                        ${showNav ? `
-                        <div class="image-dots">
-                            ${images.map((_, i) => `<div class="image-dot ${i === 0 ? 'active' : ''}" onclick="goToImage(${product.id}, ${i})"></div>`).join('')}
-                        </div>` : ''}
+                        ${imageCount > 1 ? `<div class="image-dots"><div class="image-dot active"></div>${'<div class="image-dot"></div>'.repeat(Math.min(imageCount - 1, 4))}</div>` : ''}
                     </div>
                     <div class="product-info">
                         <h3>${product.name}</h3>
-                        <p>${product.description}</p>
                         <div class="free-badge">✓ FREE</div>
-                        ${product.sizes ? `
-                        <div class="size-options">
-                            <label>Choose a size:</label>
-                            <div class="size-buttons">
-                                ${product.sizes.map(size => `
-                                    <button type="button" class="size-btn" 
-                                            data-size="${size}"
-                                            data-product-id="${product.id}"
-                                            onclick="selectSize(this, ${product.id}, '${size}')">
-                                        ${size}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ` : ''}
-                        ${product.colorParts ? `
-                        ${Object.entries(product.colorParts).map(([partName, colors]) => `
-                        <div class="color-options">
-                            <label>${partName} Color:</label>
-                            <div class="color-swatches">
-                                ${colors.map(color => {
-                                    const style = colorHex[color]?.startsWith('linear')
-                                        ? `background: ${colorHex[color]}`
-                                        : `background-color: ${colorHex[color] || '#ccc'}`;
-                                    return `
-                                    <div class="color-swatch"
-                                         style="${style}"
-                                         data-color="${color}"
-                                         data-part="${partName}"
-                                         data-product-id="${product.id}"
-                                         onclick="selectPartColor(this, ${product.id}, '${partName}', '${color}')"
-                                         title="${color}">
-                                    </div>
-                                `}).join('')}
-                            </div>
-                        </div>
-                        `).join('')}
-                        ` : `
-                        <div class="color-options">
-                            <label>Choose a color:</label>
-                            <div class="color-swatches">
-                                ${product.colors.map(color => {
-                                    const style = colorHex[color]?.startsWith('linear')
-                                        ? `background: ${colorHex[color]}`
-                                        : `background-color: ${colorHex[color] || '#ccc'}`;
-                                    return `
-                                    <div class="color-swatch"
-                                         style="${style}"
-                                         data-color="${color}"
-                                         data-product-id="${product.id}"
-                                         onclick="selectColor(this, ${product.id}, '${color}')"
-                                         title="${color}">
-                                    </div>
-                                `}).join('')}
-                            </div>
-                        </div>
-                        `}
-                        <button class="add-to-order"
-                                id="add-btn-${product.id}"
-                                onclick="addToCart(${product.id})"
-                                disabled>
-                            ${product.colorParts ? 'Select all colors' : (product.sizes ? 'Select size & color' : 'Select a color')}
-                        </button>
+                        <p class="click-hint">Tap to customize</p>
                     </div>
                 </div>
             `}).join('');
         }
 
-        // Image navigation functions
-        function changeImage(productId, direction) {
-            const product = products.find(p => p.id === productId);
-            const images = product.images || [product.image];
-            if (images.length <= 1) return;
-            
-            let newIndex = (currentImageIndex[productId] || 0) + direction;
-            if (newIndex < 0) newIndex = images.length - 1;
-            if (newIndex >= images.length) newIndex = 0;
-            
-            goToImage(productId, newIndex);
-        }
+        // Modal state
+        let currentModalProduct = null;
+        let modalImageIndex = 0;
+        let modalSelectedColor = null;
+        let modalSelectedSize = null;
+        let modalSelectedPartColors = {};
 
-        function goToImage(productId, index) {
-            const product = products.find(p => p.id === productId);
-            const images = product.images || [product.image];
+        // Open product modal
+        function openProductModal(productId) {
+            currentModalProduct = products.find(p => p.id === productId);
+            modalImageIndex = 0;
+            modalSelectedColor = null;
+            modalSelectedSize = null;
+            modalSelectedPartColors = {};
             
-            currentImageIndex[productId] = index;
+            const modal = document.getElementById('product-modal');
+            const images = currentModalProduct.images || [currentModalProduct.image];
             
-            const img = document.getElementById(`product-img-${productId}`);
-            if (img) {
-                img.src = images[index];
-            }
+            // Set image
+            document.getElementById('modal-product-image').src = images[0];
+            
+            // Show/hide nav buttons
+            const showNav = images.length > 1;
+            document.getElementById('modal-prev').style.display = showNav ? 'flex' : 'none';
+            document.getElementById('modal-next').style.display = showNav ? 'flex' : 'none';
             
             // Update dots
-            const container = document.getElementById(`product-image-${productId}`);
-            const dots = container.querySelectorAll('.image-dot');
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
+            const dotsContainer = document.getElementById('modal-dots');
+            dotsContainer.innerHTML = images.map((_, i) => 
+                `<div class="image-dot ${i === 0 ? 'active' : ''}" onclick="modalGoToImage(${i})"></div>`
+            ).join('');
+            
+            // Set text content
+            document.getElementById('modal-title').textContent = currentModalProduct.name;
+            document.getElementById('modal-description').textContent = currentModalProduct.description;
+            
+            // Render colors
+            const colorsContainer = document.getElementById('modal-colors');
+            const colors = currentModalProduct.colors || [];
+            colorsContainer.innerHTML = colors.map(color => {
+                const style = colorHex[color]?.startsWith('linear')
+                    ? `background: ${colorHex[color]}`
+                    : `background-color: ${colorHex[color] || '#ccc'}`;
+                return `<div class="modal-color-swatch" style="${style}" data-color="${color}" onclick="modalSelectColor(this, '${color}')" title="${color}"></div>`;
+            }).join('');
+            
+            // Render sizes if applicable
+            const sizesSection = document.getElementById('modal-sizes-section');
+            const sizesContainer = document.getElementById('modal-sizes');
+            if (currentModalProduct.sizes) {
+                sizesSection.style.display = 'block';
+                sizesContainer.innerHTML = currentModalProduct.sizes.map(size => 
+                    `<button class="modal-size-btn" onclick="modalSelectSize(this, '${size}')">${size}</button>`
+                ).join('');
+            } else {
+                sizesSection.style.display = 'none';
+            }
+            
+            // Reset button
+            updateModalButton();
+            
+            // Show modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('product-modal').classList.remove('active');
+            document.body.style.overflow = '';
+            currentModalProduct = null;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('product-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function modalChangeImage(direction) {
+            const images = currentModalProduct.images || [currentModalProduct.image];
+            modalImageIndex += direction;
+            if (modalImageIndex < 0) modalImageIndex = images.length - 1;
+            if (modalImageIndex >= images.length) modalImageIndex = 0;
+            modalGoToImage(modalImageIndex);
+        }
+
+        function modalGoToImage(index) {
+            const images = currentModalProduct.images || [currentModalProduct.image];
+            modalImageIndex = index;
+            document.getElementById('modal-product-image').src = images[index];
+            
+            // Update dots
+            const dots = document.getElementById('modal-dots').querySelectorAll('.image-dot');
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+        }
+
+        function modalSelectColor(element, color) {
+            document.querySelectorAll('#modal-colors .modal-color-swatch').forEach(s => s.classList.remove('selected'));
+            element.classList.add('selected');
+            modalSelectedColor = color;
+            updateModalButton();
+        }
+
+        function modalSelectSize(element, size) {
+            document.querySelectorAll('#modal-sizes .modal-size-btn').forEach(s => s.classList.remove('selected'));
+            element.classList.add('selected');
+            modalSelectedSize = size;
+            updateModalButton();
+        }
+
+        function updateModalButton() {
+            const btn = document.getElementById('modal-add-btn');
+            const needsSize = currentModalProduct.sizes && currentModalProduct.sizes.length > 0;
+            
+            if (!modalSelectedColor) {
+                btn.disabled = true;
+                btn.textContent = 'Select a color';
+            } else if (needsSize && !modalSelectedSize) {
+                btn.disabled = true;
+                btn.textContent = 'Select a size';
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Add to Order';
+            }
+        }
+
+        function modalAddToOrder() {
+            if (!currentModalProduct || !modalSelectedColor) return;
+            
+            const item = {
+                id: currentModalProduct.id,
+                name: currentModalProduct.name,
+                color: modalSelectedColor,
+                size: modalSelectedSize || null
+            };
+            
+            orderItems.push(item);
+            updateOrderDisplay();
+            closeModal();
+            
+            // Scroll to order section
+            document.getElementById('order-section').scrollIntoView({ behavior: 'smooth' });
         }
 
         // Track selected colors for each product
