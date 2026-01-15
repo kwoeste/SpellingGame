@@ -1507,11 +1507,6 @@
             document.getElementById('modal-title').textContent = currentModalProduct.name;
             document.getElementById('modal-description').textContent = currentModalProduct.description;
             
-            // Reset color label
-            const colorLabel = document.getElementById('selected-color-label');
-            colorLabel.style.display = 'none';
-            colorLabel.textContent = '';
-            
             // Render colors - handle both single colors and colorParts
             const colorsSection = document.getElementById('modal-colors-section');
             const colorsContainer = document.getElementById('modal-colors');
