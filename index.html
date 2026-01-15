@@ -1084,6 +1084,7 @@
                     <div class="modal-section" id="modal-colors-section">
                         <div class="modal-section-title">Choose a color:</div>
                         <div class="modal-colors" id="modal-colors"></div>
+                        <div class="selected-color-label" id="selected-color-label" style="display: none; margin-top: 8px; font-size: 14px; color: #667eea; font-weight: 600;"></div>
                     </div>
                     
                     <div class="modal-section" id="modal-sizes-section" style="display: none;">
@@ -1467,6 +1468,11 @@
             modalSelectedSize = null;
             modalSelectedPartColors = {};
             
+            // Reset color label
+            const colorLabel = document.getElementById('selected-color-label');
+            colorLabel.style.display = 'none';
+            colorLabel.textContent = '';
+            
             const modal = document.getElementById('product-modal');
             const images = currentModalProduct.images || [currentModalProduct.image];
             
@@ -1631,6 +1637,11 @@
             document.querySelectorAll('#modal-colors .modal-color-swatch').forEach(s => s.classList.remove('selected'));
             element.classList.add('selected');
             modalSelectedColor = color;
+            
+            // Show selected color name
+            const colorLabel = document.getElementById('selected-color-label');
+            colorLabel.textContent = 'Selected: ' + color.charAt(0).toUpperCase() + color.slice(1);
+            colorLabel.style.display = 'block';
             
             // Check if this product has color-specific images
             if (currentModalProduct.colorImages && currentModalProduct.colorImages[color]) {
