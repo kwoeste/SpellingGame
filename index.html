@@ -1220,8 +1220,14 @@
                 description: "A mesmerizing gear fidget spinner with planetary gears that all spin together! Watch all the cogs turn in perfect sync. Choose your size and style - Spike has pointed teeth, Cog has rounded teeth!",
                 price: 0,
                 category: "fidget",
-                images: ["images/planetary-gear-spinner.jpg", "images/planetary-gear-spinner-2.jpg", "images/planetary-gear-spinner-3.jpg"],
+                images: ["images/planetary-gear-spinner.jpg", "images/planetary-gear-spinner-2.jpg", "images/planetary-gear-spinner-3.jpg", "images/planetary-gear-6spike-17mm.jpg"],
                 sizes: ["6 Gears Spike (17mm)", "6 Gears Cog (17mm)", "8 Gears Spike (33mm)", "8 Gears Cog (33mm)", "10 Gears Spike (33mm)", "10 Gears Cog (33mm)"],
+                sizeImages: {
+                    "6 Gears Spike (17mm)": ["images/planetary-gear-6spike-17mm.jpg"]
+                },
+                sizeVideos: {
+                    "6 Gears Spike (17mm)": "images/planetary-gear-6spike-17mm-video.mp4"
+                },
                 colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             },
             {
@@ -1567,13 +1573,15 @@
         });
 
         function modalChangeImage(direction) {
-            // Use color-specific images if available, otherwise default images
-            const images = currentModalProduct._currentColorImages || currentModalProduct.images || [currentModalProduct.image];
+            // Use size/color-specific images if available, otherwise default images
+            const images = currentModalProduct._currentSizeImages || currentModalProduct._currentColorImages || currentModalProduct.images || [currentModalProduct.image];
             modalImageIndex += direction;
             if (modalImageIndex < 0) modalImageIndex = images.length - 1;
             if (modalImageIndex >= images.length) modalImageIndex = 0;
             
-            if (currentModalProduct._currentColorImages) {
+            if (currentModalProduct._currentSizeImages) {
+                modalGoToSizeImage(modalImageIndex);
+            } else if (currentModalProduct._currentColorImages) {
                 modalGoToColorImage(modalImageIndex);
             } else {
                 modalGoToImage(modalImageIndex);
@@ -1704,7 +1712,48 @@
             document.querySelectorAll('#modal-sizes .modal-size-btn').forEach(s => s.classList.remove('selected'));
             element.classList.add('selected');
             modalSelectedSize = size;
+            
+            // Check if this size has specific images
+            if (currentModalProduct.sizeImages && currentModalProduct.sizeImages[size]) {
+                const sizeImages = currentModalProduct.sizeImages[size];
+                modalImageIndex = 0;
+                document.getElementById('modal-product-image').src = sizeImages[0];
+                document.getElementById('modal-product-image').style.display = 'block';
+                document.getElementById('modal-product-video').style.display = 'none';
+                
+                // Update dots
+                const dotsContainer = document.getElementById('modal-dots');
+                dotsContainer.innerHTML = sizeImages.map((_, i) => 
+                    `<span class="image-dot ${i === 0 ? 'active' : ''}" onclick="modalGoToSizeImage(${i})"></span>`
+                ).join('');
+                
+                currentModalProduct._currentSizeImages = sizeImages;
+            } else {
+                currentModalProduct._currentSizeImages = null;
+            }
+            
+            // Check if this size has a specific video
+            const videoBtn = document.getElementById('modal-video-btn');
+            const videoEl = document.getElementById('modal-product-video');
+            if (currentModalProduct.sizeVideos && currentModalProduct.sizeVideos[size]) {
+                videoBtn.style.display = 'block';
+                videoBtn.textContent = '▶ Watch Video';
+                videoEl.src = currentModalProduct.sizeVideos[size];
+            } else if (!currentModalProduct.video) {
+                videoBtn.style.display = 'none';
+            }
+            
             updateModalButton();
+        }
+        
+        function modalGoToSizeImage(index) {
+            if (!currentModalProduct || !currentModalProduct._currentSizeImages) return;
+            const images = currentModalProduct._currentSizeImages;
+            modalImageIndex = index;
+            document.getElementById('modal-product-image').src = images[index];
+            
+            const dots = document.getElementById('modal-dots').querySelectorAll('.image-dot');
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
         }
 
         function updateModalButton() {
