@@ -519,6 +519,29 @@
             transition: opacity 0.2s ease;
         }
 
+        .video-play-btn {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 15;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .video-play-btn:hover {
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
         .modal-body {
             padding: 20px 24px;
             overflow-y: auto;
@@ -1047,9 +1070,11 @@
                 <div class="modal-image" id="modal-image-container">
                     <button class="image-nav prev" id="modal-prev" onclick="modalChangeImage(-1)">‹</button>
                     <img id="modal-product-image" src="" alt="">
+                    <video id="modal-product-video" src="" controls style="display: none; max-width: 100%; max-height: 100%;"></video>
                     <div class="modal-image-tint" id="modal-image-tint"></div>
                     <button class="image-nav next" id="modal-next" onclick="modalChangeImage(1)">›</button>
                     <div class="image-dots" id="modal-dots"></div>
+                    <button class="video-play-btn" id="modal-video-btn" onclick="toggleModalVideo()" style="display: none;">▶ Watch Video</button>
                 </div>
                 <div class="modal-body">
                     <h2 class="modal-title" id="modal-title"></h2>
@@ -1305,11 +1330,15 @@
             {
                 id: 18,
                 name: "Herringbone Gear Fidget",
-                description: "A mesmerizing herringbone gear fidget with interlocking helical gears! Turn the crank and watch both gears spin in perfect sync. Super satisfying mechanical action!",
+                description: "A mesmerizing herringbone gear fidget with interlocking helical gears! Turn the crank and watch both gears spin in perfect sync. Pick two colors for the gears and handle!",
                 price: 0,
                 category: "fidget",
-                images: ["images/herringbone-gear.jpg", "images/herringbone-gear-2.jpg", "images/herringbone-gear-3.jpg", "images/herringbone-gear-4.jpg", "images/herringbone-gear-5.jpg"],
-                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+                images: ["images/herringbone-gear.jpg", "images/herringbone-gear-2.jpg", "images/herringbone-gear-3.jpg", "images/herringbone-gear-4.jpg", "images/herringbone-gear-5.jpg", "images/herringbone-gear-6.jpg", "images/herringbone-gear-7.jpg"],
+                video: "images/herringbone-gear-video.mp4",
+                colorParts: {
+                    "Gears": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"],
+                    "Handle": ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+                }
             },
             {
                 id: 19,
@@ -1437,6 +1466,19 @@
             
             // Set image
             document.getElementById('modal-product-image').src = images[0];
+            document.getElementById('modal-product-image').style.display = 'block';
+            document.getElementById('modal-product-video').style.display = 'none';
+            
+            // Show/hide video button
+            const videoBtn = document.getElementById('modal-video-btn');
+            const videoEl = document.getElementById('modal-product-video');
+            if (currentModalProduct.video) {
+                videoBtn.style.display = 'block';
+                videoBtn.textContent = '▶ Watch Video';
+                videoEl.src = currentModalProduct.video;
+            } else {
+                videoBtn.style.display = 'none';
+            }
             
             // Show/hide nav buttons
             const showNav = images.length > 1;
@@ -1627,6 +1669,26 @@
             // Update dots
             const dots = document.getElementById('modal-dots').querySelectorAll('.image-dot');
             dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+        }
+
+        function toggleModalVideo() {
+            const img = document.getElementById('modal-product-image');
+            const video = document.getElementById('modal-product-video');
+            const btn = document.getElementById('modal-video-btn');
+            
+            if (video.style.display === 'none') {
+                // Show video
+                img.style.display = 'none';
+                video.style.display = 'block';
+                video.play();
+                btn.textContent = '✕ Close Video';
+            } else {
+                // Show image
+                video.pause();
+                video.style.display = 'none';
+                img.style.display = 'block';
+                btn.textContent = '▶ Watch Video';
+            }
         }
 
         function modalSelectPartColor(element, partName, color) {
