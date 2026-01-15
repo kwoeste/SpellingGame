@@ -1181,8 +1181,13 @@
                 description: "An epic articulated dragon with spiky scales and a long serpent body! Fully flexible and posable - bend and twist it into any shape. Looks amazing on your desk!",
                 price: 0,
                 category: "animals",
-                images: ["images/snake-dragon.jpg", "images/snake-dragon-2.jpg", "images/snake-dragon-4.jpg", "images/snake-dragon-5.jpg", "images/snake-dragon-6.jpg", "images/snake-dragon-7.jpg", "images/snake-dragon-8.jpg", "images/snake-dragon-9.jpg"],
-                colors: ["light blue", "white", "black", "red", "hot pink", "brown", "gray", "blue grey", "green", "light gray", "bambu green", "purple", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
+                images: ["images/snake-dragon.jpg", "images/snake-dragon-2.jpg", "images/snake-dragon-4.jpg"],
+                colorImages: {
+                    "green": ["images/snake-dragon.jpg", "images/snake-dragon-2.jpg", "images/snake-dragon-4.jpg"],
+                    "hot pink": ["images/snake-dragon-5.jpg", "images/snake-dragon-6.jpg", "images/snake-dragon-8.jpg"],
+                    "purple": ["images/snake-dragon-7.jpg", "images/snake-dragon-9.jpg"]
+                },
+                colors: ["green", "hot pink", "purple", "light blue", "white", "black", "red", "brown", "gray", "blue grey", "light gray", "bambu green", "desert tan (matte)", "latte brown (matte)", "nardo gray (matte)"]
             },
             {
                 id: 5,
@@ -1517,11 +1522,17 @@
         });
 
         function modalChangeImage(direction) {
-            const images = currentModalProduct.images || [currentModalProduct.image];
+            // Use color-specific images if available, otherwise default images
+            const images = currentModalProduct._currentColorImages || currentModalProduct.images || [currentModalProduct.image];
             modalImageIndex += direction;
             if (modalImageIndex < 0) modalImageIndex = images.length - 1;
             if (modalImageIndex >= images.length) modalImageIndex = 0;
-            modalGoToImage(modalImageIndex);
+            
+            if (currentModalProduct._currentColorImages) {
+                modalGoToColorImage(modalImageIndex);
+            } else {
+                modalGoToImage(modalImageIndex);
+            }
         }
 
         function modalGoToImage(index) {
@@ -1567,8 +1578,52 @@
             document.querySelectorAll('#modal-colors .modal-color-swatch').forEach(s => s.classList.remove('selected'));
             element.classList.add('selected');
             modalSelectedColor = color;
-            setModalImageTint(color);
+            
+            // Check if this product has color-specific images
+            if (currentModalProduct.colorImages && currentModalProduct.colorImages[color]) {
+                // Swap to color-specific images
+                const colorImages = currentModalProduct.colorImages[color];
+                modalImageIndex = 0;
+                document.getElementById('modal-product-image').src = colorImages[0];
+                
+                // Update dots for the new image set
+                const dotsContainer = document.getElementById('modal-dots');
+                dotsContainer.innerHTML = colorImages.map((_, i) => 
+                    `<span class="image-dot ${i === 0 ? 'active' : ''}" onclick="modalGoToColorImage(${i})"></span>`
+                ).join('');
+                
+                // Store current color images for navigation
+                currentModalProduct._currentColorImages = colorImages;
+                
+                // Hide tint overlay since we have real photos
+                setModalImageTint(null);
+            } else {
+                // Reset to default images and apply color tint
+                currentModalProduct._currentColorImages = null;
+                const defaultImages = currentModalProduct.images || [currentModalProduct.image];
+                document.getElementById('modal-product-image').src = defaultImages[0];
+                modalImageIndex = 0;
+                
+                // Update dots for default images
+                const dotsContainer = document.getElementById('modal-dots');
+                dotsContainer.innerHTML = defaultImages.map((_, i) => 
+                    `<span class="image-dot ${i === 0 ? 'active' : ''}" onclick="modalGoToImage(${i})"></span>`
+                ).join('');
+                
+                setModalImageTint(color);
+            }
             updateModalButton();
+        }
+        
+        function modalGoToColorImage(index) {
+            if (!currentModalProduct || !currentModalProduct._currentColorImages) return;
+            const images = currentModalProduct._currentColorImages;
+            modalImageIndex = index;
+            document.getElementById('modal-product-image').src = images[index];
+            
+            // Update dots
+            const dots = document.getElementById('modal-dots').querySelectorAll('.image-dot');
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
         }
 
         function modalSelectPartColor(element, partName, color) {
