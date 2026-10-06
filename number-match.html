@@ -207,15 +207,16 @@
 
             const matched = playerNumber === computerNumber;
             const result = document.getElementById("result");
+            // The guesser scores on a match. On a miss, the one who hid the number scores.
+            const playerScores = matched === playerGuesses;
+            if (playerScores) playerScore++; else computerScore++;
             if (matched) {
-                if (playerGuesses) playerScore++; else computerScore++;
                 result.innerText = playerGuesses ? "🎯 You matched it! +1 for you!" : "🤖 The computer matched you! +1 for the computer!";
-                result.className = playerGuesses ? "match" : "miss";
-                if (playerGuesses) celebrate();
             } else {
-                result.innerText = "No match this time.";
-                result.className = "miss";
+                result.innerText = playerGuesses ? "No match. +1 for the computer." : "No match. +1 for you!";
             }
+            result.className = playerScores ? "match" : "miss";
+            if (playerScores) celebrate();
             updateScores();
 
             if (playerScore >= winScore || computerScore >= winScore) {
