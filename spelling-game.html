@@ -237,20 +237,35 @@
             return utterance;
         }
 
+        // Recorded clips live in audio/<word>.mp3 and audio/<word>-sentence.mp3.
+        // Any clip that is missing falls back to the browser voice.
+        let currentClip = null;
+
+        function audioFile(word, suffix) {
+            return "audio/" + word.toLowerCase().replace(/\s+/g, "-") + suffix + ".mp3";
+        }
+
+        function speakPart(text, file, onDone) {
+            const fallbackToVoice = () => {
+                if (!('speechSynthesis' in window)) { onDone(); return; }
+                const utterance = makeUtterance(text);
+                utterance.onend = onDone;
+                utterance.onerror = onDone;
+                window.speechSynthesis.speak(utterance);
+            };
+            const clip = new Audio(file);
+            currentClip = clip;
+            clip.onended = onDone;
+            clip.onerror = fallbackToVoice;
+            clip.play().catch(fallbackToVoice);
+        }
+
         function sayWordAndSentence(word) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const speechWord = makeUtterance(word);
-                const speechSentence = makeUtterance(wordSentences[word]);
-                window.speechSynthesis.speak(speechWord);
-                // Short pause between the word and the sentence
-                speechWord.onend = () => {
-                    setTimeout(() => window.speechSynthesis.speak(speechSentence), 600);
-                };
-            } else {
-                console.warn('Speech synthesis not supported');
-                document.getElementById("message").innerText = "Speech not supported in your browser";
-            }
+            if (currentClip) currentClip.pause();
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            speakPart(word, audioFile(word, ""), () => {
+                setTimeout(() => speakPart(wordSentences[word], audioFile(word, "-sentence"), () => {}), 600);
+            });
         }
 
         function replayWord() {
