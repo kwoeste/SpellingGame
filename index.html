@@ -51,6 +51,28 @@
             opacity: 0.9;
         }
 
+        .hero-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .hero-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9em;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .hero-links a:hover, .hero-links a:focus-visible {
+            background: rgba(255,255,255,0.35);
+        }
+
         .logo-text {
             font-size: 2em;
             font-weight: 800;
@@ -1058,7 +1080,12 @@
             <div class="hero-text">
                 <h1>MW Design</h1>
                 <p>3D Printing & Design — Free Creations Made Just For You</p>
-                <p><a href="games.html" style="color:white;font-weight:700;">🎮 Play Mae's Games &amp; Spelling</a></p>
+                <nav class="hero-links" aria-label="Main">
+                    <a href="#products-grid">🖨️ Order a 3D print</a>
+                    <a href="spelling-game.html">📚 Practice spelling</a>
+                    <a href="number-match.html">🔢 Counting game</a>
+                    <a href="games.html">🎮 All games</a>
+                </nav>
             </div>
         </div>
     </div>
