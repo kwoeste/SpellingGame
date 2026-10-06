@@ -93,7 +93,7 @@
         <div id="voice-controls">
             <label for="voice-select">Voice:</label>
             <select id="voice-select" onchange="changeVoice()"></select>
-            <label for="speed-select">Speed:</label>
+            <label for="speed-select">Computer voice speed:</label>
             <select id="speed-select" onchange="changeSpeed()">
                 <option value="0.7">Slow</option>
                 <option value="0.85">Normal</option>
@@ -240,31 +240,51 @@
         // Recorded clips live in audio/<word>.mp3 and audio/<word>-sentence.mp3.
         // Any clip that is missing falls back to the browser voice.
         let currentClip = null;
+        let speakToken = 0;
 
         function audioFile(word, suffix) {
             return "audio/" + word.toLowerCase().replace(/\s+/g, "-") + suffix + ".mp3";
         }
 
-        function speakPart(text, file, onDone) {
+        // Callbacks from a superseded call (token mismatch) are ignored.
+        function speakPart(text, file, token, onDone) {
+            let finished = false;
+            const finish = () => {
+                if (finished || token !== speakToken) return;
+                finished = true;
+                onDone();
+            };
             const fallbackToVoice = () => {
-                if (!('speechSynthesis' in window)) { onDone(); return; }
+                if (finished || token !== speakToken) return;
+                if (!('speechSynthesis' in window)) { finish(); return; }
                 const utterance = makeUtterance(text);
-                utterance.onend = onDone;
-                utterance.onerror = onDone;
+                utterance.onend = finish;
+                utterance.onerror = finish;
                 window.speechSynthesis.speak(utterance);
+            };
+            let usedFallback = false;
+            const fallbackOnce = () => {
+                if (usedFallback) return;
+                usedFallback = true;
+                fallbackToVoice();
             };
             const clip = new Audio(file);
             currentClip = clip;
-            clip.onended = onDone;
-            clip.onerror = fallbackToVoice;
-            clip.play().catch(fallbackToVoice);
+            clip.onended = finish;
+            clip.onerror = fallbackOnce;
+            clip.play().catch(fallbackOnce);
         }
 
         function sayWordAndSentence(word) {
+            const token = ++speakToken;
             if (currentClip) currentClip.pause();
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-            speakPart(word, audioFile(word, ""), () => {
-                setTimeout(() => speakPart(wordSentences[word], audioFile(word, "-sentence"), () => {}), 600);
+            speakPart(word, audioFile(word, ""), token, () => {
+                setTimeout(() => {
+                    if (token === speakToken) {
+                        speakPart(wordSentences[word], audioFile(word, "-sentence"), token, () => {});
+                    }
+                }, 600);
             });
         }
 
