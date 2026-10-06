@@ -148,6 +148,9 @@
         let currentWord = "";
         let guessedWord = "";
         let currentLetterIndex;
+        // Round 1 gives the word's letters plus a few extras. Round 2 gives the whole alphabet.
+        const totalRounds = 2;
+        let currentRound = 1;
 
         function bigCelebration() {
             if (typeof confetti !== "function") return;
@@ -174,11 +177,17 @@
         }
 
         function showWord() {
+            if (currentIndex >= words.length && currentRound < totalRounds) {
+                currentRound++;
+                currentIndex = 0;
+                const roundMessage = document.getElementById("message");
+                roundMessage.innerText = "";
+            }
             if (currentIndex < words.length) {
                 currentWord = words[currentIndex];
                 guessedWord = "_".repeat(currentWord.length);
                 currentLetterIndex = 0;
-                document.getElementById("word-counter").innerText = "Word " + (currentIndex + 1) + " of " + words.length;
+                document.getElementById("word-counter").innerText = "Round " + currentRound + " of " + totalRounds + ", Word " + (currentIndex + 1) + " of " + words.length;
                 updateWordDisplay();
                 displayLetterButtons();
                 document.getElementById("message").innerText = "";
@@ -196,9 +205,14 @@
         function displayLetterButtons() {
             let letterContainer = document.getElementById("letter-buttons");
             letterContainer.innerHTML = "";
-            let letters = currentWord.split('');
-            let extraLetters = shuffleArray('abcdefghijklmnopqrstuvwxyz'.split('')).slice(0, 3);
-            let allLetters = letters.concat(extraLetters).sort(() => Math.random() - 0.5);
+            let allLetters;
+            if (currentRound >= 2) {
+                allLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+            } else {
+                let letters = currentWord.split('');
+                let extraLetters = shuffleArray('abcdefghijklmnopqrstuvwxyz'.split('')).slice(0, 3);
+                allLetters = letters.concat(extraLetters).sort(() => Math.random() - 0.5);
+            }
             allLetters.forEach(letter => {
                 let button = document.createElement("button");
                 button.innerText = letter;
@@ -333,8 +347,13 @@
                 newGuessedWord[currentLetterIndex] = letter;
                 guessedWord = newGuessedWord.join('');
                 updateWordDisplay();
-                button.disabled = true;
-                button.classList.add('correct');
+                if (currentRound < 2) {
+                    button.disabled = true;
+                    button.classList.add('correct');
+                } else {
+                    button.classList.add('correct');
+                    setTimeout(() => button.classList.remove('correct'), 600);
+                }
                 currentLetterIndex++;
                 checkCompletion();
             } else {
@@ -355,6 +374,7 @@
 
         function restartGame() {
             currentIndex = 0;
+            currentRound = 1;
             showWord();
         }
 
