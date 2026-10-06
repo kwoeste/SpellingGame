@@ -25,6 +25,12 @@
         #letter-buttons {
             margin-top: 20px;
         }
+        #word-counter {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #5a67d8;
+            margin: 0 0 8px;
+        }
         button {
             font-size: 18px;
             padding: 10px;
@@ -86,6 +92,7 @@
     </nav>
     <h1>Spelling List D-1: Short a and Short e</h1>
     <div id="game-container">
+        <p id="word-counter" aria-live="polite"></p>
         <p id="word-hint" aria-live="polite">Spell the word: _ _ _ _</p>
         <div id="letter-buttons" role="group" aria-label="Letter choices"></div>
         <p id="message" aria-live="assertive"></p>
@@ -147,6 +154,7 @@
                 currentWord = words[currentIndex];
                 guessedWord = "_".repeat(currentWord.length);
                 currentLetterIndex = 0;
+                document.getElementById("word-counter").innerText = "Word " + (currentIndex + 1) + " of " + words.length;
                 updateWordDisplay();
                 displayLetterButtons();
                 document.getElementById("message").innerText = "";
