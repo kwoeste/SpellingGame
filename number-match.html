@@ -185,8 +185,8 @@
 
         function reveal(playerNumber, computerNumber) {
             document.getElementById("reveal").innerHTML =
-                "<div>Your number<span class='reveal-num'>" + playerNumber + "</span></div>" +
-                "<div>Computer's number<span class='reveal-num'>" + computerNumber + "</span></div>";
+                "<div>" + (playerGuesses ? "Your guess" : "Your secret number") + "<span class='reveal-num'>" + playerNumber + "</span></div>" +
+                "<div>" + (playerGuesses ? "Computer's secret number" : "Computer's guess") + "<span class='reveal-num'>" + computerNumber + "</span></div>";
 
             const matched = playerNumber === computerNumber;
             const result = document.getElementById("result");
@@ -194,7 +194,7 @@
                 if (playerGuesses) playerScore++; else computerScore++;
                 result.innerText = playerGuesses ? "🎯 You matched it! +1 for you!" : "🤖 The computer matched you! +1 for the computer!";
                 result.className = playerGuesses ? "match" : "miss";
-                if (playerGuesses) confetti();
+                if (playerGuesses) celebrate();
             } else {
                 result.innerText = "No match this time.";
                 result.className = "miss";
@@ -205,7 +205,7 @@
                 const won = playerScore >= WIN_SCORE;
                 result.innerText = won ? "🎉 You win! 🎉" : "🤖 The computer wins! Good game!";
                 result.className = won ? "match" : "miss";
-                if (won) confetti({ particleCount: 200, spread: 90 });
+                if (won) celebrate({ particleCount: 200, spread: 90 });
                 document.getElementById("prompt").innerText = "";
                 document.getElementById("again-button").classList.remove("hidden");
                 document.getElementById("again-button").focus();
@@ -214,6 +214,10 @@
                 document.getElementById("next-button").classList.remove("hidden");
                 document.getElementById("next-button").focus();
             }
+        }
+
+        function celebrate(options) {
+            if (typeof confetti === "function") confetti(options);
         }
 
         function nextRound() {
