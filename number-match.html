@@ -47,6 +47,8 @@
         button:disabled { background: #95a5a6; cursor: not-allowed; }
         button:focus-visible { outline: 3px solid #f1c40f; outline-offset: 2px; }
         .number-btn { min-width: 56px; }
+        .goal-btn[aria-pressed="true"] { background: linear-gradient(135deg, #27ae60, #2ecc71); outline: 3px solid #1e8449; }
+        #result.final { font-size: 2em; }
         #scoreboard {
             display: flex;
             justify-content: space-around;
@@ -74,16 +76,23 @@
 
     <div id="game-container">
         <div id="setup">
+            <p>How many points to win?</p>
+            <div role="group" aria-label="Choose the winning score">
+                <button class="goal-btn" aria-pressed="false" onclick="setGoal(3)">First to 3</button>
+                <button class="goal-btn" aria-pressed="true" onclick="setGoal(5)">First to 5</button>
+                <button class="goal-btn" aria-pressed="false" onclick="setGoal(10)">First to 10</button>
+            </div>
             <p>How big should the numbers be?</p>
             <div role="group" aria-label="Choose the biggest number">
                 <button onclick="startGame(3)">1 to 3</button>
                 <button onclick="startGame(5)">1 to 5</button>
                 <button onclick="startGame(10)">1 to 10</button>
             </div>
-            <p>Take turns matching numbers. First to 5 points wins!</p>
+            <p>Take turns matching numbers. Pick your goal, then pick the number range to start!</p>
         </div>
 
         <div id="play" class="hidden">
+            <p id="goal-label"></p>
             <div id="scoreboard" aria-live="polite">
                 <span>You: <span id="player-score">0</span></span>
                 <span>Computer: <span id="computer-score">0</span></span>
@@ -100,7 +109,7 @@
     <h3>Created by: Mae Woeste</h3>
 
     <script>
-        const WIN_SCORE = 5;
+        let winScore = 5;
         let maxNumber = 5;
         let playerScore = 0;
         let computerScore = 0;
@@ -112,6 +121,13 @@
             return Math.floor(Math.random() * maxNumber) + 1;
         }
 
+        function setGoal(goal) {
+            winScore = goal;
+            document.querySelectorAll(".goal-btn").forEach(b => {
+                b.setAttribute("aria-pressed", b.innerText === "First to " + goal ? "true" : "false");
+            });
+        }
+
         function startGame(max) {
             maxNumber = max;
             playerScore = 0;
@@ -120,6 +136,7 @@
             document.getElementById("setup").classList.add("hidden");
             document.getElementById("play").classList.remove("hidden");
             document.getElementById("again-button").classList.add("hidden");
+            document.getElementById("goal-label").innerText = "First to " + winScore + " points wins!";
             updateScores();
             startRound();
         }
@@ -201,11 +218,12 @@
             }
             updateScores();
 
-            if (playerScore >= WIN_SCORE || computerScore >= WIN_SCORE) {
-                const won = playerScore >= WIN_SCORE;
-                result.innerText = won ? "🎉 You win! 🎉" : "🤖 The computer wins! Good game!";
-                result.className = won ? "match" : "miss";
-                if (won) celebrate({ particleCount: 200, spread: 90 });
+            if (playerScore >= winScore || computerScore >= winScore) {
+                const won = playerScore >= winScore;
+                const finalScore = playerScore + " to " + computerScore;
+                result.innerText = won ? "🎉 You win! " + finalScore + " 🎉" : "🤖 The computer wins " + computerScore + " to " + playerScore + ". Good game!";
+                result.className = (won ? "match" : "miss") + " final";
+                if (won) bigCelebration();
                 document.getElementById("prompt").innerText = "";
                 document.getElementById("again-button").classList.remove("hidden");
                 document.getElementById("again-button").focus();
@@ -214,6 +232,30 @@
                 document.getElementById("next-button").classList.remove("hidden");
                 document.getElementById("next-button").focus();
             }
+        }
+
+        function bigCelebration() {
+            if (typeof confetti !== "function") return;
+            const colors = ["#5a67d8", "#7c3aed", "#27ae60", "#2ecc71", "#f1c40f", "#e74c3c", "#ff8ad8"];
+            const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            if (reduceMotion) {
+                confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: colors });
+                return;
+            }
+            // Opening blast from the middle.
+            confetti({ particleCount: 180, spread: 120, startVelocity: 55, origin: { x: 0.5, y: 0.65 }, colors: colors, zIndex: 1000 });
+            // Side cannons plus falling confetti across the whole screen for 4 seconds.
+            const end = Date.now() + 4000;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 60, startVelocity: 60, origin: { x: 0, y: 0.8 }, colors: colors, zIndex: 1000 });
+                confetti({ particleCount: 5, angle: 120, spread: 60, startVelocity: 60, origin: { x: 1, y: 0.8 }, colors: colors, zIndex: 1000 });
+                confetti({ particleCount: 3, angle: 90, spread: 180, startVelocity: 20, gravity: 0.6, ticks: 300, origin: { x: Math.random(), y: -0.1 }, colors: colors, zIndex: 1000 });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            })();
+            // Star burst finale.
+            setTimeout(() => {
+                confetti({ particleCount: 80, spread: 360, startVelocity: 35, shapes: ["star"], scalar: 1.3, origin: { x: 0.5, y: 0.4 }, colors: colors, zIndex: 1000 });
+            }, 1800);
         }
 
         function celebrate(options) {
