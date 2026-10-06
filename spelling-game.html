@@ -49,6 +49,15 @@
         .incorrect {
             background: #e74c3c;
         }
+        #voice-controls {
+            margin-top: 15px;
+            font-size: 16px;
+        }
+        #voice-controls select {
+            font-size: 16px;
+            padding: 6px;
+            max-width: 220px;
+        }
         nav {
             margin-bottom: 20px;
         }
@@ -81,6 +90,16 @@
         <div id="letter-buttons" role="group" aria-label="Letter choices"></div>
         <p id="message" aria-live="assertive"></p>
         <button id="replay-button" onclick="replayWord()" aria-label="Replay word pronunciation">🔊 Replay Word</button>
+        <div id="voice-controls">
+            <label for="voice-select">Voice:</label>
+            <select id="voice-select" onchange="changeVoice()"></select>
+            <label for="speed-select">Speed:</label>
+            <select id="speed-select" onchange="changeSpeed()">
+                <option value="0.7">Slow</option>
+                <option value="0.85">Normal</option>
+                <option value="1">Fast</option>
+            </select>
+        </div>
     </div>
     <h3>Created by: Mae Woeste</h3>
     
@@ -163,21 +182,71 @@
             return array;
         }
 
+        let voices = [];
+        let selectedVoiceName = localStorage.getItem("spellingVoice") || "";
+        let speechRate = parseFloat(localStorage.getItem("spellingRate")) || 0.85;
+
+        // Higher score = nicer sounding. Names vary by browser and device.
+        function voiceScore(v) {
+            if (!v.lang.startsWith("en")) return -1;
+            let score = v.lang === "en-US" ? 2 : 1;
+            if (/natural|neural|online/i.test(v.name)) score += 10;
+            if (/Google US English|Samantha|Ava|Allison|Aria|Jenny|Karen|Moira/i.test(v.name)) score += 5;
+            return score;
+        }
+
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices().filter(v => voiceScore(v) >= 0);
+            voices.sort((a, b) => voiceScore(b) - voiceScore(a));
+            const select = document.getElementById("voice-select");
+            select.innerHTML = "";
+            voices.forEach(v => {
+                const option = document.createElement("option");
+                option.value = v.name;
+                option.textContent = v.name;
+                select.appendChild(option);
+            });
+            if (!voices.some(v => v.name === selectedVoiceName) && voices.length) {
+                selectedVoiceName = voices[0].name;
+            }
+            select.value = selectedVoiceName;
+            document.getElementById("speed-select").value = String(speechRate);
+        }
+
+        function changeVoice() {
+            selectedVoiceName = document.getElementById("voice-select").value;
+            localStorage.setItem("spellingVoice", selectedVoiceName);
+            replayWord();
+        }
+
+        function changeSpeed() {
+            speechRate = parseFloat(document.getElementById("speed-select").value);
+            localStorage.setItem("spellingRate", speechRate);
+            replayWord();
+        }
+
+        function makeUtterance(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "en-US";
+            utterance.rate = speechRate;
+            const voice = voices.find(v => v.name === selectedVoiceName);
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang;
+            }
+            return utterance;
+        }
+
         function sayWordAndSentence(word) {
             if ('speechSynthesis' in window) {
-                // First speak the word
-                let speechWord = new SpeechSynthesisUtterance(word);
-                speechWord.lang = "en-US";
-                
-                // Then speak the sentence after a short delay
-                let speechSentence = new SpeechSynthesisUtterance(wordSentences[word]);
-                speechSentence.lang = "en-US";
-                
-                // Use setTimeout to create a pause between word and sentence
+                window.speechSynthesis.cancel();
+                const speechWord = makeUtterance(word);
+                const speechSentence = makeUtterance(wordSentences[word]);
                 window.speechSynthesis.speak(speechWord);
-                setTimeout(() => {
-                    window.speechSynthesis.speak(speechSentence);
-                }, 1000); // 1 second delay between word and sentence
+                // Short pause between the word and the sentence
+                speechWord.onend = () => {
+                    setTimeout(() => window.speechSynthesis.speak(speechSentence), 600);
+                };
             } else {
                 console.warn('Speech synthesis not supported');
                 document.getElementById("message").innerText = "Speech not supported in your browser";
@@ -221,6 +290,10 @@
             showWord();
         }
 
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
         showWord();
     </script>
 </body>
