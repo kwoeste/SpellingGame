@@ -88,7 +88,7 @@
                 <button onclick="startGame(5)">1 to 5</button>
                 <button onclick="startGame(10)">1 to 10</button>
             </div>
-            <p>Take turns matching numbers. Pick your goal, then pick the number range to start!</p>
+            <p>One player hides a number and the other guesses it. Only the player hiding the number can score. Pick your goal, then pick the number range to start!</p>
         </div>
 
         <div id="play" class="hidden">
@@ -114,6 +114,7 @@
         let playerScore = 0;
         let computerScore = 0;
         // true: you guess the computer's secret number. false: the computer guesses yours.
+        // Whoever is not guessing holds the number and is the only one who can score.
         let playerGuesses = true;
         let busy = false;
 
@@ -132,13 +133,39 @@
             maxNumber = max;
             playerScore = 0;
             computerScore = 0;
-            playerGuesses = true;
             document.getElementById("setup").classList.add("hidden");
             document.getElementById("play").classList.remove("hidden");
             document.getElementById("again-button").classList.add("hidden");
             document.getElementById("goal-label").innerText = "First to " + winScore + " points wins!";
             updateScores();
-            startRound();
+            rollForFirst();
+        }
+
+        function rollForFirst() {
+            let playerRoll, computerRoll;
+            do {
+                playerRoll = Math.floor(Math.random() * 6) + 1;
+                computerRoll = Math.floor(Math.random() * 6) + 1;
+            } while (playerRoll === computerRoll);
+            const playerWins = playerRoll > computerRoll;
+            // The higher roll goes first as the number holder, so they can score first.
+            playerGuesses = !playerWins;
+            busy = true;
+            document.getElementById("number-buttons").innerHTML = "";
+            document.getElementById("countdown").innerText = "";
+            document.getElementById("prompt").innerText = "Roll the dice to see who goes first!";
+            document.getElementById("reveal").innerHTML =
+                "<div>Your roll<span class='reveal-num'>🎲 " + playerRoll + "</span></div>" +
+                "<div>Computer's roll<span class='reveal-num'>🎲 " + computerRoll + "</span></div>";
+            const result = document.getElementById("result");
+            result.innerText = playerWins
+                ? "You rolled higher! You go first and pick a secret number."
+                : "The computer rolled higher! It goes first and has a secret number.";
+            result.className = playerWins ? "match" : "miss";
+            const next = document.getElementById("next-button");
+            next.innerText = "Let's go ▶";
+            next.classList.remove("hidden");
+            next.focus();
         }
 
         function showSetup() {
@@ -153,14 +180,15 @@
 
         function startRound() {
             busy = false;
+            document.getElementById("next-button").innerText = "Next ▶";
             document.getElementById("countdown").innerText = "";
             document.getElementById("reveal").innerHTML = "";
             document.getElementById("result").innerText = "";
             document.getElementById("result").className = "";
             document.getElementById("next-button").classList.add("hidden");
             document.getElementById("prompt").innerText = playerGuesses
-                ? "Your turn to guess! Pick a number from 1 to " + maxNumber + "."
-                : "Computer's turn to guess! Pick a secret number from 1 to " + maxNumber + ".";
+                ? "The computer has a secret number. Guess it! Pick a number from 1 to " + maxNumber + "."
+                : "You have the number! Pick a secret number from 1 to " + maxNumber + ".";
 
             const container = document.getElementById("number-buttons");
             container.innerHTML = "";
@@ -207,16 +235,23 @@
 
             const matched = playerNumber === computerNumber;
             const result = document.getElementById("result");
-            // The guesser scores on a match. On a miss, the one who hid the number scores.
-            const playerScores = matched === playerGuesses;
-            if (playerScores) playerScore++; else computerScore++;
             if (matched) {
-                result.innerText = playerGuesses ? "🎯 You matched it! +1 for you!" : "🤖 The computer matched you! +1 for the computer!";
+                // A correct guess scores nothing, and the guesser becomes the number holder.
+                playerGuesses = !playerGuesses;
+                result.innerText = playerGuesses
+                    ? "🤖 The computer matched your number! No points. Now the computer holds the number and you guess."
+                    : "🎯 You matched it! No points. Now you hold the number!";
+                result.className = "";
+            } else if (playerGuesses) {
+                computerScore++;
+                result.innerText = "No match. +1 for the computer, and it keeps its turn.";
+                result.className = "miss";
             } else {
-                result.innerText = playerGuesses ? "No match. +1 for the computer." : "No match. +1 for you!";
+                playerScore++;
+                result.innerText = "No match. +1 for you, and you keep your turn!";
+                result.className = "match";
+                celebrate();
             }
-            result.className = playerScores ? "match" : "miss";
-            if (playerScores) celebrate();
             updateScores();
 
             if (playerScore >= winScore || computerScore >= winScore) {
@@ -264,7 +299,6 @@
         }
 
         function nextRound() {
-            playerGuesses = !playerGuesses;
             startRound();
         }
     </script>
