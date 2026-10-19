@@ -1,3 +1,4 @@
+import { seededShuffle, shortHash } from "@/lib/content/shuffle";
 import type { ChapterItem, ChapterPack, ReviewStatus, SubjectId } from "@/lib/content/types";
 
 export type CompactChapter = {
@@ -37,7 +38,7 @@ export function buildChapter(compact: CompactChapter): ChapterPack {
     sentenceId: sentences[Math.min(idx, sentences.length - 1)]?.id ?? sentences[0]?.id ?? "",
   }));
   const sequence = compact.sequence.map((label, idx) => ({
-    id: `${compact.id}.seq${idx + 1}`,
+    id: `${compact.id}.card.${shortHash(`${compact.id}:${label}`)}`,
     label,
     order: idx + 1,
   }));
@@ -60,21 +61,21 @@ export function buildChapter(compact: CompactChapter): ChapterPack {
     conceptId: `${compact.id}.sequence`,
     type: "drag_order",
     stem: "Put the events in the order they happen.",
-    options: compact.sequence,
     answer: sequence.map((card) => card.id),
     feedbackCorrect: "That's the right order.",
     feedbackWrong: "Not yet. Think about what happened first, next, and last.",
   });
   compact.proofs.forEach((proof, idx) => {
     const evidence = sentences[proof.evidence];
+    const id = `${compact.id}.q${idx + 1}`;
     items.push({
-      id: `${compact.id}.q${idx + 1}`,
+      id,
       activityId: `${compact.id}.check`,
       templateId: "ela.evidence_tap",
       conceptId: `${compact.id}.knowledge`,
       type: "tap_evidence",
       stem: proof.stem,
-      options: proof.options,
+      options: seededShuffle(proof.options, id),
       answer: proof.options[proof.answer] ?? "",
       evidenceSentenceId: evidence?.id,
       feedbackCorrect: "Yes — that sentence proves it.",
