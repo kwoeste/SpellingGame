@@ -1,10 +1,14 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { getResolvedUser } from "@/lib/auth/users";
+import { envRoleForEmail } from "@/lib/auth/allowlist";
+import { resolveUser } from "@/lib/auth/users";
 import { writeAudit } from "@/lib/auth/audit";
 
 const googleId = process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID;
 const googleSecret = process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET;
+
+const STUDENT_SESSION_SECONDS = 30 * 24 * 60 * 60;
+const ADMIN_SESSION_MS = 8 * 60 * 60 * 1000;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -15,14 +19,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorization: { params: { scope: "openid email profile" } },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: STUDENT_SESSION_SECONDS },
   pages: { signIn: "/sign-in", error: "/sign-in" },
   callbacks: {
     async signIn({ user, profile }) {
       const email = (user.email ?? "").trim().toLowerCase();
-      const verified =
-        Boolean((profile as { email_verified?: boolean } | undefined)?.email_verified) ||
-        Boolean((user as { emailVerified?: Date | null }).emailVerified);
+      const verified = (profile as { email_verified?: boolean } | undefined)?.email_verified === true;
       if (!email || !verified) {
         await writeAudit({
           userEmail: email || "unknown",
@@ -34,7 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         return false;
       }
-      const resolved = getResolvedUser(email);
+      const resolved = await resolveUser(email);
       if (!resolved) {
         await writeAudit({
           userEmail: email,
@@ -48,18 +50,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user, profile }) {
-      const email = (user?.email ?? token.email ?? "").toString().toLowerCase();
-      if (email) {
-        const resolved = getResolvedUser(email);
+    /**
+     * Identity is resolved against Postgres once, at sign-in. Later calls (including from Edge
+     * middleware) only re-check the env allowlist and the admin 8-hour limit; route handlers and
+     * server layouts re-resolve the user on every request.
+     */
+    async jwt({ token, user }) {
+      if (user?.email) {
+        const email = user.email.toLowerCase();
+        const resolved = await resolveUser(email);
+        if (!resolved) return null;
         token.email = email;
-        token.role = resolved?.role ?? null;
-        token.learnerId = resolved?.learnerId ?? null;
-        token.userId = resolved?.id ?? null;
-        token.emailVerified = Boolean(
-          (profile as { email_verified?: boolean } | undefined)?.email_verified,
-        );
+        token.role = resolved.role;
+        token.learnerId = resolved.learnerId;
+        token.userId = resolved.id;
+        token.signedInAt = Date.now();
+        return token;
       }
+      const email = typeof token.email === "string" ? token.email : "";
+      if (!email || !token.role || envRoleForEmail(email) !== token.role) return null;
+      if (token.role === "admin" && Date.now() - Number(token.signedInAt ?? 0) > ADMIN_SESSION_MS) return null;
       return token;
     },
     async session({ session, token }) {

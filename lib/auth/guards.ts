@@ -1,8 +1,9 @@
 import type { NextRequest } from "next/server";
 import type { AppRole } from "@/lib/auth/allowlist";
 import { writeAudit } from "@/lib/auth/audit";
+import { auth } from "@/lib/auth/config";
 import { getSession, type AuthSession } from "@/lib/auth/sessions";
-import { getResolvedUser } from "@/lib/auth/users";
+import { resolveUser } from "@/lib/auth/users";
 
 export type AuthedActor = {
   email: string;
@@ -43,7 +44,27 @@ export const FEEDBACK_FORBIDDEN_KEYS = [
   "p_correct",
 ] as const;
 
+function requestOrigins(req: Request): Set<string> {
+  const url = new URL(req.url);
+  const origins = new Set([url.origin]);
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const proto = req.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+    origins.add(`${proto}://${forwardedHost}`);
+  }
+  return origins;
+}
+
+/** CSRF defense in depth for state-changing routes (Auth.js cookies are already SameSite=Lax). */
+export function sameOriginOrForbidden(req: Request): Response | null {
+  const origin = req.headers.get("origin");
+  if (origin) return requestOrigins(req).has(origin) ? null : jsonForbidden();
+  return req.headers.get("sec-fetch-site") === "cross-site" ? jsonForbidden() : null;
+}
+
+/** Opaque test sessions (cookie or header) exist only under NODE_ENV=test. */
 export function sessionFromRequest(req: NextRequest | Request): AuthSession | null {
+  if (process.env.NODE_ENV !== "test") return null;
   const cookieHeader =
     "cookies" in req ? req.cookies.get("mae_session")?.value : undefined;
   const fallback = req.headers.get("cookie") ?? "";
@@ -58,62 +79,19 @@ export async function requireRole(
   allowed: AppRole | AppRole[],
 ): Promise<{ ok: true; actor: AuthedActor } | { ok: false; status: 401 | 403; body: unknown }> {
   const allowedRoles = Array.isArray(allowed) ? allowed : [allowed];
-  const session = sessionFromRequest(req);
-  const url = new URL(req.url);
-  if (!session) {
-    const signedIn =
-      process.env.NODE_ENV === "test"
-        ? null
-        : await import("@/lib/auth/config")
-            .then((mod) => mod.auth())
-            .catch(() => null);
-    const email = signedIn?.user?.email?.toLowerCase();
-    const user = email ? getResolvedUser(email) : null;
-    if (user && allowedRoles.includes(user.role)) {
-      return {
-        ok: true,
-        actor: {
-          email: user.email,
-          role: user.role,
-          learnerId: user.learnerId,
-          userId: user.id,
-          sessionId: null,
-        },
-      };
-    }
-    await writeAudit({
-      userEmail: email ?? "anonymous",
-      role: user?.role ?? (signedIn ? "outsider" : "anonymous"),
-      route: url.pathname,
-      method: req.method,
-      status: signedIn ? 403 : 401,
-      detail: signedIn ? "role_denied" : "no_session",
-    });
-    return { ok: false, status: signedIn ? 403 : 401, body: { error: signedIn ? "forbidden" : "unauthorized" } };
-  }
-  const user = getResolvedUser(session.email);
-  if (!user || user.role !== session.role) {
-    await writeAudit({
-      userEmail: session.email,
-      role: session.role,
-      route: url.pathname,
-      method: req.method,
-      status: 403,
-      detail: "role_drift_or_disabled",
-    });
-    return { ok: false, status: 403, body: { error: "forbidden" } };
-  }
-  if (!allowedRoles.includes(user.role)) {
-    await writeAudit({
-      userEmail: user.email,
-      role: user.role,
-      route: url.pathname,
-      method: req.method,
-      status: 403,
-      detail: "role_denied",
-    });
-    return { ok: false, status: 403, body: { error: "forbidden" } };
-  }
+  const route = new URL(req.url).pathname;
+  const testSession = sessionFromRequest(req);
+  const signedIn = testSession || process.env.NODE_ENV === "test" ? null : await auth().catch(() => null);
+  const email = (testSession?.email ?? signedIn?.user?.email ?? "").toLowerCase() || null;
+  const deny = async (status: 401 | 403, role: string, detail: string) => {
+    await writeAudit({ userEmail: email ?? "anonymous", role, route, method: req.method, status, detail });
+    return { ok: false as const, status, body: { error: status === 401 ? "unauthorized" : "forbidden" } };
+  };
+  if (!email) return deny(401, "anonymous", "no_session");
+  const user = await resolveUser(email);
+  if (!user) return deny(403, "outsider", "not_allowlisted_or_disabled");
+  if (testSession && testSession.role !== user.role) return deny(403, testSession.role, "role_drift");
+  if (!allowedRoles.includes(user.role)) return deny(403, user.role, "role_denied");
   return {
     ok: true,
     actor: {
@@ -121,7 +99,7 @@ export async function requireRole(
       role: user.role,
       learnerId: user.learnerId,
       userId: user.id,
-      sessionId: session.id,
+      sessionId: testSession?.id ?? null,
     },
   };
 }

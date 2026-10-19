@@ -1,5 +1,5 @@
 import type { AppRole } from "@/lib/auth/allowlist";
-import { getResolvedUser, type AppUser } from "@/lib/auth/users";
+import { getMemoryUser, resolveAgreedRole, type AppUser } from "@/lib/auth/users";
 
 export type AuthSession = {
   id: string;
@@ -82,7 +82,7 @@ export function mintTestSession(email: string, now = Date.now()): AuthSession {
   if (process.env.NODE_ENV !== "test") {
     throw new Error("Test sessions can only be minted when NODE_ENV=test");
   }
-  const user = getResolvedUser(email);
+  const user = resolveAgreedRole(email) ? getMemoryUser(email) : null;
   if (!user) {
     throw new Error(`Cannot mint session for ${email}`);
   }

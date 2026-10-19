@@ -18,7 +18,9 @@ import { POST as nextItem } from "@/app/api/engine/next-item/route";
 import { POST as events } from "@/app/api/engine/events/route";
 import { POST as startSession } from "@/app/api/engine/session/start/route";
 import { assertsStudentCannotReadAdmin, migrationSql } from "@/lib/db/sql";
-import { resetEngineStore, snapshotCounts } from "@/lib/engine/store";
+import { memoryAdminRepo, resetMemoryRepo } from "@/lib/engine/repo-memory";
+import { requireRole } from "@/lib/auth/guards";
+import { resolveUser } from "@/lib/auth/users";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -37,7 +39,7 @@ describe("section 16 role tests", () => {
     resetSessions();
     resetMemoryUsers();
     resetAudit();
-    resetEngineStore();
+    resetMemoryRepo();
   });
 
   it("R1 student is forbidden from admin pages", () => {
@@ -59,7 +61,7 @@ describe("section 16 role tests", () => {
   });
 
   it("R3 student writes do not change config/data", async () => {
-    const before = snapshotCounts();
+    const before = { counts: await memoryAdminRepo.counts(), config: await memoryAdminRepo.activeConfig() };
     const res = await putConfig(
       req("http://local/api/admin/config", "mae.woeste@gmail.com", {
         method: "PUT",
@@ -67,7 +69,7 @@ describe("section 16 role tests", () => {
       }),
     );
     expect(res.status).toBe(403);
-    expect(snapshotCounts()).toEqual(before);
+    expect({ counts: await memoryAdminRepo.counts(), config: await memoryAdminRepo.activeConfig() }).toEqual(before);
   });
 
   it("R4 path tricks never allow admin", () => {
@@ -94,13 +96,13 @@ describe("section 16 role tests", () => {
     const res = await nextItem(
       req("http://local/api/engine/next-item?learner_id=someone-else", "mae.woeste@gmail.com", {
         method: "POST",
-        body: JSON.stringify({ learner_id: "other", include: "mastery" }),
+        body: JSON.stringify({ chapterId: "savvas.ch1", learner_id: "other", include: "mastery" }),
       }),
     );
     expect(res.status).toBe(200);
-    const json = (await res.json()) as Record<string, unknown>;
-    for (const key of NEXT_ITEM_FORBIDDEN_KEYS) {
-      expect(key in json).toBe(false);
+    const json = (await res.json()) as { item: Record<string, unknown> };
+    for (const key of [...NEXT_ITEM_FORBIDDEN_KEYS, "answer", "feedbackWrong", "evidenceSentenceId"]) {
+      expect(key in json.item).toBe(false);
     }
   });
 
@@ -141,12 +143,13 @@ describe("section 16 role tests", () => {
       displayName: "Nope",
       disabledAt: null,
     });
-    const decision = decideRequest({ pathname: "/study", hasSession: true, role: "outsider" });
-    expect(decision.kind).toBe("forbidden");
-    const res = await progress(req("http://local/api/engine/progress-summary", "mae.woeste@gmail.com"));
-    expect(res.status).toBe(200);
-    await writeDenied();
-    expect(lastAuditFor("stranger@example.com") || true).toBeTruthy();
+    expect(await resolveUser("stranger@example.com")).toBeNull();
+    expect(decideRequest({ pathname: "/study", hasSession: true, role: "outsider" }).kind).toBe("forbidden");
+    const live = req("http://local/api/engine/progress-summary", "mae.woeste@gmail.com");
+    upsertMemoryUser({ id: "user-student", email: "mae.woeste@gmail.com", role: "student", learnerId: "x", displayName: "Mae", disabledAt: "2026-01-01" });
+    const denied = await requireRole(live, "student");
+    expect(denied.ok).toBe(false);
+    expect(lastAuditFor("mae.woeste@gmail.com", "/api/engine/progress-summary")?.status).toBe(403);
   });
 
   it("R10 admin can read admin APIs", async () => {
@@ -202,9 +205,12 @@ describe("section 16 role tests", () => {
     expect([401, 403]).toContain(drifted.status);
   });
 
-  it("R17 env/db mismatch is denied", () => {
-    removeMemoryUser("mae.woeste@gmail.com");
+  it("R17 env/db mismatch is denied", async () => {
+    upsertMemoryUser({ id: "user-student", email: "mae.woeste@gmail.com", role: "admin", learnerId: null, displayName: "Mae", disabledAt: null });
     expect(resolveAgreedRole("mae.woeste@gmail.com")).toBeNull();
+    expect(await resolveUser("mae.woeste@gmail.com")).toBeNull();
+    removeMemoryUser("mae.woeste@gmail.com");
+    expect(await resolveUser("mae.woeste@gmail.com")).toBeNull();
   });
 
   it("R18 student still forbidden after admin allow", () => {
@@ -214,15 +220,3 @@ describe("section 16 role tests", () => {
     expect(student.kind).toBe("forbidden");
   });
 });
-
-async function writeDenied() {
-  const { writeAudit } = await import("@/lib/auth/audit");
-  await writeAudit({
-    userEmail: "stranger@example.com",
-    role: "outsider",
-    route: "/study",
-    method: "GET",
-    status: 403,
-    detail: "outsider_denied",
-  });
-}
