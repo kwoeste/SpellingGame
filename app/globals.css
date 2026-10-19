@@ -91,3 +91,4 @@ button, input, textarea, select { font: inherit; }
   cursor: pointer;
 }
 .option.selected { border-color: var(--brand); background: #f0f4ff; }
+.sentence.proving, .option.proving { background: #e0f2fe; border-radius: 4px; }
