@@ -5,7 +5,7 @@ import type { ChapterPack, Sentence } from "@/lib/content/types";
 export type StudentStep =
   | { kind: "vocab"; itemId: string; prompt: string; words: string[]; definitions: string[] }
   | { kind: "order"; itemId: string; prompt: string; cards: { id: string; label: string }[] }
-  | { kind: "proof"; itemId: string; prompt: string; options: string[] };
+  | { kind: "proof"; itemId: string; prompt: string; options: string[]; needsEvidence: boolean };
 
 /** What the browser receives for a chapter: text and choices, never answers or wrong-answer feedback. */
 export type StudentChapter = {
@@ -53,7 +53,13 @@ export function toStudentChapter(chapter: ChapterPack): StudentChapter {
       case "mc":
       case "spell":
       case "cloze":
-        return { kind: "proof", itemId: item.id, prompt: item.stem, options: item.options ?? [] };
+        return {
+          kind: "proof",
+          itemId: item.id,
+          prompt: item.stem,
+          options: item.options ?? [],
+          needsEvidence: item.type === "tap_evidence" && Boolean(item.evidenceSentenceId),
+        };
       default: {
         const unreachable: never = item.type;
         throw new Error(`Unhandled item type ${String(unreachable)}`);
