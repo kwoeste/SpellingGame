@@ -60,3 +60,16 @@ describe.skipIf(!existsSync(".next/static"))("public static bundle", () => {
     for (const needle of needles) expect(bundle.includes(needle), needle).toBe(false);
   });
 });
+
+describe("GitHub Pages publish list", () => {
+  it("excludes every top-level app/source entry so Study text never lands on maewoeste.com", () => {
+    const root = process.cwd();
+    const config = readFileSync(path.join(root, "_config.yml"), "utf8");
+    const excluded = new Set([...config.matchAll(/^\s*-\s*(\S+)\s*$/gm)].map((m) => m[1]));
+    const published = ["CNAME", "favicon.png", "public", "_config.yml"];
+    const leaks = readdirSync(root).filter(
+      (name) => !name.startsWith(".") && !name.endsWith(".html") && !published.includes(name) && !excluded.has(name),
+    );
+    expect(leaks).toEqual([]);
+  });
+});

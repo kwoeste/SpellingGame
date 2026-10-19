@@ -21,7 +21,7 @@ import { assertsStudentCannotReadAdmin, migrationSql } from "@/lib/db/sql";
 import { memoryAdminRepo, resetMemoryRepo } from "@/lib/engine/repo-memory";
 import { requireRole } from "@/lib/auth/guards";
 import { resolveUser } from "@/lib/auth/users";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 function req(url: string, email?: string, init?: RequestInit): Request {
@@ -173,13 +173,12 @@ describe("section 16 role tests", () => {
   });
 
   it("R15 student sources omit admin field names", () => {
-    const roots = ["app/study", "app/games", "app/spelling-game", "app/number-match", "components", "public/js"];
+    const roots = ["app/study", "app/games", "app/spelling-game", "app/number-match", "components", "lib/games"];
     const forbidden = ["p_mastery", "frustration", "strategy_label", "/api/admin"];
     for (const root of roots) {
       const walk = (dir: string) => {
-        const fs = require("node:fs") as typeof import("node:fs");
-        if (!fs.existsSync(dir)) return;
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!existsSync(dir)) return;
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
           const full = path.join(dir, entry.name);
           if (entry.isDirectory()) walk(full);
           else if (/\.(ts|tsx|js)$/.test(entry.name)) {
