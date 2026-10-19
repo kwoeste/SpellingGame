@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "MW Design | Mae's site",
-  description: "Free 3D prints, games, and Study for Mae.",
+  description: "Free 3D prints from MW Design.",
   icons: { icon: "/favicon.png" },
 };
 

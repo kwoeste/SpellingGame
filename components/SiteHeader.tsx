@@ -1,6 +1,13 @@
 import Link from "next/link";
+import { auth, signOut } from "@/lib/auth/config";
+import { headerNav, headerViewer, type HeaderNav } from "@/lib/nav";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const session = await auth().catch(() => null);
+  return <SiteHeaderView nav={headerNav(headerViewer(session))} />;
+}
+
+export function SiteHeaderView({ nav }: { nav: HeaderNav }) {
   return (
     <header className="site-header">
       <div className="wrap" style={{ paddingTop: 0, paddingBottom: 0 }}>
@@ -20,13 +27,27 @@ export function SiteHeader() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: "1.6rem" }}>MW Design</h1>
-            <p style={{ margin: "4px 0 10px", opacity: 0.9 }}>3D printing, games, and Study</p>
+            <p style={{ margin: "4px 0 10px", opacity: 0.9 }}>Free 3D prints</p>
             <nav className="site-nav" aria-label="Main">
-              <Link href="/">Shop</Link>
-              <Link href="/store">Store</Link>
-              <Link href="/games">Games</Link>
-              <Link href="/study">Study</Link>
-              <Link href="/sign-in">Sign in</Link>
+              {nav.links.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  {link.label}
+                </Link>
+              ))}
+              {nav.account === "sign-in" ? (
+                <Link href="/sign-in">Sign in</Link>
+              ) : (
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/store" });
+                  }}
+                >
+                  <button type="submit" className="linkish">
+                    Sign out
+                  </button>
+                </form>
+              )}
             </nav>
           </div>
         </div>

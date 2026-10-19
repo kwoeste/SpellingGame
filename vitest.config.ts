@@ -9,6 +9,7 @@ export default defineConfig({
     testTimeout: 20000,
     server: { deps: { inline: ["next-auth"] } },
   },
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),

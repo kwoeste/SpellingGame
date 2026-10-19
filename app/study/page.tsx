@@ -46,6 +46,18 @@ export default async function StudyIndexPage() {
           </div>
         ))}
       </div>
+      <h2>Games</h2>
+      <div className="chips">
+        <Link className="chip" href="/spelling-game">
+          Spelling Safari
+        </Link>
+        <Link className="chip" href="/number-match">
+          Number Match
+        </Link>
+        <Link className="chip" href="/games">
+          Game Lab
+        </Link>
+      </div>
       <h2>Chapter games</h2>
       <div className="chips">
         {games.map((game) => (
