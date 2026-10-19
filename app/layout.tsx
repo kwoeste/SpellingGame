@@ -1,0 +1,20 @@
+import type { Metadata } from "next";
+import { SiteHeader } from "@/components/SiteHeader";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "MW Design | Mae's site",
+  description: "Free 3D prints from MW Design.",
+  icons: { icon: "/favicon.png" },
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <SiteHeader />
+        {children}
+      </body>
+    </html>
+  );
+}

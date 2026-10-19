@@ -290,7 +290,7 @@
         let speakToken = 0;
 
         function audioFile(word, suffix) {
-            return "audio/" + word.toLowerCase().replace(/\s+/g, "-") + suffix + ".mp3";
+            return "public/audio/" + word.toLowerCase().replace(/\s+/g, "-") + suffix + ".mp3";
         }
 
         // Callbacks from a superseded call (token mismatch) are ignored.
