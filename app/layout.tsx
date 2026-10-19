@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ReportProblem } from "@/components/ReportProblem";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
@@ -15,7 +14,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <SiteHeader />
         {children}
-        <ReportProblem />
       </body>
     </html>
   );

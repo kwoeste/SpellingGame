@@ -19,8 +19,12 @@ export function ReportProblem() {
         page: typeof window !== "undefined" ? window.location.pathname : "",
       }),
     });
-    const json = (await res.json()) as { ok?: boolean; url?: string; message?: string };
-    setStatus(json.url ? `Opened: ${json.url}` : json.message || "Thanks. Kevin will see this.");
+    const json = (await res.json().catch(() => ({}))) as { ok?: boolean; url?: string; message?: string };
+    if (json.ok) {
+      setTitle("");
+      setDetails("");
+    }
+    setStatus(json.url ? `Opened: ${json.url}` : json.message || "Something went wrong. Please tell Kevin.");
   }
 
   return (
@@ -33,15 +37,19 @@ export function ReportProblem() {
         <div className="card" style={{ width: 280 }}>
           <strong>Report a problem</strong>
           <p style={{ color: "var(--soft)", fontSize: "0.85rem" }}>
-            This opens a GitHub issue for Kevin. Do not include private details.
+            This sends a note to Kevin. Please don&apos;t include your name, school, or other private details.
           </p>
           <input
+            aria-label="Short title"
+            maxLength={120}
             placeholder="Short title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             style={{ width: "100%", margin: "8px 0", padding: 8 }}
           />
           <textarea
+            aria-label="What happened?"
+            maxLength={2000}
             placeholder="What happened?"
             value={details}
             onChange={(e) => setDetails(e.target.value)}
@@ -56,7 +64,7 @@ export function ReportProblem() {
               Close
             </button>
           </div>
-          {status ? <p>{status}</p> : null}
+          <p role="status" aria-live="polite">{status}</p>
         </div>
       )}
     </div>

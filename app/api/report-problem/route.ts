@@ -1,25 +1,32 @@
 import { NextResponse } from "next/server";
+import { writeAudit } from "@/lib/auth/audit";
+import { jsonForbidden, jsonUnauthorized, noStoreHeaders, requireRole, sameOriginOrForbidden } from "@/lib/auth/guards";
+import { sanitizeIssueText, sanitizePagePath, takeReportToken } from "@/lib/report";
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as {
-    title?: string;
-    details?: string;
-    page?: string;
-  };
+  const blocked = sameOriginOrForbidden(req);
+  if (blocked) return blocked;
+  const gate = await requireRole(req, ["student", "admin"]);
+  if (!gate.ok) return gate.status === 401 ? jsonUnauthorized() : jsonForbidden();
+  const { actor } = gate;
+
+  if (!takeReportToken(actor.email)) {
+    return NextResponse.json({ ok: false, message: "That's a lot of reports. Try again later." }, { status: 429, headers: noStoreHeaders() });
+  }
+  const body = (await req.json().catch(() => null)) as { title?: unknown; details?: unknown; page?: unknown } | null;
+  const title = sanitizeIssueText(typeof body?.title === "string" ? body.title : "", 120).replace(/\s+/g, " ");
+  const details = sanitizeIssueText(typeof body?.details === "string" ? body.details : "", 2000);
+  if (!title && !details) {
+    return NextResponse.json({ ok: false, message: "Tell us what happened first." }, { status: 400, headers: noStoreHeaders() });
+  }
+  const page = sanitizePagePath(body?.page);
+
+  await writeAudit({ userEmail: actor.email, role: actor.role, route: "/api/report-problem", method: "POST", status: 200, detail: `report:${page}` });
+
   const token = process.env.GITHUB_ISSUE_TOKEN;
   const repo = process.env.GITHUB_REPO || "kwoeste/SpellingGame";
-  const title = (body.title || "Problem on Mae's site").slice(0, 120);
-  const page = body.page || "unknown";
-  const details = (body.details || "").slice(0, 4000);
   if (!token) {
-    return NextResponse.json(
-      {
-        ok: false,
-        queued: true,
-        message: "Saved locally. A GitHub token is not configured yet, so Kevin needs to add GITHUB_ISSUE_TOKEN.",
-      },
-      { status: 202 },
-    );
+    return NextResponse.json({ ok: true, queued: false, message: "Thanks! Kevin will see this." }, { status: 202, headers: noStoreHeaders() });
   }
   const response = await fetch(`https://api.github.com/repos/${repo}/issues`, {
     method: "POST",
@@ -30,13 +37,14 @@ export async function POST(req: Request) {
       "User-Agent": "maewoeste-site",
     },
     body: JSON.stringify({
-      title,
-      body: `Reported from \`${page}\`.\n\n${details}\n\n---\nNo student personal data included.`,
+      title: title || "Problem on Mae's site",
+      body: `Reported by a signed-in ${actor.role} from \`${page}\`.\n\n${details || "(no details)"}`,
     }),
-  });
-  if (!response.ok) {
-    return NextResponse.json({ ok: false, message: "Could not open a GitHub issue." }, { status: 502 });
+  }).catch(() => null);
+  if (!response?.ok) {
+    return NextResponse.json({ ok: false, message: "Could not send that. Please tell Kevin." }, { status: 502, headers: noStoreHeaders() });
   }
   const created = (await response.json()) as { html_url?: string };
-  return NextResponse.json({ ok: true, url: created.html_url });
+  const url = actor.role === "admin" ? created.html_url : undefined;
+  return NextResponse.json({ ok: true, url, message: "Thanks! Kevin will see this." }, { headers: noStoreHeaders() });
 }
