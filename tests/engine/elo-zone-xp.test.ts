@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { predictedCorrect, updateElo } from "@/lib/engine/elo";
 import { conceptGatePassed } from "@/lib/engine/gating";
 import { dueAt, etDateKey, intervalDays, nextBoxOnPass } from "@/lib/engine/scheduler";
-import { resetXpLedger, ringPercent, xpForMinute } from "@/lib/engine/xp";
+import { ringPercent, xpForMinute } from "@/lib/engine/xp";
 import { itemSelectionScore, targetSuccess } from "@/lib/engine/zone";
 
 describe("Elo and zone", () => {
@@ -10,8 +10,13 @@ describe("Elo and zone", () => {
     const p = predictedCorrect(0, 0, 0.25);
     expect(p).toBeGreaterThan(0.5);
     expect(p).toBeLessThan(0.8);
-    const updated = updateElo({ theta: 0, difficulty: 0, outcome: 1, nLearner: 0, nItem: 0, guess: 0.25 });
+    const updated = updateElo({ theta: 0, difficulty: 0, outcome: 1, nLearner: 0, nItem: 0, guess: 0.25, seed: 0 });
     expect(updated.theta).toBeGreaterThan(0);
+    let difficulty = 0;
+    for (let i = 0; i < 500; i += 1) {
+      difficulty = updateElo({ theta: 5, difficulty, outcome: 0, nLearner: 50, nItem: 0, guess: 0.25, seed: 0 }).difficulty;
+    }
+    expect(difficulty).toBeCloseTo(1);
     expect(targetSuccess(0.64)).toBe(0.9);
     expect(targetSuccess(0.82)).toBe(0.82);
     expect(itemSelectionScore({ predicted: 0.82, target: 0.82, dueReview: false, holeFill: false, interestMatch: false, templateNovelty: false })).toBeCloseTo(0);
@@ -28,14 +33,13 @@ describe("gating", () => {
 });
 
 describe("xp and rings", () => {
-  it("does not double-count minutes or reward idle/rapid-guess", () => {
-    resetXpLedger();
-    const base = { sessionId: "s1", minuteStart: 1000, qualifyingActions: 1, idleGapMs: 0, majorityRapidGuess: false, videoHidden: false };
+  it("does not reward idle/rapid-guess minutes", () => {
+    const base = { qualifyingActions: 1, idleGapMs: 0, majorityRapidGuess: false, videoHidden: false };
     expect(xpForMinute(base)).toBe(10);
-    expect(xpForMinute(base)).toBe(0);
-    expect(xpForMinute({ ...base, sessionId: "s2", idleGapMs: 50000 })).toBe(0);
-    expect(xpForMinute({ ...base, sessionId: "s3", majorityRapidGuess: true })).toBe(0);
-    expect(xpForMinute({ ...base, sessionId: "s4", videoHidden: true })).toBe(0);
+    expect(xpForMinute({ ...base, qualifyingActions: 0 })).toBe(0);
+    expect(xpForMinute({ ...base, idleGapMs: 50000 })).toBe(0);
+    expect(xpForMinute({ ...base, majorityRapidGuess: true })).toBe(0);
+    expect(xpForMinute({ ...base, videoHidden: true })).toBe(0);
     expect(ringPercent(6, 8)).toBe(75);
   });
 });

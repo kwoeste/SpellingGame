@@ -1,9 +1,6 @@
-import { NextResponse } from "next/server";
-import { adminGate } from "@/lib/auth/admin-api";
-import { adminEvents } from "@/lib/engine/store";
+import { adminRead } from "@/lib/auth/admin-api";
+import { adminRepo } from "@/lib/engine/repos";
 
 export async function GET(req: Request) {
-  const gate = await adminGate(req);
-  if (!gate.ok) return gate.response;
-  return NextResponse.json({ event_count: adminEvents().length }, { headers: gate.headers });
+  return adminRead(req, async () => ({ engaged_minutes_by_day: await adminRepo().engagedMinutesByDay() }));
 }

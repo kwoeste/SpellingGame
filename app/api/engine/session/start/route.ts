@@ -1,30 +1,18 @@
-import { NextResponse } from "next/server";
-import { jsonForbidden, jsonUnauthorized, noStoreHeaders, requireRole } from "@/lib/auth/guards";
-import { nextItemFor, startSession } from "@/lib/engine/store";
+import { engineActor, engineFailure, engineJson, readJson } from "@/lib/engine/http";
+import { engineRepo } from "@/lib/engine/repos";
+import { startSession } from "@/lib/engine/service";
 
 export async function POST(req: Request) {
-  const gate = await requireRole(req, ["student", "admin"]);
-  if (!gate.ok) {
-    return gate.status === 401 ? jsonUnauthorized() : jsonForbidden();
+  const gate = await engineActor(req);
+  if (!gate.ok) return gate.response;
+  const body = await readJson(req);
+  try {
+    const result = await startSession(engineRepo(), gate.actor, {
+      entryPoint: typeof body.entry === "string" ? body.entry.slice(0, 40) : "study",
+      chapterId: typeof body.chapterId === "string" ? body.chapterId : null,
+    });
+    return engineJson({ session_id: result.sessionId, preview: result.preview, chapter: result.chapter });
+  } catch (error) {
+    return engineFailure(error);
   }
-  const body = (await req.json().catch(() => ({}))) as { entry?: string; chapterId?: string; preview?: boolean };
-  const isPreview = gate.actor.role === "admin" && Boolean(body.preview);
-  if (!gate.actor.learnerId && !isPreview) {
-    return jsonForbidden();
-  }
-  const learnerId = isPreview ? "learner-preview" : (gate.actor.learnerId as string);
-  const session = startSession({
-    learnerId,
-    entryPoint: body.entry ?? "study",
-    isPreview,
-  });
-  const item = nextItemFor({
-    learnerId,
-    sessionId: session.id,
-    chapterId: body.chapterId,
-  });
-  return NextResponse.json(
-    { session_id: session.id, item, preview: isPreview },
-    { headers: noStoreHeaders() },
-  );
 }

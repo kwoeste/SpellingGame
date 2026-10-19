@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
-import { jsonForbidden, jsonUnauthorized, noStoreHeaders, requireRole } from "@/lib/auth/guards";
-import { progressSummary } from "@/lib/engine/store";
+import { toStudentProgress } from "@/lib/engine/dto";
+import { engineActor, engineFailure, engineJson } from "@/lib/engine/http";
+import { engineRepo } from "@/lib/engine/repos";
+import { progressSummary } from "@/lib/engine/service";
 
 export async function GET(req: Request) {
-  const gate = await requireRole(req, ["student", "admin"]);
-  if (!gate.ok) {
-    return gate.status === 401 ? jsonUnauthorized() : jsonForbidden();
+  const gate = await engineActor(req);
+  if (!gate.ok) return gate.response;
+  try {
+    return engineJson(toStudentProgress(await progressSummary(engineRepo(), gate.actor)));
+  } catch (error) {
+    return engineFailure(error);
   }
-  const learnerId = gate.actor.learnerId;
-  if (!learnerId) return jsonForbidden();
-  return NextResponse.json(progressSummary(learnerId), { headers: noStoreHeaders() });
 }

@@ -35,13 +35,14 @@ export function updateElo(args: {
   nLearner: number;
   nItem: number;
   guess: number;
+  /** The item's authored difficulty; drift is bounded to seed +/- 1. */
+  seed: number;
   boostK?: number;
 }): { theta: number; difficulty: number; p: number } {
   const p = predictedCorrect(args.theta, args.difficulty, args.guess);
   const kBoost = args.boostK ?? 1;
   const nextTheta = args.theta + learnerK(args.nLearner) * kBoost * (args.outcome - p);
   let nextD = args.difficulty - itemK(args.nItem) * kBoost * (args.outcome - p);
-  const seed = args.difficulty;
-  nextD = Math.min(seed + 1, Math.max(seed - 1, nextD));
+  nextD = Math.min(args.seed + 1, Math.max(args.seed - 1, nextD));
   return { theta: nextTheta, difficulty: nextD, p };
 }

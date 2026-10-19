@@ -1,0 +1,259 @@
+import type {
+  AdminRepo,
+  EngineRepo,
+  FirstAnswer,
+  GateAttempt,
+  ItemRating,
+  LearnerTx,
+  LikeRow,
+  MasteryRow,
+  PlaySession,
+  ReviewRow,
+  StoredEvent,
+} from "@/lib/engine/repo";
+
+type MemoryState = {
+  sessions: Map<string, PlaySession>;
+  events: StoredEvent[];
+  eventIds: Set<string>;
+  mastery: Map<string, MasteryRow & { learnerId: string }>;
+  reviews: Map<string, ReviewRow & { learnerId: string }>;
+  ratings: Map<string, ItemRating>;
+  decisions: Record<string, unknown>[];
+  gates: (GateAttempt & { learnerId: string })[];
+  xp: Map<string, { learnerId: string; sessionId: string; minuteStart: number; xp: number }>;
+  likes: { learnerId: string; interestTag: string; liked: boolean; ts: number }[];
+  configs: { version: string; json: Record<string, unknown>; createdBy: string }[];
+};
+
+function emptyState(): MemoryState {
+  return {
+    sessions: new Map(),
+    events: [],
+    eventIds: new Set(),
+    mastery: new Map(),
+    reviews: new Map(),
+    ratings: new Map(),
+    decisions: [],
+    gates: [],
+    xp: new Map(),
+    likes: [],
+    configs: [],
+  };
+}
+
+let state = emptyState();
+
+export function resetMemoryRepo(): void {
+  state = emptyState();
+}
+
+function clone<T>(value: T): T {
+  return structuredClone(value);
+}
+
+function answersFor(learnerId: string, itemIds: string[], since: number): StoredEvent[] {
+  const wanted = new Set(itemIds);
+  return state.events
+    .filter(
+      (e) =>
+        e.learnerId === learnerId &&
+        e.type === "answer_submitted" &&
+        !e.isPreview &&
+        e.itemId !== null &&
+        wanted.has(e.itemId) &&
+        e.serverTs > since,
+    )
+    .sort((a, b) => a.serverTs - b.serverTs || a.seq - b.seq);
+}
+
+class MemoryLearnerTx implements LearnerTx {
+  constructor(readonly learnerId: string) {}
+
+  async getSession(id: string) {
+    const s = state.sessions.get(id);
+    return s && s.learnerId === this.learnerId ? clone(s) : null;
+  }
+
+  async latestOpenSession() {
+    const open = [...state.sessions.values()]
+      .filter((s) => s.learnerId === this.learnerId && !s.endedAt && !s.isPreview)
+      .sort((a, b) => b.lastEventAt - a.lastEventAt)[0];
+    return open ? clone(open) : null;
+  }
+
+  async insertSession(session: PlaySession) {
+    state.sessions.set(session.id, clone({ ...session, learnerId: this.learnerId }));
+  }
+
+  async updateSession(session: PlaySession) {
+    const existing = state.sessions.get(session.id);
+    if (existing && existing.learnerId === this.learnerId) state.sessions.set(session.id, clone(session));
+  }
+
+  async insertEvent(event: StoredEvent) {
+    if (state.eventIds.has(event.id)) return false;
+    state.eventIds.add(event.id);
+    state.events.push(clone({ ...event, learnerId: this.learnerId }));
+    return true;
+  }
+
+  async countAnswers(sessionId: string, itemId: string) {
+    return state.events.filter(
+      (e) =>
+        e.learnerId === this.learnerId &&
+        e.sessionId === sessionId &&
+        e.itemId === itemId &&
+        e.type === "answer_submitted",
+    ).length;
+  }
+
+  async firstAnswersSince(itemIds: string[], since: number): Promise<FirstAnswer[]> {
+    const seen = new Map<string, FirstAnswer>();
+    for (const e of answersFor(this.learnerId, itemIds, since)) {
+      if (!seen.has(e.itemId as string)) {
+        seen.set(e.itemId as string, { itemId: e.itemId as string, isCorrect: Boolean(e.isCorrect), hintLevel: e.hintLevel ?? 0 });
+      }
+    }
+    return [...seen.values()];
+  }
+
+  async correctItemsSince(itemIds: string[], since: number) {
+    return new Set(answersFor(this.learnerId, itemIds, since).filter((e) => e.isCorrect).map((e) => e.itemId as string));
+  }
+
+  async lastEventOfType(type: string, activityId: string, since: number) {
+    const hits = state.events.filter(
+      (e) => e.learnerId === this.learnerId && e.type === type && e.activityId === activityId && e.serverTs > since,
+    );
+    return hits.length ? Math.max(...hits.map((e) => e.serverTs)) : null;
+  }
+
+  async answeredItemIds() {
+    return new Set(
+      state.events
+        .filter((e) => e.learnerId === this.learnerId && e.type === "answer_submitted" && !e.isPreview && e.itemId)
+        .map((e) => e.itemId as string),
+    );
+  }
+
+  async getMastery(conceptId: string) {
+    const row = state.mastery.get(`${this.learnerId}:${conceptId}`);
+    if (!row) return null;
+    const { learnerId: _ignored, ...rest } = row;
+    return clone(rest);
+  }
+
+  async upsertMastery(row: MasteryRow) {
+    state.mastery.set(`${this.learnerId}:${row.conceptId}`, clone({ ...row, learnerId: this.learnerId }));
+  }
+
+  async getReview(targetType: string, targetId: string) {
+    const row = state.reviews.get(`${this.learnerId}:${targetType}:${targetId}`);
+    if (!row) return null;
+    const { learnerId: _ignored, ...rest } = row;
+    return clone(rest);
+  }
+
+  async upsertReview(row: ReviewRow) {
+    state.reviews.set(`${this.learnerId}:${row.targetType}:${row.targetId}`, clone({ ...row, learnerId: this.learnerId }));
+  }
+
+  async getItemRating(itemId: string) {
+    const rating = state.ratings.get(itemId);
+    return rating ? clone(rating) : null;
+  }
+
+  async upsertItemRating(rating: ItemRating) {
+    state.ratings.set(rating.itemId, clone(rating));
+  }
+
+  async insertDecision(sessionId: string, decision: string, reasonCode: string, inputs: Record<string, unknown>) {
+    state.decisions.push({ learnerId: this.learnerId, sessionId, decision, reasonCode, inputs, ts: Date.now() });
+  }
+
+  async lastGateAttempt(scope: GateAttempt["scope"], scopeId: string) {
+    const rows = state.gates.filter((g) => g.learnerId === this.learnerId && g.scope === scope && g.scopeId === scopeId);
+    const last = rows.sort((a, b) => b.finishedAt - a.finishedAt)[0];
+    if (!last) return null;
+    const { learnerId: _ignored, ...rest } = last;
+    return clone(rest);
+  }
+
+  async insertGateAttempt(attempt: GateAttempt) {
+    state.gates.push(clone({ ...attempt, learnerId: this.learnerId }));
+  }
+
+  async passedGateScopeIds(scope: GateAttempt["scope"]) {
+    return [...new Set(state.gates.filter((g) => g.learnerId === this.learnerId && g.scope === scope && g.passed).map((g) => g.scopeId))];
+  }
+
+  async awardXp(sessionId: string, minuteStart: number, xp: number) {
+    const key = `${sessionId}:${minuteStart}`;
+    if (state.xp.has(key)) return false;
+    state.xp.set(key, { learnerId: this.learnerId, sessionId, minuteStart, xp });
+    return true;
+  }
+
+  async xpRows() {
+    return [...state.xp.values()].filter((r) => r.learnerId === this.learnerId).map(({ minuteStart, xp }) => ({ minuteStart, xp }));
+  }
+
+  async saveLikes(tags: LikeRow[]) {
+    const now = Date.now();
+    for (const tag of tags) state.likes.push({ learnerId: this.learnerId, interestTag: tag.interestTag, liked: tag.liked, ts: now });
+  }
+
+  async getLikes() {
+    const latest = new Map<string, LikeRow>();
+    for (const row of state.likes.filter((r) => r.learnerId === this.learnerId)) {
+      latest.set(row.interestTag, { interestTag: row.interestTag, liked: row.liked });
+    }
+    return [...latest.values()];
+  }
+}
+
+export const memoryEngineRepo: EngineRepo = {
+  async withLearner(learnerId, work) {
+    return work(new MemoryLearnerTx(learnerId));
+  },
+};
+
+export const memoryAdminRepo: AdminRepo = {
+  async mastery() {
+    return clone([...state.mastery.values()]);
+  },
+  async wrongAnswers(limit) {
+    return clone(state.events.filter((e) => e.type === "answer_submitted" && e.isCorrect === false && !e.isPreview).slice(-limit).reverse());
+  },
+  async events(limit) {
+    return clone(state.events.slice(-limit).reverse());
+  },
+  async decisions(limit) {
+    return clone(state.decisions.slice(-limit).reverse());
+  },
+  async likes() {
+    const latest = new Map<string, LikeRow & { learnerId: string }>();
+    for (const row of state.likes) latest.set(`${row.learnerId}:${row.interestTag}`, { learnerId: row.learnerId, interestTag: row.interestTag, liked: row.liked });
+    return [...latest.values()];
+  },
+  async engagedMinutesByDay() {
+    const byDay = new Map<string, number>();
+    for (const row of state.xp.values()) {
+      const day = new Date(row.minuteStart).toISOString().slice(0, 10);
+      byDay.set(day, (byDay.get(day) ?? 0) + 1);
+    }
+    return [...byDay.entries()].map(([day, minutes]) => ({ day, minutes }));
+  },
+  async counts() {
+    return { events: state.events.length, mastery: state.mastery.size, reviews: state.reviews.size };
+  },
+  async activeConfig() {
+    return state.configs.at(-1)?.json ?? null;
+  },
+  async saveConfig(config, createdBy) {
+    const version = `v${state.configs.length + 2}-${Date.now()}`;
+    state.configs.push({ version, json: clone(config), createdBy });
+    return version;
+  },
+};
