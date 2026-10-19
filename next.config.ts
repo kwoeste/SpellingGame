@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/spelling-game": ["./spelling-game.html"],
+    "/number-match": ["./number-match.html"],
+  },
   async redirects() {
     return [
       { source: "/index.html", destination: "/", permanent: false },

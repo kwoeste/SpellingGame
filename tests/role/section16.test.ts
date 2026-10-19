@@ -173,7 +173,7 @@ describe("section 16 role tests", () => {
   });
 
   it("R15 student sources omit admin field names", () => {
-    const roots = ["app/study", "app/games", "app/spelling-game", "app/number-match", "public/js"];
+    const roots = ["app/study", "app/games", "app/spelling-game", "app/number-match", "components", "public/js"];
     const forbidden = ["p_mastery", "frustration", "strategy_label", "/api/admin"];
     for (const root of roots) {
       const walk = (dir: string) => {

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 
 const forbidden = ["p_mastery", "frustration", "strategy_label", "/api/admin"];
-const roots = ["app/study", "app/games", "app/spelling-game", "app/number-match", "public/js"];
+const roots = ["app/study", "app/games", "app/spelling-game", "app/number-match", "components", "public/js"];
 const hits = [];
 
 function walk(dir) {
