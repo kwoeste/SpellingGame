@@ -159,11 +159,6 @@ export function ChapterPlayer({
   return (
     <div className="card">
       {preview ? <p className="notice">Preview: answers are checked but not saved.</p> : null}
-      {isAdmin && chapter.pendingReligionReview ? (
-        <p className="notice">
-          Religion content is pending review and hidden from Mae. Bible translation: {chapter.bibleTranslation ?? "NABRE"} (set with BIBLE_TRANSLATION).
-        </p>
-      ) : null}
       {progress?.starEarned ? <p aria-label="Star earned">⭐ You earned the star for this chapter.</p> : null}
       {welcomeBack && view.kind !== "done" ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
       <p className="kid-kicker">{view.kind === "keywords" ? "Words you'll see" : chapter.bigQuestion}</p>

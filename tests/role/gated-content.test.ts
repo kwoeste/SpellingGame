@@ -21,6 +21,36 @@ describe("gated games", () => {
     expect(gameVisibleTo("not-a-game", "admin")).toBe(false);
   });
 
+  it("shows religion banner only to admins, not students, with correct wording", () => {
+    const chapterPlayerSrc = readFileSync(path.join(process.cwd(), "components/ChapterPlayer.tsx"), "utf8");
+    // Banner must live in the server page, not the client ChapterPlayer bundle.
+    expect(chapterPlayerSrc).not.toContain("Admin note");
+    const chapterPageSrc = readFileSync(path.join(process.cwd(), "app/study/[chapterId]/page.tsx"), "utf8");
+    expect(chapterPageSrc).not.toMatch(/^["']use client["']/);
+    expect(chapterPageSrc).toContain("isAdmin && chapter.pendingReligionReview");
+    expect(chapterPageSrc).toContain("Admin note: Religion chapters are hidden from Mae until approved.");
+    expect(chapterPlayerSrc).not.toContain("BIBLE_TRANSLATION");
+    expect(chapterPlayerSrc).not.toContain("Bible translation:");
+    
+    const gamePageSrc = readFileSync(path.join(process.cwd(), "app/games/[gameId]/page.tsx"), "utf8");
+    expect(gamePageSrc).toContain("isAdmin && spec.pendingReligionReview");
+    expect(gamePageSrc).toContain("Admin note: Religion games are hidden from Mae until approved.");
+    expect(gamePageSrc).not.toMatch(/^["']use client["']/);
+  });
+
+  it("does not ship admin religion banner text in any client chunk", () => {
+    const dir = path.join(process.cwd(), ".next/static");
+    const walk = (d: string): string[] =>
+      readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+    const js = walk(dir).filter((f) => f.endsWith(".js"));
+    expect(js.length).toBeGreaterThan(0);
+    for (const f of js) {
+      const src = readFileSync(f, "utf8");
+      expect(src, f).not.toContain("Admin note");
+      expect(src, f).not.toContain("hidden from Mae");
+    }
+  });
+
   it("keeps D-1 audio clips on the /audio/ path, not public/audio/", () => {
     const src = readFileSync(path.join(process.cwd(), "lib/games/spelling-lists.ts"), "utf8");
     expect(src).toContain("/audio/");

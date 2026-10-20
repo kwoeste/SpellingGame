@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Mascot } from "@/components/ui/Mascot";
 import { etDateKey } from "@/lib/engine/scheduler";
 import type { StudentProgress } from "@/lib/engine/service";
@@ -17,6 +20,7 @@ const SUBJECT_LABEL: Record<string, string> = {
 };
 
 const SUBJECT_ORDER = ["science", "math", "ela", "religion"];
+const COLLAPSED_LIMIT = 6;
 
 export function ProgressView({ displayName, progress, allChapters }: Props) {
   const hasProgress = progress.starsEarned > 0 || progress.streakDays > 0 || progress.xpTotal > 0;
@@ -101,28 +105,13 @@ export function ProgressView({ displayName, progress, allChapters }: Props) {
           </p>
         )}
         {chaptersBySubject.map(group => (
-          <div key={group.subject} className="badges-group">
-            <h4 className="badges-group-label">{group.label}</h4>
-            <div className="badges-grid">
-              {group.chapters.map((chapter) => {
-                const earned = earnedIds.has(chapter.id);
-                const badge = progress.badges.find(b => b.id === `${chapter.id}-star`);
-                return (
-                  <div key={chapter.id} className={`badge-card ${earned ? "earned" : "locked"}`}>
-                    <span className="badge-icon">{earned ? "⭐" : "🔒"}</span>
-                    <div className="badge-info">
-                      <span className="badge-label">{chapter.titleKid}</span>
-                      {earned && badge ? (
-                        <span className="badge-date">Earned {badge.earnedAt}</span>
-                      ) : (
-                        <span className="badge-hint">Complete this chapter</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <BadgeGroup
+            key={group.subject}
+            label={group.label}
+            chapters={group.chapters}
+            earnedIds={earnedIds}
+            badges={progress.badges}
+          />
         ))}
       </section>
 
@@ -192,6 +181,65 @@ function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }
         <span className="streak-cell-compact played mini" /> Played
         <span className="streak-cell-compact today mini" style={{ marginLeft: 12 }} /> Today
       </div>
+    </div>
+  );
+}
+
+function BadgeGroup({
+  label,
+  chapters,
+  earnedIds,
+  badges,
+}: {
+  label: string;
+  chapters: { id: string; titleKid: string }[];
+  earnedIds: Set<string>;
+  badges: { id: string; earnedAt: string }[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  
+  const earnedChapters = chapters.filter(ch => earnedIds.has(ch.id));
+  const lockedChapters = chapters.filter(ch => !earnedIds.has(ch.id));
+  
+  const visibleLocked = expanded ? lockedChapters : lockedChapters.slice(0, COLLAPSED_LIMIT);
+  const hasMoreLocked = lockedChapters.length > COLLAPSED_LIMIT;
+  const hiddenCount = lockedChapters.length - COLLAPSED_LIMIT;
+
+  return (
+    <div className="badges-group">
+      <h4 className="badges-group-label">{label}</h4>
+      <div className="badges-grid">
+        {earnedChapters.map((chapter) => {
+          const badge = badges.find(b => b.id === `${chapter.id}-star`);
+          return (
+            <div key={chapter.id} className="badge-card earned">
+              <span className="badge-icon">⭐</span>
+              <div className="badge-info">
+                <span className="badge-label">{chapter.titleKid}</span>
+                {badge && <span className="badge-date">Earned {badge.earnedAt}</span>}
+              </div>
+            </div>
+          );
+        })}
+        {visibleLocked.map((chapter) => (
+          <div key={chapter.id} className="badge-card locked">
+            <span className="badge-icon">🔒</span>
+            <div className="badge-info">
+              <span className="badge-label">{chapter.titleKid}</span>
+              <span className="badge-hint">Complete this chapter</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {hasMoreLocked && !expanded && (
+        <button
+          type="button"
+          className="badges-show-all"
+          onClick={() => setExpanded(true)}
+        >
+          Show all ({hiddenCount} more)
+        </button>
+      )}
     </div>
   );
 }

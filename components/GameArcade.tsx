@@ -68,16 +68,35 @@ export function GameArcade({ tiles, resumeHref }: { tiles: ArcadeTile[]; resumeH
           </button>
         ))}
       </div>
-      {groups.map((group) => (
-        <div key={group.group} style={{ marginBottom: 22 }}>
-          <h3>{group.label}</h3>
-          <div className="arcade-grid">
-            {group.tiles.map((tile) => (
-              <TileCard key={tile.id} tile={tile} />
+      {(() => {
+        const smallGroups = groups.filter((g) => g.tiles.length === 1);
+        const regularGroups = groups.filter((g) => g.tiles.length > 1);
+        const moreGames = smallGroups.flatMap((g) => g.tiles);
+        return (
+          <>
+            {regularGroups.map((group) => (
+              <div key={group.group} style={{ marginBottom: 22 }}>
+                <h3>{group.label}</h3>
+                <div className="arcade-grid">
+                  {group.tiles.map((tile) => (
+                    <TileCard key={tile.id} tile={tile} />
+                  ))}
+                </div>
+              </div>
             ))}
-          </div>
-        </div>
-      ))}
+            {moreGames.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <h3>More games</h3>
+                <div className="arcade-grid">
+                  {moreGames.map((tile) => (
+                    <TileCard key={tile.id} tile={tile} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </section>
   );
 }
