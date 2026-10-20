@@ -161,7 +161,7 @@ export function ChapterPlayer({
       {preview ? <p className="notice">Preview: answers are checked but not saved.</p> : null}
       {isAdmin && chapter.pendingReligionReview ? (
         <p className="notice">
-          Religion content is pending review and hidden from Mae. Bible translation: {chapter.bibleTranslation ?? "NABRE"} (set with BIBLE_TRANSLATION).
+          Admin note: Religion chapters are hidden from Mae until approved.
         </p>
       ) : null}
       {progress?.starEarned ? <p aria-label="Star earned">⭐ You earned the star for this chapter.</p> : null}

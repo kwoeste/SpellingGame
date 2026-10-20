@@ -20,9 +20,12 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
   const game = NAMED_GAMES.find((row) => row.id === gameId);
   if (!game || !isGameId(game.id) || !gameVisibleTo(game.id, user.role)) notFound();
   const spec = gameSpec(game.id);
+  const isAdmin = user.role === "admin";
   return (
     <div className="kid-shell">
-      {spec.pendingReligionReview ? <p className="notice">Religion game pending review; hidden from Mae.</p> : null}
+      {isAdmin && spec.pendingReligionReview ? (
+        <p className="notice">Admin note: Religion games are hidden from Mae until approved.</p>
+      ) : null}
       <NamedGame gameId={game.id} title={game.title} spec={spec} />
     </div>
   );

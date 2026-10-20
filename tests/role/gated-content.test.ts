@@ -21,6 +21,18 @@ describe("gated games", () => {
     expect(gameVisibleTo("not-a-game", "admin")).toBe(false);
   });
 
+  it("shows religion banner only to admins, not students, with correct wording", () => {
+    const chapterPlayerSrc = readFileSync(path.join(process.cwd(), "components/ChapterPlayer.tsx"), "utf8");
+    expect(chapterPlayerSrc).toContain("isAdmin && chapter.pendingReligionReview");
+    expect(chapterPlayerSrc).toContain("Admin note: Religion chapters are hidden from Mae until approved.");
+    expect(chapterPlayerSrc).not.toContain("BIBLE_TRANSLATION");
+    expect(chapterPlayerSrc).not.toContain("Bible translation:");
+    
+    const gamePageSrc = readFileSync(path.join(process.cwd(), "app/games/[gameId]/page.tsx"), "utf8");
+    expect(gamePageSrc).toContain("isAdmin && spec.pendingReligionReview");
+    expect(gamePageSrc).toContain("Admin note: Religion games are hidden from Mae until approved.");
+  });
+
   it("keeps D-1 audio clips on the /audio/ path, not public/audio/", () => {
     const src = readFileSync(path.join(process.cwd(), "lib/games/spelling-lists.ts"), "utf8");
     expect(src).toContain("/audio/");

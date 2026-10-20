@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { LikesPicker } from "@/components/LikesPicker";
 import { SettingsPopover } from "@/components/SettingsPopover";
 import { Mascot } from "@/components/ui/Mascot";
@@ -116,36 +119,15 @@ export function StudentDashboard({
             const ring = subjectRings.find((row) => row.id === `subject:${subject}`);
             const nextChapter = group.find((ch) => (chapterPct.get(ch.id) ?? 0) < 100);
             return (
-              <div key={subject} className={`pack-card ${subject}`}>
-                <div className="pack-header">
-                  <span className="pack-emoji">{SUBJECT_EMOJI[subject]}</span>
-                  <h3>{SUBJECT_LABEL[subject]}</h3>
-                  <ProgressRing pct={ring?.pct ?? 0} label="" size={56} />
-                </div>
-                <div className="path-dots">
-                  {group.map((chapter) => {
-                    const pct = chapterPct.get(chapter.id) ?? 0;
-                    const cls = pct >= 100 ? "done" : quest?.chapterId === chapter.id ? "now" : "";
-                    return (
-                      <Link
-                        key={chapter.id}
-                        href={`/study/${chapter.id}`}
-                        className={`path-dot ${cls}`}
-                        title={chapter.titleKid}
-                        aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
-                      >
-                        {pct >= 100 ? "★" : chapter.number}
-                      </Link>
-                    );
-                  })}
-                </div>
-                {nextChapter && (
-                  <Link href={`/study/${nextChapter.id}`} className="pack-next-btn">
-                    <span className="pack-next-arrow">→</span>
-                    <span>Next: {nextChapter.titleKid}</span>
-                  </Link>
-                )}
-              </div>
+              <ChapterPack
+                key={subject}
+                subject={subject}
+                chapters={group}
+                ring={ring}
+                nextChapter={nextChapter}
+                chapterPct={chapterPct}
+                questChapterId={quest?.chapterId ?? null}
+              />
             );
           })}
         </div>
@@ -178,6 +160,123 @@ export function StudentDashboard({
       <p style={{ marginTop: 28 }}>
         <Link href="/store">Visit Mae&apos;s 3D print shop</Link>
       </p>
+    </div>
+  );
+}
+
+const COMPACT_THRESHOLD = 12;
+const COMPACT_VISIBLE = 8;
+
+function ChapterPack({
+  subject,
+  chapters,
+  ring,
+  nextChapter,
+  chapterPct,
+  questChapterId,
+}: {
+  subject: DashChapter["subject"];
+  chapters: DashChapter[];
+  ring: { pct: number } | undefined;
+  nextChapter: DashChapter | undefined;
+  chapterPct: Map<string, number>;
+  questChapterId: string | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isLarge = chapters.length > COMPACT_THRESHOLD;
+  const visibleChapters = isLarge && !expanded ? chapters.slice(0, COMPACT_VISIBLE) : chapters;
+  const hiddenCount = chapters.length - COMPACT_VISIBLE;
+
+  return (
+    <div className={`pack-card ${subject}`}>
+      <div className="pack-header">
+        <span className="pack-emoji">{SUBJECT_EMOJI[subject]}</span>
+        <h3>{SUBJECT_LABEL[subject]}</h3>
+        <ProgressRing pct={ring?.pct ?? 0} label="" size={56} />
+      </div>
+      {isLarge && !expanded ? (
+        <>
+          <div className="path-dots path-dots-compact">
+            {visibleChapters.map((chapter) => {
+              const pct = chapterPct.get(chapter.id) ?? 0;
+              const cls = pct >= 100 ? "done" : questChapterId === chapter.id ? "now" : "";
+              return (
+                <Link
+                  key={chapter.id}
+                  href={`/study/${chapter.id}`}
+                  className={`path-dot ${cls}`}
+                  title={chapter.titleKid}
+                  aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
+                >
+                  {pct >= 100 ? "★" : chapter.number}
+                </Link>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className="pack-expand-btn"
+            onClick={() => setExpanded(true)}
+          >
+            Show all {chapters.length} chapters
+          </button>
+        </>
+      ) : (
+        <>
+          {isLarge ? (
+            <div className="chapter-list">
+              {chapters.map((chapter) => {
+                const pct = chapterPct.get(chapter.id) ?? 0;
+                const done = pct >= 100;
+                const now = questChapterId === chapter.id;
+                return (
+                  <Link
+                    key={chapter.id}
+                    href={`/study/${chapter.id}`}
+                    className={`chapter-list-item${done ? " done" : ""}${now ? " now" : ""}`}
+                  >
+                    <span className="chapter-list-num">{done ? "★" : chapter.number}</span>
+                    <span className="chapter-list-title">{chapter.titleKid}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="path-dots">
+              {chapters.map((chapter) => {
+                const pct = chapterPct.get(chapter.id) ?? 0;
+                const cls = pct >= 100 ? "done" : questChapterId === chapter.id ? "now" : "";
+                return (
+                  <Link
+                    key={chapter.id}
+                    href={`/study/${chapter.id}`}
+                    className={`path-dot ${cls}`}
+                    title={chapter.titleKid}
+                    aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
+                  >
+                    {pct >= 100 ? "★" : chapter.number}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+          {isLarge && (
+            <button
+              type="button"
+              className="pack-collapse-btn"
+              onClick={() => setExpanded(false)}
+            >
+              Show less
+            </button>
+          )}
+        </>
+      )}
+      {nextChapter && (
+        <Link href={`/study/${nextChapter.id}`} className="pack-next-btn">
+          <span className="pack-next-arrow">→</span>
+          <span>Next: {nextChapter.titleKid}</span>
+        </Link>
+      )}
     </div>
   );
 }
