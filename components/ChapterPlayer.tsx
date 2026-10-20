@@ -277,7 +277,8 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [unlocked, setUnlocked] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+  const initialCountdown = Math.ceil(answerUnlockMs(step.prompt.split(/\s+/).length) / 1000);
+  const [countdown, setCountdown] = useState(initialCountdown);
   const [attempt, setAttempt] = useState(0);
   const shownAt = useRef(Date.now());
 
@@ -453,7 +454,8 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
         <div role="status" aria-live="polite" className={`feedback-card ${feedback.correct ? "" : "miss"}`}>
           {feedback.correct ? <ConfettiLayer fire /> : null}
           <p>
-            <strong>{feedback.correct ? "Yes!" : "Not yet."}</strong> {feedback.explanation}
+            <strong>{feedback.correct ? "Yes!" : "Not yet."}</strong>{" "}
+            {feedback.explanation.replace(/^(Yes!|Not yet\.)\s*/i, "")}
           </p>
           <VoicePicker compact />
           <button className="btn secondary" onClick={() => prefs.speak(feedback.read_aloud_text)}>
