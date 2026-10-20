@@ -20,6 +20,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
   if (!user) return <NotAllowed />;
   const chapter = getChapter(chapterId);
   if (!chapter || !chapterVisibleTo(chapter, user.role)) notFound();
+  const isAdmin = user.role === "admin";
   const nextChapter = getNextChapter(chapterId);
   const nextChapterHref = nextChapter && chapterVisibleTo(nextChapter, user.role) ? `/study/${nextChapter.id}` : null;
   const studentChapter = toStudentChapter(chapter);
@@ -28,7 +29,11 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
       <p className="kid-kicker">Study pack</p>
       <ChapterHeader subject={chapter.subject} title={chapter.titleKid} />
       {studentChapter.storyHook ? <p className="story-hook">{studentChapter.storyHook}</p> : null}
-      <ChapterPlayer chapter={studentChapter} isAdmin={user.role === "admin"} nextChapterHref={nextChapterHref} />
+      {/* Admin-only banner, rendered on the server so the text never ships in a client bundle. */}
+      {isAdmin && chapter.pendingReligionReview ? (
+        <p className="notice">Admin note: Religion chapters are hidden from Mae until approved.</p>
+      ) : null}
+      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} />
     </div>
   );
 }
