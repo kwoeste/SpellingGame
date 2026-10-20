@@ -14,6 +14,9 @@ export type StudentChapter = {
   titleKid: string;
   subject: ChapterPack["subject"];
   bigQuestion: string;
+  storyHook: string | null;
+  headerImage: string | null;
+  keywords: { word: string; definition: string }[];
   pendingReligionReview: boolean;
   bibleTranslation: string | null;
   sentences: Sentence[];
@@ -72,6 +75,9 @@ export function toStudentChapter(chapter: ChapterPack): StudentChapter {
     titleKid: chapter.titleKid,
     subject: chapter.subject,
     bigQuestion: chapter.bigQuestion,
+    storyHook: chapter.storyHook ?? null,
+    headerImage: chapter.headerImage ?? null,
+    keywords: chapter.vocab.map((v) => ({ word: v.word, definition: v.definition })),
     pendingReligionReview: Boolean(chapter.pendingReligionReview),
     bibleTranslation: chapter.bibleTranslation ?? null,
     sentences: chapter.sentences,

@@ -21,11 +21,21 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
   if (!chapter || !chapterVisibleTo(chapter, user.role)) notFound();
   const nextChapter = getNextChapter(chapterId);
   const nextChapterHref = nextChapter && chapterVisibleTo(nextChapter, user.role) ? `/study/${nextChapter.id}` : null;
+  const studentChapter = toStudentChapter(chapter);
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
+      {studentChapter.headerImage ? (
+        <img
+          src={studentChapter.headerImage}
+          alt=""
+          className="chapter-header-img"
+          aria-hidden="true"
+        />
+      ) : null}
       <h1>{chapter.titleKid}</h1>
-      <ChapterPlayer chapter={toStudentChapter(chapter)} isAdmin={user.role === "admin"} nextChapterHref={nextChapterHref} />
+      {studentChapter.storyHook ? <p className="story-hook">{studentChapter.storyHook}</p> : null}
+      <ChapterPlayer chapter={studentChapter} isAdmin={user.role === "admin"} nextChapterHref={nextChapterHref} />
     </div>
   );
 }

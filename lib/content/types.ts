@@ -38,6 +38,8 @@ export type ChapterPack = {
   unit?: string;
   subject: SubjectId;
   bigQuestion: string;
+  storyHook?: string;
+  headerImage?: string;
   reviewStatus: ReviewStatus;
   pendingReligionReview?: boolean;
   bibleTranslation?: string;

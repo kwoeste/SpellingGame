@@ -33,6 +33,7 @@ type Feedback = {
 type View =
   | { kind: "loading" }
   | { kind: "read" }
+  | { kind: "keywords" }
   | { kind: "step"; index: number }
   | { kind: "done"; gate: Feedback["gate"] };
 
@@ -45,8 +46,9 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-function viewFor(progress: Progress | null, steps: number): View {
+function viewFor(progress: Progress | null, steps: number, hasKeywords: boolean): View {
   if (!progress || !progress.readDone) return { kind: "read" };
+  if (progress.nextStep === 0 && hasKeywords) return { kind: "keywords" };
   return progress.nextStep >= steps ? { kind: "read" } : { kind: "step", index: progress.nextStep };
 }
 
@@ -80,7 +82,7 @@ export function ChapterPlayer({
         setPreview(json.preview);
         setProgress(json.chapter);
         setWelcomeBack(Boolean(json.chapter && (json.chapter.readDone || json.chapter.nextStep > 0)));
-        setView(viewFor(json.chapter, chapter.steps.length));
+        setView(viewFor(json.chapter, chapter.steps.length, chapter.keywords.length > 0));
       })
       .catch(() => {
         if (cancelled) return;
@@ -128,6 +130,15 @@ export function ChapterPlayer({
       }
     }
     const next = progress && progress.nextStep < chapter.steps.length ? progress.nextStep : 0;
+    if (next === 0 && chapter.keywords.length > 0) {
+      setView({ kind: "keywords" });
+    } else {
+      setView({ kind: "step", index: next });
+    }
+  }
+
+  function finishKeywords() {
+    const next = progress && progress.nextStep < chapter.steps.length ? progress.nextStep : 0;
     setView({ kind: "step", index: next });
   }
 
@@ -170,6 +181,9 @@ export function ChapterPlayer({
             I read it — next
           </button>
         </>
+      ) : null}
+      {view.kind === "keywords" ? (
+        <KeywordsCard keywords={chapter.keywords} onContinue={finishKeywords} />
       ) : null}
       {view.kind === "step" && chapter.steps[view.index] ? (
         <StepView
@@ -253,6 +267,32 @@ function DoneView({
           </a>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function KeywordsCard({
+  keywords,
+  onContinue,
+}: {
+  keywords: { word: string; definition: string }[];
+  onContinue: () => void;
+}) {
+  return (
+    <div className="keywords-card">
+      <h3>Words you&rsquo;ll see</h3>
+      <p>Here are the key terms for this chapter. Read them before the quiz.</p>
+      <dl className="keywords-list">
+        {keywords.map((kw) => (
+          <div key={kw.word} className="keyword-item">
+            <dt>{kw.word}</dt>
+            <dd>{kw.definition}</dd>
+          </div>
+        ))}
+      </dl>
+      <button className="btn" onClick={onContinue} style={{ marginTop: 16 }}>
+        Got it — start the quiz
+      </button>
     </div>
   );
 }
