@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS engine.filament_spool (
 );
 
 CREATE INDEX IF NOT EXISTS filament_spool_color ON engine.filament_spool (color);
-CREATE INDEX IF NOT EXISTS filament_spool_low_stock ON engine.filament_spool ((grams_total - grams_used) < low_stock_threshold);
+CREATE INDEX IF NOT EXISTS filament_spool_low_stock ON engine.filament_spool (((grams_total - grams_used) < low_stock_threshold));
 
 -- Store item inventory (links to SHOP_PRODUCTS by product_id)
 CREATE TABLE IF NOT EXISTS engine.store_item (
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS engine.store_item (
 );
 
 CREATE INDEX IF NOT EXISTS store_item_product ON engine.store_item (product_id);
-CREATE INDEX IF NOT EXISTS store_item_low_stock ON engine.store_item (stock_count <= reorder_threshold);
+CREATE INDEX IF NOT EXISTS store_item_low_stock ON engine.store_item ((stock_count <= reorder_threshold));
 
 -- Inventory adjustment log for audit trail
 CREATE TABLE IF NOT EXISTS engine.inventory_adjustment (

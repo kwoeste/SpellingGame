@@ -141,6 +141,7 @@ export async function POST(req: Request) {
           },
           actor.email
         );
+        if (!adjustment) return { status: 404, body: { error: "not_found" } };
         return { body: { adjustment } };
       }
 

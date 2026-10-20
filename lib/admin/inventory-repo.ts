@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { databaseUrlFor } from "@/lib/db/client";
 import type {
   FilamentSpool,
   StoreItem,
@@ -9,8 +10,9 @@ import type {
 } from "@/lib/admin/inventory";
 
 function connectionString(): string {
-  const url = process.env.DATABASE_URL_ADMIN || process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL not set");
+  // Same rule as the rest of the app: app_admin role in production, never the owner URL.
+  const url = databaseUrlFor("admin");
+  if (!url) throw new Error("DATABASE_URL_ADMIN not set");
   return url;
 }
 
@@ -180,30 +182,37 @@ export async function updateStoreItem(id: string, input: Partial<StoreItemInput>
   };
 }
 
-export async function adjustInventory(input: AdjustmentInput, adjustedBy: string): Promise<InventoryAdjustment> {
+export async function adjustInventory(input: AdjustmentInput, adjustedBy: string): Promise<InventoryAdjustment | null> {
   const sql = neon(connectionString());
+  const consumes = input.adjustmentType === "use" || input.adjustmentType === "waste";
 
-  if (input.targetType === "filament") {
-    const delta = input.adjustmentType === "use" || input.adjustmentType === "waste" ? input.quantity : -input.quantity;
-    await sql`
-      UPDATE engine.filament_spool
-      SET grams_used = grams_used + ${delta}, updated_at = now()
-      WHERE id = ${input.targetId}
-    `;
-  } else {
-    const delta = input.adjustmentType === "use" || input.adjustmentType === "waste" ? -input.quantity : input.quantity;
-    await sql`
-      UPDATE engine.store_item
-      SET stock_count = stock_count + ${delta}, updated_at = now()
-      WHERE id = ${input.targetId}
-    `;
-  }
-
-  const [row] = await sql`
-    INSERT INTO engine.inventory_adjustment (target_type, target_id, adjustment_type, quantity, reason, adjusted_by)
-    VALUES (${input.targetType}, ${input.targetId}, ${input.adjustmentType}, ${input.quantity}, ${input.reason ?? null}, ${adjustedBy})
-    RETURNING *
-  `;
+  // One statement: update the target and log the adjustment atomically. A missing target logs nothing.
+  const rows =
+    input.targetType === "filament"
+      ? await sql`
+          WITH upd AS (
+            UPDATE engine.filament_spool
+            SET grams_used = GREATEST(0, grams_used + ${consumes ? input.quantity : -input.quantity}), updated_at = now()
+            WHERE id = ${input.targetId}
+            RETURNING id
+          )
+          INSERT INTO engine.inventory_adjustment (target_type, target_id, adjustment_type, quantity, reason, adjusted_by)
+          SELECT 'filament', upd.id, ${input.adjustmentType}, ${input.quantity}, ${input.reason ?? null}, ${adjustedBy} FROM upd
+          RETURNING *
+        `
+      : await sql`
+          WITH upd AS (
+            UPDATE engine.store_item
+            SET stock_count = GREATEST(0, stock_count + ${consumes ? -input.quantity : input.quantity}), updated_at = now()
+            WHERE id = ${input.targetId}
+            RETURNING id
+          )
+          INSERT INTO engine.inventory_adjustment (target_type, target_id, adjustment_type, quantity, reason, adjusted_by)
+          SELECT 'store_item', upd.id, ${input.adjustmentType}, ${input.quantity}, ${input.reason ?? null}, ${adjustedBy} FROM upd
+          RETURNING *
+        `;
+  const [row] = rows;
+  if (!row) return null;
 
   return {
     id: row.id as string,
