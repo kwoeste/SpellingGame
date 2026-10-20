@@ -4,11 +4,10 @@ export type HeaderViewer = AppRole | "outsider" | null;
 
 export type NavLink = { href: string; label: string };
 
-export type HeaderNav = { links: NavLink[]; account: "sign-in" | "sign-out" };
+export type HeaderNav = { links: NavLink[]; account: "sign-in" | "sign-out"; homeHref: string };
 
 export const SIGN_OUT_HREF = "/api/auth/signout";
 
-const STORE: NavLink = { href: "/store", label: "Store" };
 const STUDY: NavLink = { href: "/study", label: "Study" };
 const ADMIN: NavLink = { href: "/admin", label: "Admin" };
 
@@ -23,13 +22,13 @@ export function headerViewer(session: { user?: { email?: string | null; role?: s
 export function headerNav(viewer: HeaderViewer): HeaderNav {
   switch (viewer) {
     case null:
-      return { links: [STORE], account: "sign-in" };
+      return { links: [], account: "sign-in", homeHref: "/" };
     case "outsider":
-      return { links: [STORE], account: "sign-out" };
+      return { links: [], account: "sign-out", homeHref: "/" };
     case "student":
-      return { links: [STORE, STUDY], account: "sign-out" };
+      return { links: [STUDY], account: "sign-out", homeHref: "/study" };
     case "admin":
-      return { links: [STORE, STUDY, ADMIN], account: "sign-out" };
+      return { links: [STUDY, ADMIN], account: "sign-out", homeHref: "/study" };
     default: {
       const unhandled: never = viewer;
       throw new Error(`Unhandled header viewer: ${String(unhandled)}`);

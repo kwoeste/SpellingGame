@@ -13,7 +13,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
   if (!game || !isGameId(game.id) || !gameVisibleTo(game.id, user.role)) notFound();
   const spec = gameSpec(game.id);
   return (
-    <div className="wrap">
+    <div className="kid-shell">
       {spec.pendingReligionReview ? <p className="notice">Religion game pending review; hidden from Mae.</p> : null}
       <NamedGame gameId={game.id} title={game.title} spec={spec} />
     </div>

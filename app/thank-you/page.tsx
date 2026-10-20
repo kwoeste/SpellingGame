@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { Mascot } from "@/components/ui/Mascot";
 
 export default function ThankYouPage() {
   return (
-    <div className="wrap">
+    <div className="kid-shell">
       <div className="card" style={{ maxWidth: 520, margin: "40px auto", textAlign: "center" }}>
-        <h1>Request Received!</h1>
+        <Mascot mood="cheer" size={100} />
+        <h1>Request received!</h1>
         <p>Thank you. Mae will get started on your free print soon.</p>
         <ol style={{ textAlign: "left" }}>
           <li>Your request arrives by email.</li>
