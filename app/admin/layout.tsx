@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { AdminNav } from "@/app/admin/_ui/nav";
 import { NotAllowed } from "@/components/NotAllowed";
 import { ReportProblem } from "@/components/ReportProblem";
 import { requirePageUser } from "@/lib/auth/server";
 import "./admin.css";
+
+export const metadata: Metadata = {
+  title: "Admin Dashboard | Mae's Lab",
+};
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";

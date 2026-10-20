@@ -14,7 +14,7 @@ export const SPELLING_LISTS: SpellingList[] = [
   {
     id: "d1",
     title: "Spelling Safari · List D-1",
-    shortTitle: "Spelling Safari",
+    shortTitle: "List D-1",
     tagline: "Short a and short e. Listen, then tap the letters.",
     icon: "🦒",
     hasClips: true,
