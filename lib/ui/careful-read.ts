@@ -18,7 +18,7 @@ export function allWordsRevealed(total: number, revealed: Iterable<number>): boo
   return set.size >= total;
 }
 
-/** Short pause so Mae can't skip straight to tapping an answer. */
+/** Longer pause (4-5 seconds) so Mae reads the question before tapping an answer. */
 export function answerUnlockMs(wordCount: number): number {
-  return Math.min(2400, 700 + wordCount * 80);
+  return Math.min(5000, 4000 + wordCount * 50);
 }

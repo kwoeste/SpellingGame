@@ -277,12 +277,31 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [unlocked, setUnlocked] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const shownAt = useRef(Date.now());
 
   useEffect(() => {
     const words = step.prompt.split(/\s+/).length;
-    const timer = window.setTimeout(() => setUnlocked(true), answerUnlockMs(words));
-    return () => window.clearTimeout(timer);
+    const totalMs = answerUnlockMs(words);
+    const totalSeconds = Math.ceil(totalMs / 1000);
+    setCountdown(totalSeconds);
+    setUnlocked(false);
+
+    const countdownInterval = window.setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const unlockTimer = window.setTimeout(() => setUnlocked(true), totalMs);
+    return () => {
+      window.clearInterval(countdownInterval);
+      window.clearTimeout(unlockTimer);
+    };
   }, [step.prompt]);
 
   function response(): unknown {
@@ -347,8 +366,23 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
     setEvidence("");
     setMatches({});
     shownAt.current = Date.now();
+    const words = step.prompt.split(/\s+/).length;
+    const totalMs = answerUnlockMs(words);
+    const totalSeconds = Math.ceil(totalMs / 1000);
+    setCountdown(totalSeconds);
     setUnlocked(false);
-    window.setTimeout(() => setUnlocked(true), answerUnlockMs(step.prompt.split(/\s+/).length));
+
+    const countdownInterval = window.setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    window.setTimeout(() => setUnlocked(true), totalMs);
   }
 
   const locked = Boolean(feedback) || !unlocked;
@@ -359,7 +393,11 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
         Step {number} of {total}
       </p>
       <h3>{step.prompt}</h3>
-      {!unlocked ? <p className="notice">Read the question first. Answers unlock in a moment.</p> : null}
+      {!unlocked ? (
+        <p className="notice">
+          Read the question first. Answers unlock in {countdown} second{countdown !== 1 ? "s" : ""}.
+        </p>
+      ) : null}
 
       {step.kind === "vocab" ? (
         <MatchPairs
