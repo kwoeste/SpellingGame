@@ -50,7 +50,15 @@ function viewFor(progress: Progress | null, steps: number): View {
   return progress.nextStep >= steps ? { kind: "read" } : { kind: "step", index: progress.nextStep };
 }
 
-export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; isAdmin: boolean }) {
+export function ChapterPlayer({
+  chapter,
+  isAdmin,
+  nextChapterHref,
+}: {
+  chapter: StudentChapter;
+  isAdmin: boolean;
+  nextChapterHref: string | null;
+}) {
   const [view, setView] = useState<View>({ kind: "loading" });
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
@@ -183,13 +191,22 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
             setReadReady(false);
             setView({ kind: "read" });
           }}
+          nextChapterHref={nextChapterHref}
         />
       ) : null}
     </div>
   );
 }
 
-function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => void }) {
+function DoneView({
+  gate,
+  onAgain,
+  nextChapterHref,
+}: {
+  gate: Feedback["gate"];
+  onAgain: () => void;
+  nextChapterHref: string | null;
+}) {
   if (gate?.passed) {
     return (
       <div role="status" className="feedback-card">
@@ -199,6 +216,16 @@ function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => vo
           You got {gate.correct} of {gate.total} right on the first try. Great place to stop, or pick another chapter.
         </p>
         <ConfettiLayer fire />
+        <div className="chips" style={{ marginTop: 16, justifyContent: "center" }}>
+          <a href="/study" className="btn secondary">
+            Back to Study
+          </a>
+          {nextChapterHref ? (
+            <a href={nextChapterHref} className="btn">
+              Next chapter
+            </a>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -213,9 +240,19 @@ function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => vo
       ) : (
         <p>You finished this chapter.</p>
       )}
-      <button className="btn" onClick={onAgain}>
-        Go again
-      </button>
+      <div className="chips" style={{ marginTop: 16, justifyContent: "center" }}>
+        <a href="/study" className="btn secondary">
+          Back to Study
+        </a>
+        <button className="btn" onClick={onAgain}>
+          Go again
+        </button>
+        {nextChapterHref ? (
+          <a href={nextChapterHref} className="btn">
+            Next chapter
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }
