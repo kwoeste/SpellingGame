@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { GameArcade } from "@/components/GameArcade";
 import { LikesPicker } from "@/components/LikesPicker";
+import { SettingsPopover } from "@/components/SettingsPopover";
 import { Mascot } from "@/components/ui/Mascot";
 import { ProgressRing } from "@/components/ui/ProgressRing";
-import { VoicePicker } from "@/components/ui/VoicePicker";
 import type { ArcadeTile } from "@/lib/games/arcade";
 
 export type DashChapter = {
@@ -14,6 +13,7 @@ export type DashChapter = {
 };
 
 const SUBJECT_LABEL = { science: "Science", ela: "Reading", religion: "Religion", math: "Math" } as const;
+const SUBJECT_EMOJI = { science: "🔬", ela: "📚", religion: "✝️", math: "🔢" } as const;
 
 export function StudentDashboard({
   displayName,
@@ -43,68 +43,81 @@ export function StudentDashboard({
   const quest = resume ?? (firstOpen ? { chapterId: firstOpen.id, titleKid: firstOpen.titleKid } : null);
   const subjects = [...new Set(chapters.map((chapter) => chapter.subject))];
 
+  const gamesPreview = arcadeTiles.slice(0, 4);
+
   return (
     <div className="kid-shell">
-      <section className="kid-hero">
-        <Mascot mood={streakDays > 0 ? "cheer" : "idle"} size={108} />
+      {/* Settings gear in top-right */}
+      <div className="settings-corner">
+        <SettingsPopover />
+      </div>
+
+      {/* Hero with bigger mascot and quest */}
+      <section className="kid-hero kid-hero-large">
+        <Mascot mood={streakDays > 0 ? "cheer" : "idle"} size={140} />
         <div>
           <p className="kid-kicker">Today&apos;s quest</p>
           <h1 style={{ margin: "0 0 8px" }}>Hi {displayName}!</h1>
           {quest ? (
-            <>
-              <p style={{ fontWeight: 800, fontSize: "1.15rem" }}>{quest.titleKid}</p>
-              <Link className="btn" href={`/study/${quest.chapterId}`} style={{ display: "inline-block", marginTop: 8, textDecoration: "none" }}>
-                {resume ? "Continue where I left off" : "Start this quest"}
-              </Link>
-            </>
+            <p style={{ fontWeight: 700, fontSize: "1.1rem", margin: 0 }}>{quest.titleKid}</p>
           ) : (
-            <p>You cleared today&apos;s chapters. Play a game or pick a new pack.</p>
+            <p style={{ margin: 0 }}>You cleared today&apos;s chapters!</p>
           )}
         </div>
       </section>
 
+      {/* Continue card */}
+      {quest && (
+        <Link href={`/study/${quest.chapterId}`} className="continue-card">
+          <span className="continue-icon">▶</span>
+          <span className="continue-text">
+            <strong>{resume ? "Continue where you left off" : "Start today's quest"}</strong>
+            <span>{quest.titleKid}</span>
+          </span>
+          <span className="continue-arrow">→</span>
+        </Link>
+      )}
+
+      {/* Progress & badges button - prominent */}
+      <Link href="/my-progress" className="progress-btn">
+        <span className="progress-btn-icon">🏆</span>
+        <span>My progress &amp; badges</span>
+        <span className="progress-btn-stats">
+          {streakDays > 0 && <span className="streak-badge">🔥 {streakDays}</span>}
+          <span>{xpTotal} XP</span>
+        </span>
+      </Link>
+
+      {/* Stats row */}
       <div className="stat-row" style={{ margin: "16px 0" }}>
         <div className="stat-card">
           <strong>{xpToday}</strong>
           XP today
-          <div style={{ color: "var(--muted)", fontWeight: 700 }}>{xpTotal} all time</div>
         </div>
         <div className="stat-card">
           <strong>{streakDays}</strong>
           Day streak
-          <div style={{ color: "var(--muted)", fontWeight: 700 }}>{streakDays ? "Keep it glowing!" : "Play to start a streak"}</div>
         </div>
         <div className="stat-card" style={{ display: "grid", placeItems: "center" }}>
-          <ProgressRing pct={week?.pct ?? 0} label="This week" size={96} />
+          <ProgressRing pct={week?.pct ?? 0} label="Week" size={72} />
         </div>
       </div>
-      <Link
-        href="/my-progress"
-        className="btn secondary"
-        style={{ display: "inline-block", marginBottom: 20, textDecoration: "none" }}
-      >
-        View my progress &amp; badges
-      </Link>
 
-      <section className="card" style={{ marginBottom: 18 }}>
-        <p className="kid-kicker">Your voice</p>
-        <h2>Read-aloud settings</h2>
-        <p>Pick a voice and speed. Games and Study both use this.</p>
-        <VoicePicker />
-      </section>
-
+      {/* Chapter packs as big cards */}
       <section style={{ marginBottom: 22 }}>
-        <p className="kid-kicker">Progress map</p>
-        <h2>Chapter packs</h2>
-        <div className="subject-map">
+        <p className="kid-kicker">Chapter packs</p>
+        <h2>Pick a subject</h2>
+        <div className="chapter-packs">
           {subjects.map((subject) => {
             const group = chapters.filter((chapter) => chapter.subject === subject);
             const ring = subjectRings.find((row) => row.id === `subject:${subject}`);
+            const nextChapter = group.find((ch) => (chapterPct.get(ch.id) ?? 0) < 100);
             return (
-              <div key={subject} className={`subject-card ${subject}`}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <h3 style={{ margin: 0 }}>{SUBJECT_LABEL[subject]}</h3>
-                  <ProgressRing pct={ring?.pct ?? 0} label="" size={64} />
+              <div key={subject} className={`pack-card ${subject}`}>
+                <div className="pack-header">
+                  <span className="pack-emoji">{SUBJECT_EMOJI[subject]}</span>
+                  <h3>{SUBJECT_LABEL[subject]}</h3>
+                  <ProgressRing pct={ring?.pct ?? 0} label="" size={56} />
                 </div>
                 <div className="path-dots">
                   {group.map((chapter) => {
@@ -123,17 +136,40 @@ export function StudentDashboard({
                     );
                   })}
                 </div>
+                {nextChapter && (
+                  <Link href={`/study/${nextChapter.id}`} className="pack-next">
+                    Next: {nextChapter.titleKid}
+                  </Link>
+                )}
               </div>
             );
           })}
         </div>
       </section>
 
+      {/* Games teaser */}
+      <section className="games-teaser">
+        <div className="games-teaser-header">
+          <div>
+            <p className="kid-kicker">Game arcade</p>
+            <h2>Ready for fun?</h2>
+          </div>
+          <Link href="/games" className="btn">See all games</Link>
+        </div>
+        <div className="games-preview-grid">
+          {gamesPreview.map((tile) => (
+            <Link key={tile.id} href={tile.href} className={`games-preview-tile ${tile.tint}`}>
+              <span className="preview-icon">{tile.icon}</span>
+              <span className="preview-title">{tile.title}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Likes */}
       <div style={{ marginBottom: 22 }}>
         <LikesPicker initialLiked={likes} heading={likes.length ? "Update what you like" : "What do you like?"} />
       </div>
-
-      <GameArcade tiles={arcadeTiles} resumeHref={null} />
 
       <p style={{ marginTop: 28 }}>
         <Link href="/store">Visit Mae&apos;s 3D print shop</Link>

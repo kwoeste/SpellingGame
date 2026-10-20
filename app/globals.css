@@ -283,19 +283,207 @@ button, input, textarea, select { font: inherit; }
   margin-top: 10px;
 }
 .path-dot {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 800;
   background: #fff4e0;
-  border: 2px solid #f0d8b8;
+  border: 3px solid #f0d8b8;
   color: var(--ink);
+  transition: transform 0.15s ease;
 }
+.path-dot:hover { transform: scale(1.1); }
 .path-dot.done { background: #19a37a; color: white; border-color: #0d7a5a; }
-.path-dot.now { background: #ffb703; border-color: #c48200; }
+.path-dot.now { background: #ffb703; border-color: #c48200; box-shadow: 0 0 0 4px rgba(255, 183, 3, 0.3); }
+
+/* Settings corner with gear */
+.settings-corner {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+.settings-popover-wrap { position: relative; }
+.settings-gear-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.2s ease;
+}
+.settings-gear-btn:hover { transform: rotate(30deg); }
+.settings-popover {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  width: 300px;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+/* Larger hero for Study home */
+.kid-hero-large {
+  padding: 28px;
+  gap: 24px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
+  margin-bottom: 16px;
+}
+.kid-shell { position: relative; }
+
+/* Continue card */
+.continue-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+.continue-card:hover { transform: scale(1.02); }
+.continue-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+}
+.continue-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.continue-text strong { font-size: 1.1rem; }
+.continue-text span:not(strong) { opacity: 0.9; font-size: 0.9rem; }
+.continue-arrow { font-size: 1.5rem; font-weight: 700; }
+
+/* Progress button */
+.progress-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+.progress-btn:hover { transform: scale(1.02); }
+.progress-btn-icon { font-size: 1.4rem; }
+.progress-btn-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+.streak-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Chapter packs as big cards */
+.chapter-packs {
+  display: grid;
+  gap: 16px;
+}
+.pack-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--paper);
+  border: 3px solid #f3d7b3;
+}
+.pack-card.science { border-color: #7ed9c7; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
+.pack-card.ela { border-color: #f5b48a; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); }
+.pack-card.religion { border-color: #d3c0ff; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); }
+.pack-card.math { border-color: #9fd4f5; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+.pack-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pack-emoji { font-size: 2rem; }
+.pack-header h3 { flex: 1; margin: 0; font-size: 1.25rem; }
+.pack-next {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 14px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+.pack-next:hover { background: rgba(0,0,0,0.1); }
+
+/* Games teaser */
+.games-teaser {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 22px;
+}
+.games-teaser-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.games-teaser-header h2 { margin: 0; }
+.games-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.games-preview-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: var(--paper);
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease;
+}
+.games-preview-tile:hover { transform: scale(1.05); }
+.preview-icon { font-size: 2rem; }
+.preview-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+}
+
+@media (max-width: 600px) {
+  .games-preview-grid { grid-template-columns: repeat(2, 1fr); }
+  .settings-corner { top: 8px; right: 8px; }
+}
 
 .arcade-hero {
   display: grid;
