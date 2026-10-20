@@ -47,7 +47,11 @@ export async function POST(req: Request) {
         const snap = await loadSnapshot();
         const created = [];
         for (const row of suggestedHoleAssignments(snap, actor.email)) {
-          created.push(await repo.createAssignment(row));
+          try {
+            created.push(await repo.createAssignment(row));
+          } catch {
+            // Unique open assignment already exists for this target.
+          }
         }
         return { body: { created, assignments: await loadAssignments() } };
       }
