@@ -35,14 +35,23 @@ function TileCard({ tile }: { tile: ArcadeTile }) {
 }
 
 export function GameArcade({ tiles, resumeHref }: { tiles: ArcadeTile[]; resumeHref?: string | null }) {
-  const [filter, setFilter] = useState<ArcadeGroup | "all">("all");
+  const [filter, setFilter] = useState<ArcadeGroup | "all" | "more">("all");
   const visible = useMemo(
-    () => (filter === "all" ? tiles : tiles.filter((tile) => tile.group === filter)),
+    () => {
+      if (filter === "all") return tiles;
+      if (filter === "more") return tiles.filter((tile) => tile.group === "math" || tile.group === "words");
+      return tiles.filter((tile) => tile.group === filter);
+    },
     [filter, tiles],
   );
   const groups = groupArcade(visible);
   const featured = featuredTile(tiles, resumeHref);
-  const filterIds = ARCADE_GROUPS.filter((group) => group.id === "all" || tiles.some((tile) => tile.group === group.id));
+  const hasMathOrWords = tiles.some((tile) => tile.group === "math" || tile.group === "words");
+  const filterIds = ARCADE_GROUPS.filter((group) => {
+    if (group.id === "all") return true;
+    if (group.id === "more") return hasMathOrWords;
+    return tiles.some((tile) => tile.group === group.id);
+  });
 
   return (
     <section aria-labelledby="arcade-heading">
