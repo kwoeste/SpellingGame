@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { LikesPicker } from "@/components/LikesPicker";
 import { SettingsPopover } from "@/components/SettingsPopover";
 import { Mascot } from "@/components/ui/Mascot";
@@ -184,13 +184,26 @@ function ChapterPack({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [focusedChapter, setFocusedChapter] = useState<string | null>(null);
+  const isTouchRef = useRef(false);
   const isLarge = chapters.length > COMPACT_THRESHOLD;
   const visibleChapters = isLarge && !expanded ? chapters.slice(0, COMPACT_VISIBLE) : chapters;
-  const hiddenCount = chapters.length - COMPACT_VISIBLE;
 
   const focusedTitle = focusedChapter 
     ? chapters.find(ch => ch.id === focusedChapter)?.titleKid 
     : null;
+
+  const handleTouchStart = useCallback((chapterId: string) => {
+    isTouchRef.current = true;
+    setFocusedChapter(chapterId);
+  }, []);
+
+  const handleClick = useCallback((e: React.MouseEvent, chapterId: string) => {
+    if (isTouchRef.current && focusedChapter !== chapterId) {
+      e.preventDefault();
+      setFocusedChapter(chapterId);
+    }
+    isTouchRef.current = false;
+  }, [focusedChapter]);
 
   return (
     <div className={`pack-card ${subject}`}>
@@ -214,7 +227,8 @@ function ChapterPack({
                   aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
                   onFocus={() => setFocusedChapter(chapter.id)}
                   onBlur={() => setFocusedChapter(null)}
-                  onTouchStart={() => setFocusedChapter(chapter.id)}
+                  onTouchStart={() => handleTouchStart(chapter.id)}
+                  onClick={(e) => handleClick(e, chapter.id)}
                 >
                   {pct >= 100 ? "★" : chapter.number}
                 </Link>
@@ -265,7 +279,8 @@ function ChapterPack({
                       aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
                       onFocus={() => setFocusedChapter(chapter.id)}
                       onBlur={() => setFocusedChapter(null)}
-                      onTouchStart={() => setFocusedChapter(chapter.id)}
+                      onTouchStart={() => handleTouchStart(chapter.id)}
+                      onClick={(e) => handleClick(e, chapter.id)}
                     >
                       {pct >= 100 ? "★" : chapter.number}
                     </Link>

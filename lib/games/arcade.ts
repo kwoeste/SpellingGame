@@ -23,6 +23,7 @@ export type ArcadeTile = {
 export const ARCADE_GROUPS: { id: ArcadeGroup | "all" | "more"; label: string }[] = [
   { id: "all", label: "All games" },
   { id: "spelling", label: "Spelling" },
+  { id: "math", label: "Math" },
   { id: "history", label: "History" },
   { id: "science", label: "Science" },
   { id: "religion", label: "Religion" },
