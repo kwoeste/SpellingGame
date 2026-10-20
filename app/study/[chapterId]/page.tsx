@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChapterPlayer } from "@/components/ChapterPlayer";
+import { ChapterHeader } from "@/components/ChapterHeader";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
 import { getChapter, getNextChapter } from "@/lib/content/catalog";
@@ -25,15 +26,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
-      {studentChapter.headerImage ? (
-        <img
-          src={studentChapter.headerImage}
-          alt=""
-          className="chapter-header-img"
-          aria-hidden="true"
-        />
-      ) : null}
-      <h1>{chapter.titleKid}</h1>
+      <ChapterHeader subject={chapter.subject} title={chapter.titleKid} />
       {studentChapter.storyHook ? <p className="story-hook">{studentChapter.storyHook}</p> : null}
       <ChapterPlayer chapter={studentChapter} isAdmin={user.role === "admin"} nextChapterHref={nextChapterHref} />
     </div>
