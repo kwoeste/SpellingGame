@@ -86,12 +86,13 @@ export function ShopClient({ title = "Pick Your Free Item" }: { title?: string }
   const details = cart ? describe(cart) : "";
 
   return (
-    <div className="wrap">
-      <div className="card" style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
-        <video autoPlay loop muted playsInline style={{ width: 220, borderRadius: 12 }} preload="none">
+    <div className="kid-shell">
+      <div className="card shop-hero">
+        <video autoPlay loop muted playsInline style={{ width: 220, borderRadius: 18 }} preload="none">
           <source src="/images/grok-video-6eab7771-10cf-466c-959d-4cc642a092bf.mp4" type="video/mp4" />
         </video>
         <div>
+          <p className="kid-kicker">Mae&apos;s shop</p>
           <h2>Welcome!</h2>
           <p>Hi, I&apos;m Mae! Everything here is <strong>free</strong> — pick a color and send a request.</p>
           <p>One item per person so everyone gets a chance.</p>
@@ -113,10 +114,10 @@ export function ShopClient({ title = "Pick Your Free Item" }: { title?: string }
           </button>
         ))}
       </div>
-      <div className="grid cols-2">
+      <div className="shop-grid">
         {products.map((product) => (
-          <button key={product.id} className="card" onClick={() => openProduct(product)} style={{ textAlign: "left", cursor: "pointer" }}>
-            <img src={product.images[0]} alt={product.name} loading="lazy" style={{ width: "100%", height: 180, objectFit: "contain" }} />
+          <button key={product.id} className="card shop-card" onClick={() => openProduct(product)}>
+            <img src={product.images[0]} alt={product.name} loading="lazy" />
             <h3>{product.name}</h3>
             <div className="chip">FREE</div>
           </button>
@@ -241,25 +242,25 @@ export function ShopClient({ title = "Pick Your Free Item" }: { title?: string }
           <p>
             <label>
               Your Name *
-              <input name="customer_name" required placeholder="Enter your name" style={{ width: "100%", padding: 10 }} />
+              <input className="field" name="customer_name" required placeholder="Enter your name" />
             </label>
           </p>
           <p>
             <label>
               Your Email (or Parent&apos;s Email) *
-              <input name="customer_email" type="email" required placeholder="Enter your email" style={{ width: "100%", padding: 10 }} />
+              <input className="field" name="customer_email" type="email" required placeholder="Enter your email" />
             </label>
           </p>
           <p>
             <label>
               Your Grade/Class
-              <input name="customer_grade" placeholder="e.g., 3rd Grade - Mrs. Smith" style={{ width: "100%", padding: 10 }} />
+              <input className="field" name="customer_grade" placeholder="e.g., 3rd Grade - Mrs. Smith" />
             </label>
           </p>
           <p>
             <label>
               Special Notes or Requests
-              <textarea name="special_notes" rows={3} placeholder="Any special requests?" style={{ width: "100%", padding: 10 }} />
+              <textarea className="field" name="special_notes" rows={3} placeholder="Any special requests?" />
             </label>
           </p>
           <button className="btn" type="submit" disabled={!cart}>

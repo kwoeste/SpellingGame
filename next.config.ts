@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: {
-    "/spelling-game": ["./spelling-game.html"],
-    "/number-match": ["./number-match.html"],
+    "/spelling-game": ["./lib/games/spelling-lists.ts"],
+    "/number-match": ["./components/NumberMatch.tsx"],
   },
   async redirects() {
     return [

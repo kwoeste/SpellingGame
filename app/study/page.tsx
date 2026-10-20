@@ -1,71 +1,43 @@
-import Link from "next/link";
-import { LikesPicker } from "@/components/LikesPicker";
+import { StudentDashboard } from "@/components/StudentDashboard";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
-import { listChapters, NAMED_GAMES } from "@/lib/content/catalog";
+import { listChapters } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
+import { arcadeTiles } from "@/lib/games/arcade";
 import { engineRepo } from "@/lib/engine/repos";
-import { resumePoint } from "@/lib/engine/service";
-import { gameVisibleTo } from "@/lib/content/games";
-
-const SUBJECT_LABEL = { science: "Science", ela: "Reading", religion: "Religion", math: "Math" } as const;
+import { getLikes, progressSummary, resumePoint } from "@/lib/engine/service";
 
 export default async function StudyIndexPage() {
   const user = await requirePageUser(["student", "admin"], "/study");
   if (!user) return <NotAllowed />;
-  const chapters = listChapters().filter((chapter) => chapterVisibleTo(chapter, user.role));
-  const subjects = [...new Set(chapters.map((chapter) => chapter.subject))];
-  const resume = await resumePoint(engineRepo(), { role: user.role, learnerId: user.learnerId }).catch(() => null);
-  const games = NAMED_GAMES.filter((game) => gameVisibleTo(game.id, user.role));
+  const actor = { role: user.role, learnerId: user.learnerId };
+  const chapters = listChapters()
+    .filter((chapter) => chapterVisibleTo(chapter, user.role))
+    .map((chapter) => ({ id: chapter.id, number: chapter.number, titleKid: chapter.titleKid, subject: chapter.subject }));
+  const [resume, progress, likes] = await Promise.all([
+    resumePoint(engineRepo(), actor).catch(() => null),
+    progressSummary(engineRepo(), actor).catch(() => ({ rings: [], xp_total: 0, xp_today: 0, streak_days: 0, badges: [] })),
+    getLikes(engineRepo(), actor).catch(() => []),
+  ]);
+  const tiles = arcadeTiles({ role: user.role, badges: progress.badges, recommendedSpellingId: "d1" });
   return (
-    <div className="wrap">
-      <h1>Study</h1>
-      <p>10–15 minute drop-ins. No timers on screen.</p>
-      {resume ? (
-        <p>
-          <Link className="btn" href={`/study/${resume.chapterId}`}>
-            Continue where I left off: {resume.titleKid}
-          </Link>
-        </p>
-      ) : null}
-      <LikesPicker />
-      <div className="grid cols-2">
-        {subjects.map((subject) => (
-          <div key={subject} className="card">
-            <h2>{SUBJECT_LABEL[subject]}</h2>
-            {chapters
-              .filter((chapter) => chapter.subject === subject)
-              .map((chapter) => (
-                <p key={chapter.id}>
-                  <Link href={`/study/${chapter.id}`}>
-                    {chapter.number}. {chapter.titleKid}
-                  </Link>
-                  {chapter.pendingReligionReview ? " · pending review (admins only)" : ""}
-                </p>
-              ))}
-          </div>
-        ))}
-      </div>
-      <h2>Games</h2>
-      <div className="chips">
-        <Link className="chip" href="/spelling-game">
-          Spelling Safari
-        </Link>
-        <Link className="chip" href="/number-match">
-          Number Match
-        </Link>
-        <Link className="chip" href="/games">
-          Game Lab
-        </Link>
-      </div>
-      <h2>Chapter games</h2>
-      <div className="chips">
-        {games.map((game) => (
-          <Link key={game.id} className="chip" href={`/games/${game.id}`}>
-            {game.title}
-          </Link>
-        ))}
-      </div>
-    </div>
+    <>
+      <StudentDashboard
+        displayName={user.displayName?.split(" ")[0] || "friend"}
+        resume={resume ? { chapterId: resume.chapterId, titleKid: resume.titleKid } : null}
+        rings={progress.rings}
+        xpToday={progress.xp_today}
+        xpTotal={progress.xp_total}
+        streakDays={progress.streak_days}
+        chapters={chapters}
+        likes={likes.filter((row) => row.liked).map((row) => row.interestTag)}
+        arcadeTiles={tiles}
+      />
+      <nav className="sr-only" aria-label="Games">
+        <a href="/spelling-game">Spelling Safari</a>
+        <a href="/number-match">Number Match</a>
+        <a href="/games">Game Lab</a>
+      </nav>
+    </>
   );
 }

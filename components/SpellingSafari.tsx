@@ -1,0 +1,177 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { VoicePicker } from "@/components/ui/VoicePicker";
+import { ConfettiLayer } from "@/components/ui/ConfettiBurst";
+import { Mascot } from "@/components/ui/Mascot";
+import { useKidPrefs } from "@/components/ui/KidPrefs";
+import { playSound } from "@/lib/ui/sounds";
+import { spellingAudioFile, type SpellingList } from "@/lib/games/spelling-lists";
+
+function shuffle<T>(items: T[]): T[] {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+}
+
+export function SpellingSafari({ list }: { list: SpellingList }) {
+  const prefs = useKidPrefs();
+  const [index, setIndex] = useState(0);
+  const [round, setRound] = useState(1);
+  const [guessed, setGuessed] = useState("");
+  const [letterIndex, setLetterIndex] = useState(0);
+  const [letters, setLetters] = useState<string[]>([]);
+  const [message, setMessage] = useState("");
+  const [flash, setFlash] = useState<Record<number, "correct" | "incorrect">>({});
+  const [done, setDone] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const token = useRef(0);
+  const clip = useRef<HTMLAudioElement | null>(null);
+
+  const word = list.words[index] ?? "";
+  const totalRounds = 2;
+
+  function buildLetters(current: string, currentRound: number) {
+    if (currentRound >= 2) return shuffle("abcdefghijklmnopqrstuvwxyz".split(""));
+    const extras = shuffle("abcdefghijklmnopqrstuvwxyz".split("")).slice(0, 3);
+    return shuffle(current.split("").concat(extras));
+  }
+
+  function speakWord(current: string) {
+    const my = ++token.current;
+    if (clip.current) clip.current.pause();
+    prefs.stopSpeak();
+    const sentence = list.sentences[current] ?? "";
+    const playPart = (text: string, file: string, then?: () => void) => {
+      if (!list.hasClips) {
+        prefs.speak(text, { onend: then });
+        return;
+      }
+      const audio = new Audio(file);
+      clip.current = audio;
+      let usedFallback = false;
+      const fallback = () => {
+        if (usedFallback || token.current !== my) return;
+        usedFallback = true;
+        prefs.speak(text, { onend: then });
+      };
+      audio.onended = () => {
+        if (token.current === my) then?.();
+      };
+      audio.onerror = fallback;
+      audio.play().catch(fallback);
+    };
+    playPart(current, spellingAudioFile(current, ""), () => {
+      window.setTimeout(() => {
+        if (token.current === my && sentence) playPart(sentence, spellingAudioFile(current, "-sentence"));
+      }, 600);
+    });
+  }
+
+  function show(nextIndex = index, nextRound = round) {
+    const current = list.words[nextIndex];
+    if (!current) {
+      setDone(true);
+      setCelebrate(true);
+      playSound("fanfare", prefs.soundOn);
+      return;
+    }
+    setGuessed("_".repeat(current.length));
+    setLetterIndex(0);
+    setLetters(buildLetters(current, nextRound));
+    setMessage("");
+    speakWord(current);
+  }
+
+  useEffect(() => {
+    show(0, 1);
+    return () => {
+      token.current += 1;
+      if (clip.current) clip.current.pause();
+      prefs.stopSpeak();
+    };
+    // first mount only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list.id]);
+
+  function guess(letter: string, buttonIndex: number) {
+    if (!word || letter !== word[letterIndex]) {
+      setMessage("Try again! That is not the next letter.");
+      setFlash((prev) => ({ ...prev, [buttonIndex]: "incorrect" }));
+      playSound("wrong", prefs.soundOn);
+      window.setTimeout(() => setFlash((prev) => ({ ...prev, [buttonIndex]: undefined as unknown as "incorrect" })), 700);
+      return;
+    }
+    const nextGuess = guessed.split("");
+    nextGuess[letterIndex] = letter;
+    const joined = nextGuess.join("");
+    setGuessed(joined);
+    setLetterIndex((n) => n + 1);
+    setFlash((prev) => ({ ...prev, [buttonIndex]: "correct" }));
+    playSound("tap", prefs.soundOn);
+    if (joined === word) {
+      setMessage("Yes!");
+      playSound("correct", prefs.soundOn);
+      window.setTimeout(() => {
+        if (index + 1 >= list.words.length && round < totalRounds) {
+          setRound(round + 1);
+          setIndex(0);
+          show(0, round + 1);
+        } else {
+          setIndex(index + 1);
+          show(index + 1, round);
+        }
+      }, 900);
+    }
+  }
+
+  if (done) {
+    return (
+      <div className="card" style={{ textAlign: "center" }}>
+        <ConfettiLayer fire={celebrate} />
+        <Mascot mood="cheer" size={120} />
+        <h1>You finished {list.shortTitle}!</h1>
+        <p>Great place to stop, or play another list.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card" style={{ textAlign: "center" }}>
+      <p className="kid-kicker">Spelling Safari</p>
+      <h1>{list.title}</h1>
+      <p>{list.tagline}</p>
+      <p id="word-counter">
+        Round {round} of {totalRounds}, Word {index + 1} of {list.words.length}
+      </p>
+      <p aria-live="polite" style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem" }}>
+        Spell the word: {guessed.split("").join(" ")}
+      </p>
+      <div className="letter-pad" role="group" aria-label="Letter choices">
+        {letters.map((letter, idx) => (
+          <button
+            key={`${letter}-${idx}`}
+            type="button"
+            className={flash[idx] ?? ""}
+            disabled={round < 2 && flash[idx] === "correct"}
+            onClick={() => guess(letter, idx)}
+          >
+            {letter}
+          </button>
+        ))}
+      </div>
+      <p role="status" aria-live="assertive">
+        {message}
+      </p>
+      <button className="btn secondary" onClick={() => speakWord(word)} style={{ marginTop: 12 }}>
+        Replay word
+      </button>
+      <div style={{ marginTop: 16 }}>
+        <VoicePicker />
+      </div>
+    </div>
+  );
+}

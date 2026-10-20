@@ -1,35 +1,17 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
-import { GET as numberMatch } from "@/app/number-match/route";
-import { GET as spellingGame } from "@/app/spelling-game/route";
-import { mintTestSession, resetSessions } from "@/lib/auth/sessions";
-import { resetMemoryUsers } from "@/lib/auth/users";
+import { describe, expect, it } from "vitest";
+import { decideRequest } from "@/lib/auth/decide";
 import { listChapters } from "@/lib/content/catalog";
 import { gameSpec, gameVisibleTo, isGameId } from "@/lib/content/games";
-
-function get(url: string, email?: string): Request {
-  const headers = new Headers();
-  if (email) headers.set("x-test-session", mintTestSession(email).id);
-  return new Request(url, { headers });
-}
+import { SPELLING_LISTS } from "@/lib/games/spelling-lists";
 
 describe("gated games", () => {
-  beforeEach(() => {
-    resetSessions();
-    resetMemoryUsers();
-  });
-
-  it("serves the original games only to signed-in family, with absolute asset paths", async () => {
-    const anon = await spellingGame(get("http://local/spelling-game"));
-    expect(anon.status).toBe(307);
-    expect(anon.headers.get("location")).toContain("/sign-in?from=%2Fspelling-game");
-    const ok = await spellingGame(get("http://local/spelling-game", "mae.woeste@gmail.com"));
-    expect(ok.status).toBe(200);
-    const html = await ok.text();
-    expect(html).toContain('"/audio/"');
-    expect(html).not.toContain("public/audio/");
-    expect((await numberMatch(get("http://local/number-match", "kevinw@mcsteen.com"))).status).toBe(200);
+  it("sends anonymous visitors to sign-in for every restored game URL", () => {
+    for (const pathname of ["/spelling-game", "/number-match", "/games", "/spelling-game/wk6-2", "/spelling-game/war-of-1812", "/spelling-game/may-1", "/spelling-game/may-8"]) {
+      const decision = decideRequest({ pathname, hasSession: false, role: null });
+      expect(decision.kind).toBe("redirect-signin");
+    }
   });
 
   it("hides religion games from the student until approved", () => {
@@ -37,6 +19,13 @@ describe("gated games", () => {
     expect(gameVisibleTo("beatitudes", "admin")).toBe(true);
     expect(gameVisibleTo("circuit-builder", "student")).toBe(true);
     expect(gameVisibleTo("not-a-game", "admin")).toBe(false);
+  });
+
+  it("keeps D-1 audio clips on the /audio/ path, not public/audio/", () => {
+    const src = readFileSync(path.join(process.cwd(), "lib/games/spelling-lists.ts"), "utf8");
+    expect(src).toContain("/audio/");
+    expect(src).not.toContain("public/audio/");
+    expect(SPELLING_LISTS.find((list) => list.id === "d1")?.hasClips).toBe(true);
   });
 });
 

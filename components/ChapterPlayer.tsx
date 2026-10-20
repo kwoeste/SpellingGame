@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ReadAloud } from "@/components/ReadAloud";
+import { CarefulRead } from "@/components/CarefulRead";
+import { VoicePicker } from "@/components/ui/VoicePicker";
+import { ConfettiLayer } from "@/components/ui/ConfettiBurst";
+import { Mascot } from "@/components/ui/Mascot";
+import { useKidPrefs } from "@/components/ui/KidPrefs";
+import { playSound } from "@/lib/ui/sounds";
+import { answerUnlockMs } from "@/lib/ui/careful-read";
 import type { StudentChapter, StudentStep } from "@/lib/content/student";
 
 type Progress = {
@@ -33,14 +39,6 @@ type View =
 const HEARTBEAT_MS = 30_000;
 const ACTIVE_WINDOW_MS = 45_000;
 
-function say(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.9;
-  window.speechSynthesis.speak(utterance);
-}
-
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -59,6 +57,7 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
   const [progress, setProgress] = useState<Progress | null>(null);
   const [welcomeBack, setWelcomeBack] = useState(false);
   const [error, setError] = useState("");
+  const [readReady, setReadReady] = useState(false);
   const lastActivity = useRef(Date.now());
 
   useEffect(() => {
@@ -124,13 +123,10 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
     setView({ kind: "step", index: next });
   }
 
-  const onAnswered = useCallback(
-    (feedback: Feedback) => {
-      if (feedback.session_id) setSessionId(feedback.session_id);
-      if (feedback.chapter) setProgress(feedback.chapter);
-    },
-    [],
-  );
+  const onAnswered = useCallback((feedback: Feedback) => {
+    if (feedback.session_id) setSessionId(feedback.session_id);
+    if (feedback.chapter) setProgress(feedback.chapter);
+  }, []);
 
   function advance(feedback: Feedback, current: number) {
     if (feedback.gate) {
@@ -151,7 +147,7 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
       ) : null}
       {progress?.starEarned ? <p aria-label="Star earned">⭐ You earned the star for this chapter.</p> : null}
       {welcomeBack && view.kind !== "done" ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
-      <p style={{ color: "var(--soft)" }}>{chapter.bigQuestion}</p>
+      <p className="kid-kicker">{chapter.bigQuestion}</p>
       {error ? (
         <p role="alert" className="notice">
           {error}
@@ -161,8 +157,8 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
       {view.kind === "loading" ? <p>Loading…</p> : null}
       {view.kind === "read" ? (
         <>
-          <ReadAloud sentences={chapter.sentences} />
-          <button className="btn" onClick={finishReading}>
+          <CarefulRead sentences={chapter.sentences} onReady={setReadReady} />
+          <button className="btn" onClick={finishReading} disabled={!readReady} style={{ marginTop: 12 }}>
             I read it — next
           </button>
         </>
@@ -184,6 +180,7 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
           gate={view.gate}
           onAgain={() => {
             setWelcomeBack(false);
+            setReadReady(false);
             setView({ kind: "read" });
           }}
         />
@@ -195,16 +192,19 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
 function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => void }) {
   if (gate?.passed) {
     return (
-      <div role="status">
+      <div role="status" className="feedback-card">
+        <Mascot mood="cheer" size={96} />
         <h3>⭐ Star earned!</h3>
         <p>
           You got {gate.correct} of {gate.total} right on the first try. Great place to stop, or pick another chapter.
         </p>
+        <ConfettiLayer fire />
       </div>
     );
   }
   return (
     <div role="status">
+      <Mascot mood="think" size={80} />
       <h3>Nice work finishing!</h3>
       {gate ? (
         <p>
@@ -231,6 +231,7 @@ type StepProps = {
 };
 
 function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext }: StepProps) {
+  const prefs = useKidPrefs();
   const [matches, setMatches] = useState<Record<string, string>>({});
   const [order, setOrder] = useState<string[]>([]);
   const [choice, setChoice] = useState("");
@@ -238,7 +239,14 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
   const shownAt = useRef(Date.now());
+
+  useEffect(() => {
+    const words = step.prompt.split(/\s+/).length;
+    const timer = window.setTimeout(() => setUnlocked(true), answerUnlockMs(words));
+    return () => window.clearTimeout(timer);
+  }, [step.prompt]);
 
   function response(): unknown {
     switch (step.kind) {
@@ -286,6 +294,8 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
       });
       setFeedback(json.feedback);
       onAnswered(json.feedback);
+      playSound(json.feedback.correct ? "correct" : "wrong", prefs.soundOn);
+      if (json.feedback.correct) prefs.speak(json.feedback.read_aloud_text);
     } catch {
       setError("We couldn't check that. Check the internet and try again.");
     } finally {
@@ -298,62 +308,34 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
     setOrder([]);
     setChoice("");
     setEvidence("");
+    setMatches({});
     shownAt.current = Date.now();
+    setUnlocked(false);
+    window.setTimeout(() => setUnlocked(true), answerUnlockMs(step.prompt.split(/\s+/).length));
   }
 
-  const locked = Boolean(feedback);
+  const locked = Boolean(feedback) || !unlocked;
 
   return (
     <div>
-      <p style={{ color: "var(--soft)" }}>
+      <p className="kid-kicker">
         Step {number} of {total}
       </p>
       <h3>{step.prompt}</h3>
+      {!unlocked ? <p className="notice">Read the question first. Answers unlock in a moment.</p> : null}
 
-      {step.kind === "vocab"
-        ? step.words.map((word) => (
-            <p key={word}>
-              <label>
-                <strong>{word}</strong>{" "}
-                <select
-                  value={matches[word] ?? ""}
-                  disabled={locked}
-                  onChange={(e) => setMatches((prev) => ({ ...prev, [word]: e.target.value }))}
-                >
-                  <option value="">Choose meaning</option>
-                  {step.definitions.map((definition) => (
-                    <option key={definition} value={definition}>
-                      {definition}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </p>
-          ))
-        : null}
+      {step.kind === "vocab" ? (
+        <MatchPairs
+          words={step.words}
+          definitions={step.definitions}
+          matches={matches}
+          locked={locked}
+          onChange={setMatches}
+        />
+      ) : null}
 
       {step.kind === "order" ? (
-        <>
-          <div className="chips">
-            {step.cards
-              .filter((card) => !order.includes(card.id))
-              .map((card) => (
-                <button key={card.id} className="tile" disabled={locked} onClick={() => setOrder((prev) => [...prev, card.id])}>
-                  {card.label}
-                </button>
-              ))}
-          </div>
-          <ol>
-            {order.map((id) => (
-              <li key={id}>{step.cards.find((card) => card.id === id)?.label}</li>
-            ))}
-          </ol>
-          {order.length && !locked ? (
-            <button className="btn secondary" onClick={() => setOrder([])}>
-              Start over
-            </button>
-          ) : null}
-        </>
+        <OrderCards cards={step.cards} order={order} locked={locked} onChange={setOrder} />
       ) : null}
 
       {step.kind === "proof" ? (
@@ -362,10 +344,13 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
             {step.options.map((option) => (
               <button
                 key={option}
-                className={`option ${choice === option ? "selected" : ""}`}
+                className={`choice-btn ${choice === option ? "selected" : ""} ${locked && !feedback ? "locked" : ""}`}
                 aria-pressed={choice === option}
                 disabled={locked}
-                onClick={() => setChoice(option)}
+                onClick={() => {
+                  playSound("tap", prefs.soundOn);
+                  setChoice(option);
+                }}
               >
                 {option}
               </button>
@@ -378,7 +363,7 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
                 {chapter.sentences.map((sentence) => (
                   <button
                     key={sentence.id}
-                    className={`option ${evidence === sentence.id ? "selected" : ""} ${feedback && !feedback.correct && feedback.proving_sentence_id === sentence.id ? "proving" : ""}`}
+                    className={`choice-btn ${evidence === sentence.id ? "selected" : ""} ${feedback && !feedback.correct && feedback.proving_sentence_id === sentence.id ? "proving" : ""}`}
                     aria-pressed={evidence === sentence.id}
                     disabled={locked}
                     onClick={() => setEvidence(sentence.id)}
@@ -399,15 +384,17 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
       ) : null}
 
       {!feedback ? (
-        <button className="btn" onClick={check} disabled={!ready() || sending} style={{ marginTop: 12 }}>
+        <button className="btn" onClick={check} disabled={!ready() || sending || !unlocked} style={{ marginTop: 12 }}>
           {sending ? "Checking…" : "Check"}
         </button>
       ) : (
-        <div role="status" aria-live="polite" style={{ marginTop: 12 }}>
+        <div role="status" aria-live="polite" className={`feedback-card ${feedback.correct ? "" : "miss"}`}>
+          {feedback.correct ? <ConfettiLayer fire /> : null}
           <p>
             <strong>{feedback.correct ? "Yes!" : "Not yet."}</strong> {feedback.explanation}
           </p>
-          <button className="btn secondary" onClick={() => say(feedback.read_aloud_text)}>
+          <VoicePicker compact />
+          <button className="btn secondary" onClick={() => prefs.speak(feedback.read_aloud_text)}>
             Hear it
           </button>{" "}
           {feedback.correct ? (
@@ -422,5 +409,136 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
         </div>
       )}
     </div>
+  );
+}
+
+const PAIR_COLORS = ["#f97316", "#0ea5e9", "#22c55e", "#a855f7", "#eab308", "#ef4444"];
+
+export function pairWord(matches: Record<string, string>, word: string, definition: string): Record<string, string> {
+  const next = { ...matches };
+  if (next[word] === definition) {
+    delete next[word];
+    return next;
+  }
+  for (const [other, def] of Object.entries(next)) {
+    if (def === definition) delete next[other];
+  }
+  next[word] = definition;
+  return next;
+}
+
+function MatchPairs({
+  words,
+  definitions,
+  matches,
+  locked,
+  onChange,
+}: {
+  words: string[];
+  definitions: string[];
+  matches: Record<string, string>;
+  locked: boolean;
+  onChange: (next: Record<string, string>) => void;
+}) {
+  const { soundOn } = useKidPrefs();
+  const [picked, setPicked] = useState<string>("");
+  const colorFor = (word: string) => {
+    const idx = words.indexOf(word);
+    return PAIR_COLORS[idx % PAIR_COLORS.length];
+  };
+
+  function chooseWord(word: string) {
+    if (locked) return;
+    if (matches[word]) {
+      const next = { ...matches };
+      delete next[word];
+      onChange(next);
+      setPicked("");
+      return;
+    }
+    setPicked(word);
+    playSound("tap", soundOn);
+  }
+
+  function chooseDefinition(definition: string) {
+    if (locked || !picked) return;
+    playSound("pair", soundOn);
+    onChange(pairWord(matches, picked, definition));
+    setPicked("");
+  }
+
+  return (
+    <div>
+      <p>Tap a word, then tap its meaning.</p>
+      <div className="pair-board">
+        <div className="grid">
+          {words.map((word) => (
+            <button
+              key={word}
+              type="button"
+              className={`pair-card ${picked === word ? "picked" : ""} ${matches[word] ? "paired" : ""}`}
+              style={matches[word] ? { borderColor: colorFor(word) } : undefined}
+              disabled={locked}
+              onClick={() => chooseWord(word)}
+            >
+              {word}
+            </button>
+          ))}
+        </div>
+        <div className="grid">
+          {definitions.map((definition) => {
+            const owner = Object.entries(matches).find(([, def]) => def === definition)?.[0];
+            return (
+              <button
+                key={definition}
+                type="button"
+                className={`pair-card ${owner ? "paired" : ""}`}
+                style={owner ? { borderColor: colorFor(owner) } : undefined}
+                disabled={locked}
+                onClick={() => chooseDefinition(definition)}
+              >
+                {definition}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderCards({
+  cards,
+  order,
+  locked,
+  onChange,
+}: {
+  cards: { id: string; label: string }[];
+  order: string[];
+  locked: boolean;
+  onChange: (next: string[]) => void;
+}) {
+  const leftover = cards.filter((card) => !order.includes(card.id));
+  return (
+    <>
+      <p>Tap the cards in order.</p>
+      <div className="chips">
+        {leftover.map((card) => (
+          <button key={card.id} className="tile" disabled={locked} onClick={() => onChange([...order, card.id])}>
+            {card.label}
+          </button>
+        ))}
+      </div>
+      <ol>
+        {order.map((id) => (
+          <li key={id}>{cards.find((card) => card.id === id)?.label}</li>
+        ))}
+      </ol>
+      {order.length && !locked ? (
+        <button className="btn secondary" onClick={() => onChange([])}>
+          Start over
+        </button>
+      ) : null}
+    </>
   );
 }

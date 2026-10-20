@@ -12,7 +12,8 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
   const chapter = getChapter(chapterId);
   if (!chapter || !chapterVisibleTo(chapter, user.role)) notFound();
   return (
-    <div className="wrap">
+    <div className="kid-shell">
+      <p className="kid-kicker">Study pack</p>
       <h1>{chapter.titleKid}</h1>
       <ChapterPlayer chapter={toStudentChapter(chapter)} isAdmin={user.role === "admin"} />
     </div>
