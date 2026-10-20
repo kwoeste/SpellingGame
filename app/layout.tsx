@@ -25,8 +25,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${nunito.variable} ${baloo.variable}`}>
+    <html lang="en" className={`${nunito.variable} ${baloo.variable}`}>
+      <body>
         <KidPrefsProvider>
           <SiteHeader />
           {children}

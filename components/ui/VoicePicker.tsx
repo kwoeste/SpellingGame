@@ -10,13 +10,25 @@ export function VoicePicker({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+    
     function load() {
-      setVoices(rankVoices(window.speechSynthesis.getVoices()));
+      const available = synth.getVoices();
+      if (available.length > 0) {
+        setVoices(rankVoices(available));
+      }
     }
+    
     load();
-    window.speechSynthesis.onvoiceschanged = load;
+    synth.addEventListener("voiceschanged", load);
+    
+    const fallback = setTimeout(load, 500);
+    const retry = setTimeout(load, 1500);
+    
     return () => {
-      window.speechSynthesis.onvoiceschanged = null;
+      synth.removeEventListener("voiceschanged", load);
+      clearTimeout(fallback);
+      clearTimeout(retry);
     };
   }, []);
 

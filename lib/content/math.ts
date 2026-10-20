@@ -67,7 +67,7 @@ const mathChaptersData: ChapterPack[] = [
       { word: "double", definition: "to add a number to itself", sentenceId: "math.mult.2s.s1" },
       { word: "factor", definition: "a number you multiply", sentenceId: "math.mult.2s.s2" },
       { word: "product", definition: "the answer when you multiply", sentenceId: "math.mult.2s.s2" },
-      { word: "multiply", definition: "to add a number over and over", sentenceId: "math.mult.2s.s1" },
+      { word: "multiply", definition: "to add equal groups together", sentenceId: "math.mult.2s.s1" },
       { word: "even", definition: "a number that ends in 0, 2, 4, 6, or 8", sentenceId: "math.mult.2s.s3" },
     ],
     sequence: [],
@@ -150,7 +150,7 @@ const mathChaptersData: ChapterPack[] = [
     vocab: [
       { word: "tens place", definition: "the second digit from the right in a number", sentenceId: "math.mult.10s.s2" },
       { word: "place value", definition: "what a digit is worth based on where it sits", sentenceId: "math.mult.10s.s1" },
-      { word: "multiply", definition: "to add a number over and over", sentenceId: "math.mult.10s.s1" },
+      { word: "multiply", definition: "to add equal groups together", sentenceId: "math.mult.10s.s1" },
       { word: "product", definition: "the answer when you multiply", sentenceId: "math.mult.10s.s3" },
       { word: "zero", definition: "the number that means nothing or none", sentenceId: "math.mult.10s.s1" },
     ],
@@ -320,7 +320,7 @@ const mathChaptersData: ChapterPack[] = [
       { word: "factor", definition: "a number you multiply", sentenceId: "math.mult.7s.s2" },
       { word: "product", definition: "the answer when you multiply", sentenceId: "math.mult.7s.s2" },
       { word: "strategy", definition: "a plan or trick to solve a problem", sentenceId: "math.mult.7s.s3" },
-      { word: "multiply", definition: "to add a number over and over", sentenceId: "math.mult.7s.s1" },
+      { word: "multiply", definition: "to add equal groups together", sentenceId: "math.mult.7s.s1" },
     ],
     sequence: [],
     items: [
@@ -404,7 +404,7 @@ const mathChaptersData: ChapterPack[] = [
       { word: "pattern", definition: "something that repeats in a predictable way", sentenceId: "math.mult.9s.s3" },
       { word: "factor", definition: "a number you multiply", sentenceId: "math.mult.9s.s2" },
       { word: "product", definition: "the answer when you multiply", sentenceId: "math.mult.9s.s2" },
-      { word: "multiply", definition: "to add a number over and over", sentenceId: "math.mult.9s.s1" },
+      { word: "multiply", definition: "to add equal groups together", sentenceId: "math.mult.9s.s1" },
     ],
     sequence: [],
     items: [
