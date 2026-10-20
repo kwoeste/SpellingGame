@@ -373,6 +373,16 @@
   min-width: 820px;
 }
 
+.ad-columns-wide {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  min-width: 0;
+}
+
+.ad-columns-wide .ad-node {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
 .ad-col h3 {
   margin: 0 0 8px;
   font-size: 0.85rem;

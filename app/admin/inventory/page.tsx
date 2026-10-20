@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
 import { InventoryPanel } from "@/app/admin/_ui/inventory";
 import { listFilamentSpools, listStoreItems, listAdjustments } from "@/lib/admin/inventory-repo";
 import { SHOP_PRODUCTS, FILAMENT_COLORS } from "@/lib/shop/products";
+
+export const metadata: Metadata = {
+  title: "Admin · Inventory | Mae's Lab",
+};
 
 export const dynamic = "force-dynamic";
 

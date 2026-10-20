@@ -315,16 +315,16 @@ export function buildOverview(snap: DashboardSnapshot): Overview {
       unit: "due",
     },
   ];
-  // Review ring: remaining due items. 100% when none are due.
+  // Review ring: remaining due items. Show dash when none are due.
   const reviewRing = rings.find((ring) => ring.id === "review");
   if (reviewRing) {
     const remaining = reviewsDue.length;
     if (remaining === 0) {
-      reviewRing.done = 1;
-      reviewRing.goal = 1;
-      reviewRing.pct = 100;
+      reviewRing.done = 0;
+      reviewRing.goal = 0;
+      reviewRing.pct = -1;
       reviewRing.label = "Reviews clear";
-      reviewRing.unit = "done";
+      reviewRing.unit = "";
     } else {
       reviewRing.done = 0;
       reviewRing.goal = remaining;

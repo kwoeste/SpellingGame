@@ -1,7 +1,12 @@
 import { HorizontalBars, LineChart } from "@/app/admin/_ui/charts";
 import { EmptyState } from "@/app/admin/_ui/empty";
 import { formatEtDate } from "@/lib/admin/format";
-import type { ProgressView } from "@/lib/admin/types";
+import { subjectLabel, type ProgressView } from "@/lib/admin/types";
+
+function friendlyChapterName(subject: string, number: number, title: string): string {
+  const subjectName = subjectLabel(subject as "math" | "science" | "ela" | "religion");
+  return `${subjectName} ${number} · ${title}`;
+}
 
 export function ProgressViewPanel({ data }: { data: ProgressView }) {
   const anyMastery = data.subjects.some((subject) => subject.mastered > 0 || subject.inProgress > 0);
@@ -89,9 +94,9 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
               {data.chapters.map((chapter) => (
                 <tr key={chapter.chapterId}>
                   <td>
-                    {chapter.book} {chapter.number}. {chapter.title}
+                    {friendlyChapterName(chapter.subject, chapter.number, chapter.title)}
                   </td>
-                  <td>{chapter.subject}</td>
+                  <td>{subjectLabel(chapter.subject)}</td>
                   <td>
                     {chapter.itemsCorrect}/{chapter.itemsTotal}
                   </td>
