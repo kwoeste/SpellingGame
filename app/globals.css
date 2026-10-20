@@ -541,6 +541,179 @@ button, input, textarea, select { font: inherit; }
   80% { transform: translateX(4px); }
 }
 
+/* Richer study lessons */
+.chapter-header-img {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  border: 3px solid var(--line);
+}
+.story-hook {
+  font-size: 1.08rem;
+  font-style: italic;
+  color: var(--muted);
+  margin: 0 0 18px;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(255,140,60,0.08), rgba(155,93,229,0.06));
+  border-left: 4px solid var(--brand);
+  border-radius: 0 12px 12px 0;
+}
+.keywords-card {
+  background: var(--paper);
+  border: 3px solid var(--line);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 12px;
+}
+.keywords-card h3 {
+  margin: 0 0 8px;
+  color: var(--brand);
+}
+.keywords-card > p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+.keywords-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.keyword-item {
+  display: grid;
+  grid-template-columns: minmax(100px, auto) 1fr;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--wash);
+  border-radius: 12px;
+}
+.keyword-item dt {
+  font-weight: 700;
+  color: var(--ink);
+}
+.keyword-item dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Student Progress */
+.progress-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255,140,60,0.12), rgba(155,93,229,0.08));
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+.progress-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--paper);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+}
+.progress-stat-card.stars { border-color: #f5c842; }
+.progress-stat-card.chapters { border-color: #9fd4f5; }
+.progress-stat-card.xp { border-color: #d3c0ff; }
+.progress-stat-card.streak { border-color: #ff9b6a; }
+.progress-stat-icon {
+  font-size: 2rem;
+}
+.progress-stat-card strong {
+  display: block;
+  font-size: 1.6rem;
+  font-family: var(--font-display);
+  line-height: 1;
+}
+.progress-stat-card span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* Streak Calendar */
+.streak-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.streak-day-labels {
+  display: flex;
+  gap: 3px;
+  padding-left: 4px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.streak-day-labels span {
+  width: 14px;
+  text-align: center;
+}
+.streak-grid {
+  display: flex;
+  gap: 3px;
+}
+.streak-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.streak-day {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.streak-day.level-1 { background: #ffe4c4; }
+.streak-day.level-2 { background: #ffb87a; }
+.streak-day.level-3 { background: #ff8a3d; }
+.streak-day.level-4 { background: #e85d04; }
+.streak-day.future { background: transparent; border: 1px dashed var(--line); }
+.streak-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.streak-legend .streak-day {
+  width: 12px;
+  height: 12px;
+}
+
+/* Badges */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.badge-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fff8e8, #fff3e0);
+  border: 2px solid #f5c842;
+  border-radius: 12px;
+}
+.badge-icon {
+  font-size: 1.4rem;
+}
+.badge-label {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
 @media (max-width: 800px) {
   .kid-hero, .arcade-hero, .shop-hero { grid-template-columns: 1fr; }
   .stat-row { grid-template-columns: 1fr; }

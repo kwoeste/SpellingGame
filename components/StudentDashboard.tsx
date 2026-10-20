@@ -78,6 +78,13 @@ export function StudentDashboard({
           <ProgressRing pct={week?.pct ?? 0} label="This week" size={96} />
         </div>
       </div>
+      <Link
+        href="/my-progress"
+        className="btn secondary"
+        style={{ display: "inline-block", marginBottom: 20, textDecoration: "none" }}
+      >
+        View my progress &amp; badges
+      </Link>
 
       <section className="card" style={{ marginBottom: 18 }}>
         <p className="kid-kicker">Your voice</p>

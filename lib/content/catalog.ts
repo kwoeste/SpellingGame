@@ -1,9 +1,10 @@
 import { cklaChapters } from "@/lib/content/ckla";
 import { colChapters } from "@/lib/content/col";
+import { mathChapters } from "@/lib/content/math";
 import { savvasChapters } from "@/lib/content/savvas";
 import type { ChapterPack } from "@/lib/content/types";
 
-const chapters: ChapterPack[] = [...savvasChapters, ...cklaChapters, ...colChapters];
+const chapters: ChapterPack[] = [...savvasChapters, ...cklaChapters, ...colChapters, ...mathChapters];
 
 export function listChapters(): ChapterPack[] {
   return chapters;
@@ -27,12 +28,13 @@ export function getNextChapter(currentId: string): ChapterPack | null {
   return sortedByNumber[currentIndex + 1];
 }
 
-export function chapterCount(): { total: number; savvas: number; ckla: number; col: number } {
+export function chapterCount(): { total: number; savvas: number; ckla: number; col: number; math: number } {
   return {
     total: chapters.length,
     savvas: savvasChapters.length,
     ckla: cklaChapters.length,
     col: colChapters.length,
+    math: mathChapters.length,
   };
 }
 
