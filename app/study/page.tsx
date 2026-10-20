@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { StudentDashboard } from "@/components/StudentDashboard";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
@@ -6,6 +7,10 @@ import { chapterVisibleTo } from "@/lib/content/student";
 import { arcadeTiles } from "@/lib/games/arcade-tiles";
 import { engineRepo } from "@/lib/engine/repos";
 import { getLikes, progressSummary, resumePoint } from "@/lib/engine/service";
+
+export const metadata: Metadata = {
+  title: "Study | Mae's Lab",
+};
 
 export default async function StudyIndexPage() {
   const user = await requirePageUser(["student", "admin"], "/study");

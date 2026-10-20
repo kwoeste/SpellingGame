@@ -8,6 +8,7 @@ const savvas: CompactChapter[] = [
     titleKid: "What is science?",
     subject: "science",
     bigQuestion: "How do scientists learn about the world?",
+    storyHook: "Imagine you're a detective with a magnifying glass. Scientists are like detectives who ask questions about everything they see!",
     paragraphs: [
       "Scientists start by looking closely. An observation is something you notice with your senses, like “the ice feels cold.” An inference is a guess based on what you saw, like “the ice will melt in the sun.”",
       "A fair test changes only one variable at a time. Tools such as a ruler, thermometer, or balance help you collect data you can share.",
@@ -43,6 +44,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Technology and design",
     subject: "science",
     bigQuestion: "How do people design solutions?",
+    storyHook: "Every time you use a pencil or drink from a water bottle, you're using technology someone designed. How do inventors turn ideas into real things?",
     paragraphs: [
       "Technology is any tool people make to solve a problem. A pencil, a bridge, and a water bottle are all technology.",
       "Designers follow a process. They name the problem, list limits, sketch ideas, build a prototype, test it, and improve it.",
@@ -71,6 +73,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Living things and adaptations",
     subject: "science",
     bigQuestion: "How do living things fit their homes?",
+    storyHook: "A polar bear has thick fur, and a cactus stores water. Every living thing has special tricks to survive where it lives!",
     paragraphs: [
       "Scientists classify animals to study them. Vertebrates have backbones. Invertebrates do not.",
       "An adaptation is a body part or behavior that helps a living thing survive. A thick coat, a sharp beak, or traveling to a warmer place can all be adaptations.",
@@ -99,6 +102,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Ecosystems and fossils",
     subject: "science",
     bigQuestion: "How do living things and past worlds connect?",
+    storyHook: "Long ago, dinosaurs roamed the Earth. We know about them because of fossils — nature's time capsules buried in rock!",
     paragraphs: [
       "An ecosystem is the living and nonliving parts of a place working together. Producers make food. Consumers eat. Decomposers recycle leftovers.",
       "A fossil is a trace of a living thing from long ago. Fossils can hint at the past environment, like a watery place or a dry one.",
@@ -127,6 +131,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Earth's resources and changing land",
     subject: "science",
     bigQuestion: "How does Earth's surface change?",
+    storyHook: "Rivers carve canyons, and wind shapes sand dunes. The ground under your feet is always changing — very, very slowly!",
     paragraphs: [
       "Earth's surface has landforms and a lot of water. Most of that water is in oceans, so only a little is fresh water we can easily use.",
       "Weathering breaks rock into smaller pieces. Erosion carries those pieces away. Deposition drops them in a new place. Gravity helps water, ice, and wind move soil.",
@@ -156,6 +161,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Matter stays matter",
     subject: "science",
     bigQuestion: "What happens to matter when it changes?",
+    storyHook: "When you melt an ice cube, it turns into water — but did any of it disappear? Let's find out what happens to stuff when it changes!",
     paragraphs: [
       "Matter is anything that has mass and takes up space. It can be a solid, a liquid, or a gas.",
       "When something breaks, dissolves, or changes state, the amount of matter stays the same. The pieces still add up, even if they look different.",
@@ -184,6 +190,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Energy and heat",
     subject: "science",
     bigQuestion: "How does energy move?",
+    storyHook: "Why does a metal spoon get hot in soup, but a wooden spoon stays cool? Heat energy is sneaky — it loves to travel!",
     paragraphs: [
       "Energy can show up as light, heat, sound, or motion. Heat moves from a warmer place to a cooler place.",
       "A conductor lets heat move through it easily, like a metal pan. An insulator slows heat, like a wooden handle.",
@@ -212,6 +219,7 @@ const savvas: CompactChapter[] = [
     titleKid: "Electricity and magnetism",
     subject: "science",
     bigQuestion: "How do circuits and magnets work?",
+    storyHook: "Flip a switch and a light turns on like magic! But it's not magic — it's electricity racing through wires in a loop called a circuit.",
     paragraphs: [
       "A circuit needs a complete conducting loop for electricity to flow. If the loop is open, a bulb stays dark.",
       "Electricity can change into light, heat, sound, or motion. Electricity and magnetism are related. A coil of wire with current can act like a magnet.",

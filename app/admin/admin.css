@@ -171,6 +171,37 @@
 
 .ad-empty p { margin: 0; }
 
+.ad-empty-state {
+  border: 2px dashed var(--ad-line);
+  background: var(--ad-panel);
+  border-radius: 16px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ad-muted);
+}
+
+.ad-empty-icon {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 12px;
+  opacity: 0.7;
+}
+
+.ad-empty-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ad-ink);
+}
+
+.ad-empty-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  max-width: 300px;
+  margin-inline: auto;
+  line-height: 1.5;
+}
+
 .ad-alert {
   display: grid;
   gap: 8px;

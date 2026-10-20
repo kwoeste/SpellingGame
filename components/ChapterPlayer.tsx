@@ -166,7 +166,7 @@ export function ChapterPlayer({
       ) : null}
       {progress?.starEarned ? <p aria-label="Star earned">⭐ You earned the star for this chapter.</p> : null}
       {welcomeBack && view.kind !== "done" ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
-      <p className="kid-kicker">{chapter.bigQuestion}</p>
+      <p className="kid-kicker">{view.kind === "keywords" ? "Words you'll see" : chapter.bigQuestion}</p>
       {error ? (
         <p role="alert" className="notice">
           {error}
@@ -223,14 +223,16 @@ function DoneView({
 }) {
   if (gate?.passed) {
     return (
-      <div role="status" className="feedback-card">
-        <Mascot mood="cheer" size={96} />
-        <h3>⭐ Star earned!</h3>
-        <p>
-          You got {gate.correct} of {gate.total} right on the first try. Great place to stop, or pick another chapter.
-        </p>
+      <div role="status" className="done-card success">
+        <Mascot mood="cheer" size={80} />
+        <div className="done-content">
+          <h3>⭐ Star earned!</h3>
+          <p>
+            You got {gate.correct} of {gate.total} right on the first try. Great place to stop, or pick another chapter.
+          </p>
+        </div>
         <ConfettiLayer fire />
-        <div className="chips" style={{ marginTop: 16, justifyContent: "center" }}>
+        <div className="done-actions">
           <a href="/study" className="btn secondary">
             Back to Study
           </a>
@@ -244,17 +246,19 @@ function DoneView({
     );
   }
   return (
-    <div role="status">
-      <Mascot mood="think" size={80} />
-      <h3>Nice work finishing!</h3>
-      {gate ? (
-        <p>
-          You got {gate.correct} of {gate.total} right on the first try. A star needs {gate.needPct}%. Want to go again?
-        </p>
-      ) : (
-        <p>You finished this chapter.</p>
-      )}
-      <div className="chips" style={{ marginTop: 16, justifyContent: "center" }}>
+    <div role="status" className="done-card">
+      <Mascot mood="think" size={72} />
+      <div className="done-content">
+        <h3>Nice work finishing!</h3>
+        {gate ? (
+          <p>
+            You got {gate.correct} of {gate.total} right on the first try. A star needs {gate.needPct}%. Want to go again?
+          </p>
+        ) : (
+          <p>You finished this chapter.</p>
+        )}
+      </div>
+      <div className="done-actions">
         <a href="/study" className="btn secondary">
           Back to Study
         </a>

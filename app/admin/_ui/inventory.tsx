@@ -50,7 +50,7 @@ export function InventoryPanel({
           onClick={() => setTab("filament")}
           className={tab === "filament" ? "active" : ""}
         >
-          Filament ({filamentSpools.length})
+          🎨 Filament Spools {filamentSpools.length > 0 && `(${filamentSpools.length})`}
         </button>
         <button
           role="tab"
@@ -58,7 +58,7 @@ export function InventoryPanel({
           onClick={() => setTab("store")}
           className={tab === "store" ? "active" : ""}
         >
-          Store Items ({storeItems.length})
+          📦 Store Items {storeItems.length > 0 && `(${storeItems.length})`}
         </button>
         <button
           role="tab"
@@ -66,7 +66,7 @@ export function InventoryPanel({
           onClick={() => setTab("log")}
           className={tab === "log" ? "active" : ""}
         >
-          Adjustment Log
+          📋 Activity Log
         </button>
       </div>
 
@@ -248,26 +248,26 @@ function FilamentTab({
         </form>
       )}
 
-      <table className="ad-table">
-        <thead>
-          <tr>
-            <th>Color</th>
-            <th>Material</th>
-            <th>Brand</th>
-            <th>Remaining</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {spools.length === 0 ? (
+      {spools.length === 0 ? (
+        <div className="ad-empty-state">
+          <span className="ad-empty-icon">🎨</span>
+          <p className="ad-empty-title">No filament spools yet</p>
+          <p className="ad-empty-hint">Add your first spool to start tracking filament usage and get low-stock alerts.</p>
+        </div>
+      ) : (
+        <table className="ad-table">
+          <thead>
             <tr>
-              <td colSpan={6} className="ad-empty">
-                No filament spools tracked yet. Add your first spool above.
-              </td>
+              <th>Color</th>
+              <th>Material</th>
+              <th>Brand</th>
+              <th>Remaining</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          ) : (
-            spools.map((spool) => (
+          </thead>
+          <tbody>
+            {spools.map((spool) => (
               <tr key={spool.id} className={spool.lowStock ? "low-stock" : ""}>
                 <td>{spool.color}</td>
                 <td>{spool.material}</td>
@@ -286,10 +286,10 @@ function FilamentTab({
                   </button>
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
@@ -454,25 +454,25 @@ function StoreItemTab({
         </form>
       )}
 
-      <table className="ad-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Variant</th>
-            <th>Stock</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.length === 0 ? (
+      {items.length === 0 ? (
+        <div className="ad-empty-state">
+          <span className="ad-empty-icon">📦</span>
+          <p className="ad-empty-title">No store items yet</p>
+          <p className="ad-empty-hint">Add your first item to track inventory for your shop products.</p>
+        </div>
+      ) : (
+        <table className="ad-table">
+          <thead>
             <tr>
-              <td colSpan={5} className="ad-empty">
-                No store items tracked yet. Add your first item above.
-              </td>
+              <th>Name</th>
+              <th>Variant</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          ) : (
-            items.map((item) => (
+          </thead>
+          <tbody>
+            {items.map((item) => (
               <tr key={item.id} className={item.lowStock ? "low-stock" : ""}>
                 <td>{item.name}</td>
                 <td>{item.variantDesc || "—"}</td>
@@ -490,10 +490,10 @@ function StoreItemTab({
                   </button>
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
@@ -502,26 +502,26 @@ function AdjustmentLog({ adjustments }: { adjustments: InventoryAdjustment[] }) 
   return (
     <div className="ad-card">
       <h2>Recent Adjustments</h2>
-      <table className="ad-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Action</th>
-            <th>Qty</th>
-            <th>Reason</th>
-            <th>By</th>
-          </tr>
-        </thead>
-        <tbody>
-          {adjustments.length === 0 ? (
+      {adjustments.length === 0 ? (
+        <div className="ad-empty-state">
+          <span className="ad-empty-icon">📋</span>
+          <p className="ad-empty-title">No activity yet</p>
+          <p className="ad-empty-hint">Adjustments will appear here when you use, restock, or correct inventory.</p>
+        </div>
+      ) : (
+        <table className="ad-table">
+          <thead>
             <tr>
-              <td colSpan={6} className="ad-empty">
-                No adjustments recorded yet.
-              </td>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Action</th>
+              <th>Qty</th>
+              <th>Reason</th>
+              <th>By</th>
             </tr>
-          ) : (
-            adjustments.map((adj) => (
+          </thead>
+          <tbody>
+            {adjustments.map((adj) => (
               <tr key={adj.id}>
                 <td>{new Date(adj.createdAt).toLocaleString()}</td>
                 <td>{adj.targetType === "filament" ? "Filament" : "Store Item"}</td>
@@ -530,10 +530,10 @@ function AdjustmentLog({ adjustments }: { adjustments: InventoryAdjustment[] }) 
                 <td>{adj.reason || "—"}</td>
                 <td>{adj.adjustedBy}</td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

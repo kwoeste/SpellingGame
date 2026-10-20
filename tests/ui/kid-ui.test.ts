@@ -61,7 +61,8 @@ describe("arcade and header chrome", () => {
   it("builds illustrated tiles for every restored spelling list plus Number Match", () => {
     const tiles = arcadeTiles({ role: "student", badges: [] });
     for (const list of SPELLING_LISTS) {
-      expect(tiles.some((tile) => tile.title === list.shortTitle)).toBe(true);
+      const expectedTitle = `Spelling Safari · ${list.shortTitle}`;
+      expect(tiles.some((tile) => tile.title === expectedTitle)).toBe(true);
     }
     expect(tiles.some((tile) => tile.href === "/number-match")).toBe(true);
     expect(tiles.every((tile) => tile.group !== "religion")).toBe(true);

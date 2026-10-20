@@ -9,6 +9,7 @@ export type CompactChapter = {
   unit?: string;
   subject: SubjectId;
   bigQuestion: string;
+  storyHook?: string;
   paragraphs: string[];
   vocab: { word: string; definition: string }[];
   sequence: string[];
@@ -91,6 +92,7 @@ export function buildChapter(compact: CompactChapter): ChapterPack {
     unit: compact.unit,
     subject: compact.subject,
     bigQuestion: compact.bigQuestion,
+    storyHook: compact.storyHook,
     reviewStatus,
     pendingReligionReview: compact.religion,
     bibleTranslation: compact.religion ? bibleTranslation() : undefined,
