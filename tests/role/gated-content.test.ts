@@ -61,6 +61,21 @@ describe.skipIf(!existsSync(".next/static"))("public static bundle", () => {
   });
 });
 
+describe("admin client UI stays catalog-free", () => {
+  it("does not import chapter packs or the admin catalog", () => {
+    const dir = path.join(process.cwd(), "app/admin/_ui");
+    const forbidden = ['from "@/lib/admin/catalog"', 'from "@/lib/content/catalog"', "listChapters("];
+    for (const entry of readdirSync(dir)) {
+      if (!/\.(ts|tsx)$/.test(entry)) continue;
+      const text = readFileSync(path.join(dir, entry), "utf8");
+      if (!text.includes('"use client"')) continue;
+      for (const needle of forbidden) {
+        expect(text.includes(needle), `${entry} contains ${needle}`).toBe(false);
+      }
+    }
+  });
+});
+
 describe("GitHub Pages publish list", () => {
   it("excludes every top-level app/source entry so Study text never lands on maewoeste.com", () => {
     const root = process.cwd();

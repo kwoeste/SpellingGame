@@ -87,7 +87,7 @@ npm run check:student-bundle
 
 Section 16 role tests live in `tests/role/section16.test.ts`. Engine tests cover BKT, Elo/zone, XP, gating, spaced review, and the session service. `tests/role/gated-content.test.ts` also scans `.next/static` (after `npm run build`) for chapter and game text.
 
-The Postgres RLS tests in `tests/db/postgres.integration.test.ts` are skipped unless a throwaway superuser URL is set. They create a scratch database, apply 001–003, and check the role boundaries:
+The Postgres RLS tests in `tests/db/postgres.integration.test.ts` are skipped unless a throwaway superuser URL is set. They create a scratch database, apply 001–004, and check the role boundaries:
 
 ```bash
 TEST_PG_SUPERUSER_URL=postgresql://user:pass@127.0.0.1/postgres npm test

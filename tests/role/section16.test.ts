@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { defaultAllowlists } from "@/lib/auth/allowlist";
 import { resetAudit, lastAuditFor } from "@/lib/auth/audit";
 import { decideRequest } from "@/lib/auth/decide";
 import { FEEDBACK_FORBIDDEN_KEYS, NEXT_ITEM_FORBIDDEN_KEYS, STUDENT_PROGRESS_ALLOWLIST } from "@/lib/auth/guards";
@@ -57,6 +58,7 @@ describe("section 16 role tests", () => {
       "/admin/sessions",
       "/admin/assignments",
       "/admin/wrong-answers",
+      "/admin/privacy",
       "/admin/assets/app.js",
     ]) {
       const decision = decideRequest({ pathname, hasSession: true, role: "student" });
@@ -285,5 +287,43 @@ describe("section 16 role tests", () => {
     const student = decideRequest({ pathname: "/admin", hasSession: true, role: "student" });
     expect(admin.kind).toBe("allow");
     expect(student.kind).toBe("forbidden");
+  });
+
+  it("R19 default admin allowlist is Kevin and Molly only", () => {
+    expect(defaultAllowlists().admins).toEqual([
+      "kevinw@mcsteen.com",
+      "woeste.kevin@gmail.com",
+      "molly.woeste@gmail.com",
+    ]);
+    expect(defaultAllowlists().students).toEqual(["mae.woeste@gmail.com"]);
+  });
+
+  it("R20 anonymous admin APIs are 401 JSON", async () => {
+    const res = await adminOverview(req("http://local/api/admin/overview"));
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "unauthorized" });
+    const page = decideRequest({ pathname: "/admin", hasSession: false, role: null });
+    expect(page).toEqual({ kind: "forbidden", status: 403, page: true });
+  });
+
+  it("R21 every admin handler and the admin layout use a server-side gate", () => {
+    const layout = readFileSync(path.join(process.cwd(), "app/admin/layout.tsx"), "utf8");
+    expect(layout).toContain('requirePageUser(["admin"]');
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith(".ts")) {
+          const text = readFileSync(full, "utf8");
+          expect(
+            /adminRead|adminWrite|adminGate/.test(text),
+            `${full} is missing the shared admin gate`,
+          ).toBe(true);
+        }
+      }
+    };
+    walk(path.join(process.cwd(), "app/api/admin"));
+    const asset = readFileSync(path.join(process.cwd(), "app/admin/assets/app.js/route.ts"), "utf8");
+    expect(asset).toMatch(/adminGate/);
   });
 });

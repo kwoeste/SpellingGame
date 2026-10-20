@@ -1,14 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { EmptyState } from "@/app/admin/_ui/empty";
-import { catalogChapters, catalogConcepts } from "@/lib/admin/catalog";
 import { formatEtDateTime } from "@/lib/admin/format";
 import type { AssignmentsView } from "@/lib/admin/types";
 
 export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
-  const concepts = useMemo(() => catalogConcepts(), []);
-  const chapters = useMemo(() => catalogChapters(), []);
+  const concepts = data.concepts;
+  const chapters = data.chapters;
   const [targetType, setTargetType] = useState<"concept" | "chapter">("concept");
   const [targetId, setTargetId] = useState(concepts[0]?.id ?? "");
   const [reason, setReason] = useState("");
@@ -101,12 +100,12 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
                 {targetType === "concept"
                   ? concepts.map((concept) => (
                       <option key={concept.id} value={concept.id}>
-                        {concept.titleAdmin}
+                        {concept.title}
                       </option>
                     ))
                   : chapters.map((chapter) => (
                       <option key={chapter.id} value={chapter.id}>
-                        {chapter.titleKid}
+                        {chapter.title}
                       </option>
                     ))}
               </select>

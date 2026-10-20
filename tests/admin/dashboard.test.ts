@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildKnowledgeNodes, buildOverview, buildProgress, suggestedHoleAssignments, type DashboardSnapshot } from "@/lib/admin/dashboard";
+import { buildAssignments, buildKnowledgeNodes, buildOverview, buildProgress, suggestedHoleAssignments, type DashboardSnapshot } from "@/lib/admin/dashboard";
 import { detectHoles } from "@/lib/admin/holes";
 import { SEEDED_LEARNER_ID } from "@/lib/auth/users";
 import type { AdminEventRow, AdminMasteryRow, PlaySession } from "@/lib/engine/repo";
@@ -138,6 +138,14 @@ describe("admin dashboard aggregations", () => {
     const ch1 = progress.chapters.find((row) => row.chapterId === "savvas.ch1");
     expect(ch1?.gated).toBe(true);
     expect(ch1?.itemsCorrect).toBeGreaterThanOrEqual(1);
+  });
+
+  it("sends assignment dropdowns as id/title only", () => {
+    const assignments = buildAssignments(snap());
+    expect(assignments.concepts.length).toBeGreaterThan(0);
+    expect(assignments.chapters.some((chapter) => chapter.id === "savvas.ch1")).toBe(true);
+    expect(JSON.stringify(assignments.concepts)).not.toContain("Scientists start by looking closely");
+    expect(JSON.stringify(assignments.chapters)).not.toContain("Scientists start by looking closely");
   });
 
   it("does not treat preview sessions as dashboard time", () => {

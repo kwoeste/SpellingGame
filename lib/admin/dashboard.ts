@@ -567,6 +567,12 @@ export function buildAssignments(snap: DashboardSnapshot): AssignmentsView {
       })),
     suggestedHoles: detectHoles(nodes, snap.now),
     goal,
+    concepts: catalogConcepts()
+      .map((concept) => ({ id: concept.id, title: concept.titleAdmin }))
+      .sort((a, b) => a.title.localeCompare(b.title)),
+    chapters: catalogChapters()
+      .map((chapter) => ({ id: chapter.id, title: chapter.titleKid }))
+      .sort((a, b) => a.title.localeCompare(b.title)),
   };
 }
 

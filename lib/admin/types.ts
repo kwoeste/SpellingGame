@@ -201,10 +201,17 @@ export type LearnerGoal = {
   updatedBy: string;
 };
 
+export type AssignTargetOption = {
+  id: string;
+  title: string;
+};
+
 export type AssignmentsView = {
   assignments: AssignmentRow[];
   suggestedHoles: Alert[];
   goal: LearnerGoal;
+  concepts: AssignTargetOption[];
+  chapters: AssignTargetOption[];
 };
 
 export function isMasteryState(value: string): value is MasteryState {
