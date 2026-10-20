@@ -1,6 +1,5 @@
-import type { AppRole } from "@/lib/auth/allowlist";
-import { NAMED_GAMES } from "@/lib/content/catalog";
-import { gameVisibleTo, type GameId } from "@/lib/content/games";
+// Client-safe: must not import chapter content (lib/content/catalog).
+import type { GameId } from "@/lib/content/games";
 import { SPELLING_LISTS } from "@/lib/games/spelling-lists";
 
 export type ArcadeGroup = "spelling" | "math" | "history" | "science" | "words" | "religion";
@@ -31,7 +30,7 @@ export const ARCADE_GROUPS: { id: ArcadeGroup | "all"; label: string }[] = [
   { id: "religion", label: "Religion" },
 ];
 
-const NAMED_META: Record<
+export const NAMED_META: Record<
   GameId,
   { tagline: string; icon: string; group: ArcadeGroup; tint: ArcadeTile["tint"] }
 > = {
@@ -115,7 +114,7 @@ const NAMED_META: Record<
   },
 };
 
-const GROUP_LABEL: Record<ArcadeGroup, string> = {
+export const GROUP_LABEL: Record<ArcadeGroup, string> = {
   spelling: "Spelling",
   math: "Math",
   history: "History",
@@ -158,39 +157,6 @@ export function spellingTiles(starredIds: Set<string>, recommendedId?: string): 
       progress: starred ? 100 : 0,
     };
   });
-}
-
-export function namedGameTiles(role: AppRole, badges: string[]): ArcadeTile[] {
-  const stars = new Set(badges);
-  return NAMED_GAMES.filter((game) => gameVisibleTo(game.id, role)).map((game) => {
-    const meta = NAMED_META[game.id];
-    const starred = stars.has(`${game.id}-star`) || stars.has(`game:${game.id}`);
-    return {
-      id: game.id,
-      href: `/games/${game.id}`,
-      title: game.title,
-      tagline: meta.tagline,
-      icon: meta.icon,
-      group: meta.group,
-      groupLabel: GROUP_LABEL[meta.group],
-      tint: meta.tint,
-      badge: starred ? "star" : undefined,
-      stars: starred ? 3 : 0,
-      progress: starred ? 100 : 0,
-    };
-  });
-}
-
-export function arcadeTiles(args: {
-  role: AppRole;
-  badges: string[];
-  recommendedSpellingId?: string;
-}): ArcadeTile[] {
-  return [
-    ...spellingTiles(new Set(args.badges), args.recommendedSpellingId),
-    numberMatchTile(args.badges.includes("number-match-star") ? 3 : 0),
-    ...namedGameTiles(args.role, args.badges),
-  ];
 }
 
 export function featuredTile(tiles: ArcadeTile[], resumeHref?: string | null): ArcadeTile {

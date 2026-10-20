@@ -3,7 +3,7 @@ import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
 import { listChapters } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
-import { arcadeTiles } from "@/lib/games/arcade";
+import { arcadeTiles } from "@/lib/games/arcade-tiles";
 import { engineRepo } from "@/lib/engine/repos";
 import { getLikes, progressSummary, resumePoint } from "@/lib/engine/service";
 
