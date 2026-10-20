@@ -29,8 +29,10 @@ function stateLabel(state: MasteryState): string {
   }
 }
 
+const CHAPTER_TAG = /\bCh\s?(\d+)/;
+
 function extractChapterNumber(title: string): number | null {
-  const match = title.match(/Ch(\d+)/);
+  const match = title.match(CHAPTER_TAG);
   return match ? parseInt(match[1], 10) : null;
 }
 
@@ -63,12 +65,12 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
 
   const elaSkills = useMemo(() => {
     const list = bySubject.get("ela") ?? [];
-    return list.filter((node) => node.kind === "reading_skill" || !node.titleAdmin.includes("Ch"));
+    return list.filter((node) => node.kind === "reading_skill" || !CHAPTER_TAG.test(node.titleAdmin));
   }, [bySubject]);
 
   const elaChapters = useMemo(() => {
     const list = bySubject.get("ela") ?? [];
-    return list.filter((node) => node.kind !== "reading_skill" && node.titleAdmin.includes("Ch"));
+    return list.filter((node) => node.kind !== "reading_skill" && CHAPTER_TAG.test(node.titleAdmin));
   }, [bySubject]);
 
   return (
