@@ -21,6 +21,7 @@ export function NumberMatch() {
   const [count, setCount] = useState(0);
   const [playerNumber, setPlayerNumber] = useState(0);
   const [computerNumber, setComputerNumber] = useState(0);
+  const [playerWasGuesser, setPlayerWasGuesser] = useState(true);
   const [rolls, setRolls] = useState({ player: 0, computer: 0, playerWins: false });
   const [result, setResult] = useState("");
   const [won, setWon] = useState<boolean | null>(null);
@@ -68,6 +69,7 @@ export function NumberMatch() {
     const computer = randomNumber(maxNumber);
     setPlayerNumber(n);
     setComputerNumber(computer);
+    setPlayerWasGuesser(playerGuesses);
     setPhase("count");
     setCount(3);
     prefs.speak("Get ready");
@@ -127,7 +129,9 @@ export function NumberMatch() {
       <ConfettiLayer fire={celebrate} />
       <p className="kid-kicker">Counting game</p>
       <h1>Number Match</h1>
-      <VoicePicker compact />
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+        <VoicePicker compact />
+      </div>
       {phase === "setup" ? (
         <div>
           <p>How many points to win?</p>
@@ -141,7 +145,7 @@ export function NumberMatch() {
           <p>How big should the numbers be?</p>
           <div className="chips" style={{ justifyContent: "center" }} role="group" aria-label="Choose the biggest number">
             {[3, 5, 10].map((max) => (
-              <button key={max} className="btn" onClick={() => rollForFirst(max)}>
+              <button key={max} className="btn secondary" onClick={() => rollForFirst(max)}>
                 1 to {max}
               </button>
             ))}
@@ -198,11 +202,11 @@ export function NumberMatch() {
           <div className="stat-row" style={{ justifyContent: "center" }}>
             <div className="stat-card">
               <strong>{playerNumber}</strong>
-              {playerGuesses ? "Your guess" : "Your secret number"}
+              {playerWasGuesser ? "Your guess" : "Your secret number"}
             </div>
             <div className="stat-card">
               <strong>{computerNumber}</strong>
-              {playerGuesses ? "Computer's secret number" : "Computer's guess"}
+              {playerWasGuesser ? "Computer's secret number" : "Computer's guess"}
             </div>
           </div>
           {won === null ? (
