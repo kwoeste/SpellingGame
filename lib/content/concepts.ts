@@ -10,6 +10,7 @@ export type ConceptNode = {
 };
 
 export const MATH_CONCEPTS: ConceptNode[] = [
+  { id: "math.oa.mult_facts", subject: "math", titleKid: "Times tables", titleAdmin: "Multiplication facts", standardCodes: ["OH.3.OA.7"], milestoneLevel: 3.5, kind: "fact_set", efficientStrategies: ["known_fact", "skip_counting"] },
   { id: "math.nbt.pv_3digit", subject: "math", titleKid: "Hundreds, tens, and ones", titleAdmin: "3-digit place value", standardCodes: ["OH.2.NBT.1"], milestoneLevel: 2.3, kind: "skill" },
   { id: "math.oa.add_sub_20_fluency", subject: "math", titleKid: "Add and subtract within 20", titleAdmin: "Fluency within 20", standardCodes: ["OH.2.OA.2"], milestoneLevel: 2.2, kind: "fact_set", efficientStrategies: ["known_fact", "decomposition_tens"] },
   { id: "math.nbt.add_sub_100", subject: "math", titleKid: "Add and subtract within 100", titleAdmin: "Add/sub within 100", standardCodes: ["OH.2.NBT.5"], milestoneLevel: 2.6, kind: "skill", efficientStrategies: ["decomposition_tens", "standard_algorithm"] },

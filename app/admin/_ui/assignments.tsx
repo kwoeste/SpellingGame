@@ -41,8 +41,7 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
       <h1>Goals and hole-filling</h1>
       <p className="ad-lead">
         Auto hole-fill walks hard prerequisites of weak concepts and assigns the deepest blockers
-        first. You can also assign a chapter or concept by hand, the way a DreamBox teacher assignment
-        works.
+        first. You can also assign a chapter or concept by hand.
       </p>
       <div className="ad-grid ad-two">
         <section className="ad-card">

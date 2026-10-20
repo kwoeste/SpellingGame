@@ -1,3 +1,9 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Admin · Privacy | Mae's Lab",
+};
+
 export default function AdminPrivacyPage() {
   return (
     <div className="ad-wrap">

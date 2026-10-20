@@ -29,6 +29,13 @@ function stateLabel(state: MasteryState): string {
   }
 }
 
+const CHAPTER_TAG = /\bCh\s?(\d+)/;
+
+function extractChapterNumber(title: string): number | null {
+  const match = title.match(CHAPTER_TAG);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [subject, setSubject] = useState<SubjectId | "all">("all");
@@ -44,9 +51,27 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
       list.push(node);
       groups.set(node.subject, list);
     }
-    for (const list of groups.values()) list.sort((a, b) => a.milestoneLevel - b.milestoneLevel || a.titleAdmin.localeCompare(b.titleAdmin));
+    for (const list of groups.values()) {
+      list.sort((a, b) => {
+        if (a.milestoneLevel !== b.milestoneLevel) return a.milestoneLevel - b.milestoneLevel;
+        const aNum = extractChapterNumber(a.titleAdmin);
+        const bNum = extractChapterNumber(b.titleAdmin);
+        if (aNum !== null && bNum !== null) return aNum - bNum;
+        return a.titleAdmin.localeCompare(b.titleAdmin);
+      });
+    }
     return groups;
   }, [nodes]);
+
+  const elaSkills = useMemo(() => {
+    const list = bySubject.get("ela") ?? [];
+    return list.filter((node) => node.kind === "reading_skill" || !CHAPTER_TAG.test(node.titleAdmin));
+  }, [bySubject]);
+
+  const elaChapters = useMemo(() => {
+    const list = bySubject.get("ela") ?? [];
+    return list.filter((node) => node.kind !== "reading_skill" && CHAPTER_TAG.test(node.titleAdmin));
+  }, [bySubject]);
 
   return (
     <div className="ad-wrap">
@@ -78,8 +103,8 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
       ) : (
         <div className="ad-map">
           <div className="ad-map-canvas">
-            <div className="ad-columns">
-              {(["math", "science", "ela", "religion"] as SubjectId[]).map((key) => {
+            <div className="ad-columns ad-columns-wide">
+              {(["math", "science", "religion"] as SubjectId[]).map((key) => {
                 const list = bySubject.get(key) ?? [];
                 if (subject !== "all" && subject !== key) return null;
                 return (
@@ -108,6 +133,48 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
                   </div>
                 );
               })}
+              {(subject === "all" || subject === "ela") && (
+                <>
+                  <div className="ad-col">
+                    <h3>ELA Skills</h3>
+                    {elaSkills.map((node) => (
+                      <button
+                        key={node.id}
+                        type="button"
+                        className="ad-node"
+                        data-state={node.state}
+                        onClick={() => setSelectedId(node.id)}
+                        aria-pressed={selectedId === node.id}
+                      >
+                        <strong>{node.titleAdmin}</strong>
+                        <span>
+                          {stateLabel(node.state)} · {node.attempts} tries · {node.milestoneLevel}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {elaChapters.length > 0 && (
+                    <div className="ad-col">
+                      <h3>ELA Chapters</h3>
+                      {elaChapters.map((node) => (
+                        <button
+                          key={node.id}
+                          type="button"
+                          className="ad-node"
+                          data-state={node.state}
+                          onClick={() => setSelectedId(node.id)}
+                          aria-pressed={selectedId === node.id}
+                        >
+                          <strong>{node.titleAdmin}</strong>
+                          <span>
+                            {stateLabel(node.state)} · {node.attempts} tries · {node.milestoneLevel}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
           <aside className="ad-card">

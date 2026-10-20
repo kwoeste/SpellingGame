@@ -96,29 +96,32 @@ export function BarChart(props: { title: string; points: Point[]; caption?: stri
 export function GoalRing(props: { label: string; pct: number; done: number; goal: number; unit: string }) {
   const r = 28;
   const c = 2 * Math.PI * r;
-  const dash = Math.max(0, Math.min(100, props.pct)) / 100 * c;
+  const isNoData = props.pct < 0;
+  const dash = isNoData ? 0 : Math.max(0, Math.min(100, props.pct)) / 100 * c;
   return (
     <div className="ad-ring">
-      <svg width="80" height="80" viewBox="0 0 80 80" role="img" aria-label={`${props.label} ${props.pct}%`}>
+      <svg width="80" height="80" viewBox="0 0 80 80" role="img" aria-label={`${props.label} ${isNoData ? "none" : `${props.pct}%`}`}>
         <circle cx="40" cy="40" r={r} fill="none" stroke="var(--ad-line)" strokeWidth="8" />
-        <circle
-          cx="40"
-          cy="40"
-          r={r}
-          fill="none"
-          stroke="var(--ad-accent)"
-          strokeWidth="8"
-          strokeDasharray={`${dash} ${c}`}
-          strokeLinecap="round"
-          transform="rotate(-90 40 40)"
-        />
+        {!isNoData && (
+          <circle
+            cx="40"
+            cy="40"
+            r={r}
+            fill="none"
+            stroke="var(--ad-accent)"
+            strokeWidth="8"
+            strokeDasharray={`${dash} ${c}`}
+            strokeLinecap="round"
+            transform="rotate(-90 40 40)"
+          />
+        )}
         <text x="40" y="44" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--ad-ink)">
-          {props.pct}%
+          {isNoData ? "—" : `${props.pct}%`}
         </text>
       </svg>
       <strong>{props.label}</strong>
       <span>
-        {props.done} / {props.goal} {props.unit}
+        {isNoData ? "Nothing due" : `${props.done} / ${props.goal} ${props.unit}`}
       </span>
     </div>
   );
