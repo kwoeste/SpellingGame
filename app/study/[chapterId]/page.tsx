@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChapterPlayer } from "@/components/ChapterPlayer";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
 import { getChapter, getNextChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo, toStudentChapter } from "@/lib/content/student";
+
+export async function generateMetadata({ params }: { params: Promise<{ chapterId: string }> }): Promise<Metadata> {
+  const { chapterId } = await params;
+  const chapter = getChapter(chapterId);
+  if (!chapter) return { title: "Study | Mae's Lab" };
+  return { title: `${chapter.titleKid} | Mae's Lab` };
+}
 
 export default async function ChapterPage({ params }: { params: Promise<{ chapterId: string }> }) {
   const { chapterId } = await params;

@@ -18,8 +18,8 @@ export function SiteHeaderView({ nav }: { nav: HeaderNav }) {
             <Mascot size={52} />
           </span>
           <span>
-            <h1>Mae&apos;s Lab</h1>
-            <p>{nav.account === "sign-in" ? "Free 3D prints" : "Let's learn"}</p>
+            <strong className="brand-title">Mae&apos;s Lab</strong>
+            <span className="brand-tagline">{nav.account === "sign-in" ? "Free 3D prints" : "Let's learn"}</span>
           </span>
         </Link>
         <div className="site-header-right">

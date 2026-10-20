@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NamedGame } from "@/components/NamedGame";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
 import { NAMED_GAMES } from "@/lib/content/catalog";
 import { gameSpec, gameVisibleTo, isGameId } from "@/lib/content/games";
+
+export async function generateMetadata({ params }: { params: Promise<{ gameId: string }> }): Promise<Metadata> {
+  const { gameId } = await params;
+  const game = NAMED_GAMES.find((row) => row.id === gameId);
+  if (!game) return { title: "Game Lab | Mae's Lab" };
+  return { title: `${game.title} | Mae's Lab` };
+}
 
 export default async function GamePage({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
