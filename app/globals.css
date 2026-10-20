@@ -529,11 +529,20 @@ button, input, textarea, select { font: inherit; }
   border: 0;
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
 @media (max-width: 800px) {
   .kid-hero, .arcade-hero, .shop-hero { grid-template-columns: 1fr; }
   .stat-row { grid-template-columns: 1fr; }
   .pair-board { grid-template-columns: 1fr; }
   .brand p { display: none; }
+  .brand-tagline { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

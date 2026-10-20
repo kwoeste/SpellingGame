@@ -72,13 +72,21 @@ export function NamedGame({ gameId, title, spec }: { gameId: GameId; title: stri
       </div>
       <div className="grid cols-2" style={{ marginTop: 16 }}>
         {spec.bins.map((bin) => (
-          <button
+          <div
             key={bin}
-            type="button"
+            role="region"
+            aria-label={`${bin} bin`}
             className="drop"
             onClick={() => {
               if (picked) place(picked, bin);
             }}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === " ") && picked) {
+                e.preventDefault();
+                place(picked, bin);
+              }
+            }}
+            tabIndex={picked ? 0 : -1}
           >
             <strong>{bin}</strong>
             {spec.items
@@ -87,8 +95,19 @@ export function NamedGame({ gameId, title, spec }: { gameId: GameId; title: stri
                 <p
                   key={item.label}
                   className={misplaced.has(item.label) ? "misplaced" : ""}
-                  style={misplaced.has(item.label) ? { backgroundColor: "var(--warning-bg, #fff3cd)", borderRadius: 6, padding: "4px 8px" } : undefined}
+                  style={
+                    misplaced.has(item.label)
+                      ? {
+                          border: "3px solid #dc2626",
+                          borderRadius: 8,
+                          padding: "6px 10px",
+                          backgroundColor: "#fef2f2",
+                          animation: "shake 0.4s ease-in-out",
+                        }
+                      : undefined
+                  }
                 >
+                  {misplaced.has(item.label) ? <span aria-hidden="true">⚠️ </span> : null}
                   {item.label}{" "}
                   <button
                     type="button"
@@ -108,7 +127,7 @@ export function NamedGame({ gameId, title, spec }: { gameId: GameId; title: stri
                   </button>
                 </p>
               ))}
-          </button>
+          </div>
         ))}
       </div>
       <button className="btn" onClick={check} style={{ marginTop: 12 }}>
