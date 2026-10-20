@@ -7,6 +7,7 @@ import { Mascot } from "@/components/ui/Mascot";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
 import { playSound } from "@/lib/ui/sounds";
 import { spellingAudioFile, type SpellingList } from "@/lib/games/spelling-lists";
+import { loadProgress, saveProgress, clearProgress } from "@/lib/games/spelling-progress";
 
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -15,43 +16,6 @@ function shuffle<T>(items: T[]): T[] {
     [next[i], next[j]] = [next[j], next[i]];
   }
   return next;
-}
-
-function storageKey(listId: string): string {
-  return `spelling-safari:${listId}`;
-}
-
-function loadProgress(listId: string): { index: number; round: number } | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem(storageKey(listId));
-    if (!stored) return null;
-    const parsed = JSON.parse(stored) as { index: number; round: number };
-    if (typeof parsed.index === "number" && typeof parsed.round === "number") {
-      return parsed;
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return null;
-}
-
-function saveProgress(listId: string, index: number, round: number): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(storageKey(listId), JSON.stringify({ index, round }));
-  } catch {
-    // Ignore storage errors
-  }
-}
-
-function clearProgress(listId: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.removeItem(storageKey(listId));
-  } catch {
-    // Ignore storage errors
-  }
 }
 
 export function SpellingSafari({ list }: { list: SpellingList }) {
