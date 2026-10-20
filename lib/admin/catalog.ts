@@ -19,10 +19,16 @@ function conceptKind(conceptId: string): ConceptNode["kind"] {
   return "knowledge";
 }
 
+function formatChapterName(chapter: ChapterPack): string {
+  const bookName = chapter.book === "savvas" ? "Savvas" : chapter.book === "ckla" ? "CKLA" : chapter.book === "col" ? "CoL" : chapter.book;
+  return `${bookName} Ch${chapter.number}: ${chapter.titleKid}`;
+}
+
 function conceptTitle(conceptId: string, chapter: ChapterPack): { kid: string; admin: string } {
-  if (conceptId.endsWith(".vocab")) return { kid: `${chapter.titleKid} words`, admin: `${chapter.id} vocabulary` };
-  if (conceptId.endsWith(".sequence")) return { kid: `${chapter.titleKid} order`, admin: `${chapter.id} sequence` };
-  if (conceptId.endsWith(".knowledge")) return { kid: chapter.bigQuestion, admin: `${chapter.id} chapter knowledge` };
+  const chapterName = formatChapterName(chapter);
+  if (conceptId.endsWith(".vocab")) return { kid: `${chapter.titleKid} words`, admin: `${chapterName} — Vocabulary` };
+  if (conceptId.endsWith(".sequence")) return { kid: `${chapter.titleKid} order`, admin: `${chapterName} — Sequence` };
+  if (conceptId.endsWith(".knowledge")) return { kid: chapter.bigQuestion, admin: `${chapterName} — Knowledge` };
   return { kid: conceptId, admin: conceptId };
 }
 

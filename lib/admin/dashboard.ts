@@ -319,10 +319,19 @@ export function buildOverview(snap: DashboardSnapshot): Overview {
   const reviewRing = rings.find((ring) => ring.id === "review");
   if (reviewRing) {
     const remaining = reviewsDue.length;
-    reviewRing.done = remaining;
-    reviewRing.goal = Math.max(1, remaining);
-    reviewRing.pct = remaining === 0 ? 100 : 0;
-    reviewRing.label = remaining === 0 ? "Reviews clear" : `${remaining} review${remaining === 1 ? "" : "s"} due`;
+    if (remaining === 0) {
+      reviewRing.done = 1;
+      reviewRing.goal = 1;
+      reviewRing.pct = 100;
+      reviewRing.label = "Reviews clear";
+      reviewRing.unit = "done";
+    } else {
+      reviewRing.done = 0;
+      reviewRing.goal = remaining;
+      reviewRing.pct = 0;
+      reviewRing.label = `${remaining} review${remaining === 1 ? "" : "s"} due`;
+      reviewRing.unit = "to do";
+    }
   }
 
   const weekBuckets = new Map<string, { correct: number; total: number }>();
