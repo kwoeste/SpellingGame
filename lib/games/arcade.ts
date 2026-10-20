@@ -146,7 +146,7 @@ export function spellingTiles(starredIds: Set<string>, recommendedId?: string): 
     return {
       id: `spelling:${list.id}`,
       href: list.id === "d1" ? "/spelling-game" : `/spelling-game/${list.id}`,
-      title: list.shortTitle,
+      title: `Spelling Safari · ${list.shortTitle}`,
       tagline: list.tagline,
       icon: list.icon,
       group: "spelling" as const,
