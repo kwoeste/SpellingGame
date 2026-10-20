@@ -12,6 +12,7 @@ import {
 } from "@/lib/games/arcade";
 
 function Stars({ count }: { count: number }) {
+  if (count === 0) return null;
   return <div className="stars" aria-label={`${count} of 3 stars`}>{`${"★".repeat(count)}${"☆".repeat(3 - count)}`}</div>;
 }
 
@@ -19,8 +20,8 @@ function TileCard({ tile }: { tile: ArcadeTile }) {
   const reduce = useReducedMotion();
   return (
     <motion.div whileHover={reduce ? undefined : { y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 380, damping: 22 }}>
-    <Link href={tile.href} className={`arcade-tile ${tile.tint}`}>
-      {tile.badge ? <span className={`badge ${tile.badge}`}>{tile.badge === "star" ? "Star" : tile.badge === "new" ? "New" : "Play next"}</span> : null}
+    <Link href={tile.href} className={`arcade-tile arcade-tile-big ${tile.tint}`}>
+      {tile.badge ? <span className={`badge ${tile.badge}`}>{tile.badge === "star" ? "★" : tile.badge === "new" ? "New" : "Play next"}</span> : null}
       <div className="icon" aria-hidden="true">
         {tile.icon}
       </div>
@@ -48,16 +49,16 @@ export function GameArcade({ tiles, resumeHref }: { tiles: ArcadeTile[]; resumeH
       <p className="kid-kicker">Game arcade</p>
       <h2 id="arcade-heading">Pick a game</h2>
       {featured ? (
-        <Link href={featured.href} className="arcade-hero">
-          <div className={`icon arcade-tile ${featured.tint}`} style={{ width: 84, height: 84, display: "grid", placeItems: "center", fontSize: "2.4rem", border: 0, boxShadow: "none" }}>
+        <Link href={featured.href} className="arcade-hero-banner">
+          <div className="arcade-hero-icon">
             {featured.icon}
           </div>
-          <div>
-            <p className="kid-kicker">Play next</p>
-            <h3 style={{ margin: 0 }}>{featured.title}</h3>
-            <p style={{ margin: "6px 0 0", fontWeight: 700 }}>{featured.tagline}</p>
+          <div className="arcade-hero-content">
+            <span className="arcade-hero-label">▶ Play next</span>
+            <h3>{featured.title}</h3>
+            <p>{featured.tagline}</p>
           </div>
-          <span className="btn">Play</span>
+          <span className="arcade-hero-btn">Play</span>
         </Link>
       ) : null}
       <div className="arcade-filters" role="group" aria-label="Filter games">
