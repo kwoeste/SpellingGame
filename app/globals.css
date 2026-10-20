@@ -25,6 +25,8 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.6;
   background: var(--wash);
   color: var(--ink);
   min-height: 100vh;
@@ -178,9 +180,17 @@ button, input, textarea, select { font: inherit; }
 .report-btn {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: 24px;
   z-index: 40;
 }
+.report-btn > button.btn {
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  min-height: 36px;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+.report-btn > button.btn:hover { opacity: 1; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   background: #fff0d8;
