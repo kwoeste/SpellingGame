@@ -9,7 +9,8 @@ const SUBJECT_CONFIG: Record<SubjectId, { emoji: string; bg: string; label: stri
 
 export function ChapterHeader({ subject, title }: { subject: SubjectId; title: string }) {
   const config = SUBJECT_CONFIG[subject];
-  const emojis = Array.from(config.emoji);
+  // Split by grapheme so emoji with variation selectors (e.g. ✝️, ✏️, 🕊️) stay whole.
+  const emojis = Array.from(new Intl.Segmenter("en", { granularity: "grapheme" }).segment(config.emoji), (s) => s.segment);
   return (
     <div className="chapter-header" style={{ background: config.bg }}>
       <div className="chapter-header-art" aria-hidden="true">

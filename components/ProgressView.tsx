@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mascot } from "@/components/ui/Mascot";
+import { etDateKey } from "@/lib/engine/scheduler";
 import type { StudentProgress } from "@/lib/engine/service";
 
 type Props = {
@@ -135,27 +136,30 @@ export function ProgressView({ displayName, progress, allChapters }: Props) {
 }
 
 function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }) {
-  const today = new Date();
-  const todayKey = today.toISOString().slice(0, 10);
+  // Work in America/New_York calendar days (matching the server's etDateKey XP buckets),
+  // using UTC-noon Date objects so arithmetic is independent of the runtime's timezone.
+  const todayKey = etDateKey(new Date());
+  const [ty, tm, td] = todayKey.split("-").map(Number);
+  const today = new Date(Date.UTC(ty, tm - 1, td, 12));
   const xpByDate = new Map(dailyXp.map((d) => [d.date, d.xp]));
 
   const days: { date: Date; key: string; xp: number; isToday: boolean }[] = [];
   const start = new Date(today);
-  start.setDate(start.getDate() - 34);
-  while (start.getDay() !== 0) {
-    start.setDate(start.getDate() - 1);
+  start.setUTCDate(start.getUTCDate() - 34);
+  while (start.getUTCDay() !== 0) {
+    start.setUTCDate(start.getUTCDate() - 1);
   }
 
   const cursor = new Date(start);
   while (cursor <= today || days.length % 7 !== 0) {
     const key = cursor.toISOString().slice(0, 10);
-    days.push({ 
-      date: new Date(cursor), 
-      key, 
-      xp: xpByDate.get(key) ?? 0, 
-      isToday: key === todayKey 
+    days.push({
+      date: new Date(cursor),
+      key,
+      xp: xpByDate.get(key) ?? 0,
+      isToday: key === todayKey,
     });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
   const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
@@ -171,7 +175,7 @@ function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }
         {days.map((day) => {
           const future = day.date > today;
           const played = day.xp > 0 && !future;
-          const dayNum = day.date.getDate();
+          const dayNum = day.date.getUTCDate();
           return (
             <div
               key={day.key}
