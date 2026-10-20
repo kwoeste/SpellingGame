@@ -62,7 +62,9 @@ ALTER ROLE app_admin PASSWORD '…';
 ALTER ROLE assistant_ro PASSWORD '…';
 ```
 
-Never edit an applied migration; add `004_…` instead. Do not create a production Neon project or point DNS at this preview without Kevin's yes.
+Never edit an applied migration; add `005_…` instead. Do not create a production Neon project or point DNS at this preview without Kevin's yes.
+
+Demo parent-dashboard rows exist only in `scripts/seed-admin-demo.mjs`. That script refuses `VERCEL_ENV=production` and requires `MAE_ALLOW_DEMO_SEED=1`. Do not run it against Mae's real database.
 
 ## GitHub Pages
 

@@ -1,12 +1,16 @@
 export default function AdminPrivacyPage() {
   return (
-    <div className="wrap">
-      <h1>Privacy notes</h1>
-      <ul>
-        <li>Collected: Google email for sign-in, nickname, learning events, likes, coarse device type.</li>
-        <li>Not collected: date of birth, address, school ID, photos, voice, location.</li>
-        <li>Raw events are kept 24 months, then rolled up.</li>
-      </ul>
+    <div className="ad-wrap">
+      <p className="ad-kicker">Privacy</p>
+      <h1>What we keep</h1>
+      <div className="ad-card">
+        <ul>
+          <li>Collected: Google email for sign-in, nickname, learning events, likes, coarse device type.</li>
+          <li>Not collected: date of birth, address, school ID, photos, voice, location.</li>
+          <li>Raw events are kept 24 months, then rolled up.</li>
+          <li>Mae never sees this page. Admin-only, same gate as the rest of /admin.</li>
+        </ul>
+      </div>
     </div>
   );
 }

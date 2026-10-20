@@ -191,6 +191,25 @@ suite("Postgres persistence and RLS (migrations 001-004)", () => {
     expect(stored).toBe(1);
   });
 
+  it("lets app_admin write assignments and keeps them off admin_api for the student", async () => {
+    const created = await adminRepo().createAssignment({
+      learnerId: SEEDED_LEARNER_ID,
+      kind: "manual",
+      targetType: "concept",
+      targetId: "math.nf.compare_unlike",
+      title: "Compare unlike fractions",
+      reason: "it",
+      status: "open",
+      createdBy: "kevinw@mcsteen.com",
+    });
+    expect(created.id).toBeTruthy();
+    const listed = await adminRepo().assignments();
+    expect(listed.some((row) => row.id === created.id)).toBe(true);
+    await expect(asRole("student", SEEDED_LEARNER_ID, (c) => c.query("SELECT * FROM admin_api.assignments"))).rejects.toThrow(
+      /permission denied/,
+    );
+  });
+
   it("lets assistant_ro read admin views but not base tables", async () => {
     const rows = await asRole("assistant", null, async (c) => (await c.query("SELECT count(*)::int AS n FROM admin_api.mastery_map")).rows[0].n);
     expect(rows).toBeGreaterThan(0);
