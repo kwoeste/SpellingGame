@@ -271,14 +271,13 @@ button, input, textarea, select { font: inherit; }
   line-height: 1;
 }
 .stat-card.stat-card-compact {
-  padding: 10px 12px;
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 72px;
-  max-height: 80px;
+  gap: 6px;
+  min-height: 90px;
 }
 .stat-card.stat-card-compact strong {
   font-size: 2rem;
@@ -756,7 +755,7 @@ button, input, textarea, select { font: inherit; }
 .arcade-tile.violet .icon { background: #ead9ff; }
 .arcade-tile.rose .icon { background: #ffd4e2; }
 .arcade-tile h3 { margin: 0; font-size: 1.2rem; }
-.arcade-tile p { margin: 0; color: var(--muted); font-weight: 700; }
+.arcade-tile p { margin: 0; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
 .badge {
   position: absolute;
   top: 12px;
@@ -1010,7 +1009,7 @@ button, input, textarea, select { font: inherit; }
   background: rgba(255,255,255,0.7);
   padding: 4px 12px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 6px;
@@ -1118,7 +1117,7 @@ button, input, textarea, select { font: inherit; }
   gap: 6px;
   margin-bottom: 8px;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--muted);
 }
@@ -1166,7 +1165,7 @@ button, input, textarea, select { font: inherit; }
   justify-content: center;
   gap: 8px;
   margin-top: 14px;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 .legend-cells {
@@ -1177,26 +1176,27 @@ button, input, textarea, select { font: inherit; }
 /* Compact Streak Calendar (5 weeks) */
 .streak-calendar-wrap {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
   width: 100%;
 }
 .streak-summary {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 100px;
+  gap: 14px;
+  min-width: 120px;
 }
 .streak-summary-item {
   text-align: center;
-  padding: 10px 8px;
+  padding: 14px 12px;
   background: var(--wash);
-  border-radius: 12px;
+  border-radius: 14px;
   border: 2px solid var(--line);
 }
 .streak-summary-item strong {
   display: block;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-family: var(--font-display);
   color: var(--ink);
 }
@@ -1205,26 +1205,23 @@ button, input, textarea, select { font: inherit; }
   color: var(--muted);
 }
 .streak-calendar-grid {
-  flex: 1;
-  max-width: 300px;
+  flex: 0 0 auto;
 }
-@media (max-width: 480px) {
+@media (max-width: 520px) {
   .streak-calendar-wrap {
     flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+    gap: 16px;
+    align-items: center;
   }
   .streak-summary {
     flex-direction: row;
     justify-content: center;
     min-width: 0;
+    gap: 12px;
   }
   .streak-summary-item {
     flex: 1;
     max-width: 140px;
-  }
-  .streak-calendar-grid {
-    max-width: 100%;
   }
 }
 .streak-calendar-compact {
@@ -1234,33 +1231,28 @@ button, input, textarea, select { font: inherit; }
 }
 .streak-header-compact {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(7, 48px);
+  gap: 6px;
   margin-bottom: 8px;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--muted);
 }
 .streak-cells-compact {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-.streak-cells-compact {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(7, 48px);
+  gap: 6px;
 }
 .streak-cell-compact {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   background: var(--wash);
   border: 2px solid var(--line);
   display: grid;
   place-items: center;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--muted);
 }
@@ -1293,7 +1285,7 @@ button, input, textarea, select { font: inherit; }
   align-items: center;
   gap: 6px;
   margin-top: 12px;
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 

@@ -39,17 +39,17 @@ export function GameArcade({ tiles, resumeHref }: { tiles: ArcadeTile[]; resumeH
   const visible = useMemo(
     () => {
       if (filter === "all") return tiles;
-      if (filter === "more") return tiles.filter((tile) => tile.group === "math" || tile.group === "words");
+      if (filter === "more") return tiles.filter((tile) => tile.group === "words");
       return tiles.filter((tile) => tile.group === filter);
     },
     [filter, tiles],
   );
   const groups = groupArcade(visible);
   const featured = featuredTile(tiles, resumeHref);
-  const hasMathOrWords = tiles.some((tile) => tile.group === "math" || tile.group === "words");
+  const hasWords = tiles.some((tile) => tile.group === "words");
   const filterIds = ARCADE_GROUPS.filter((group) => {
     if (group.id === "all") return true;
-    if (group.id === "more") return hasMathOrWords;
+    if (group.id === "more") return hasWords;
     return tiles.some((tile) => tile.group === group.id);
   });
 

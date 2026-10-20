@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { LikesPicker } from "@/components/LikesPicker";
 import { SettingsPopover } from "@/components/SettingsPopover";
 import { Mascot } from "@/components/ui/Mascot";
@@ -186,11 +186,37 @@ function ChapterPack({
   const [focusedChapter, setFocusedChapter] = useState<string | null>(null);
   const isLarge = chapters.length > COMPACT_THRESHOLD;
   const visibleChapters = isLarge && !expanded ? chapters.slice(0, COMPACT_VISIBLE) : chapters;
-  const hiddenCount = chapters.length - COMPACT_VISIBLE;
 
   const focusedTitle = focusedChapter 
     ? chapters.find(ch => ch.id === focusedChapter)?.titleKid 
     : null;
+
+  // Two-tap on touch: the first tap shows the chapter name, a second tap on the same dot opens it.
+  // Mouse clicks and keyboard Enter never go through touchstart, so they navigate on the first click.
+  const touchRef = useRef<{ id: string; armed: boolean } | null>(null);
+  const armedIdRef = useRef<string | null>(null);
+
+  const handleTouchStart = useCallback((chapterId: string) => {
+    touchRef.current = { id: chapterId, armed: armedIdRef.current === chapterId };
+    setFocusedChapter(chapterId);
+  }, []);
+
+  const handleClick = useCallback((e: React.MouseEvent, chapterId: string) => {
+    const touch = touchRef.current;
+    touchRef.current = null;
+    if (touch && touch.id === chapterId && !touch.armed) {
+      e.preventDefault();
+      armedIdRef.current = chapterId;
+      setFocusedChapter(chapterId);
+      return;
+    }
+    armedIdRef.current = null;
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    armedIdRef.current = null;
+    setFocusedChapter(null);
+  }, []);
 
   return (
     <div className={`pack-card ${subject}`}>
@@ -213,8 +239,9 @@ function ChapterPack({
                   title={chapter.titleKid}
                   aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
                   onFocus={() => setFocusedChapter(chapter.id)}
-                  onBlur={() => setFocusedChapter(null)}
-                  onTouchStart={() => setFocusedChapter(chapter.id)}
+                  onBlur={handleBlur}
+                  onTouchStart={() => handleTouchStart(chapter.id)}
+                  onClick={(e) => handleClick(e, chapter.id)}
                 >
                   {pct >= 100 ? "★" : chapter.number}
                 </Link>
@@ -264,8 +291,9 @@ function ChapterPack({
                       title={chapter.titleKid}
                       aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
                       onFocus={() => setFocusedChapter(chapter.id)}
-                      onBlur={() => setFocusedChapter(null)}
-                      onTouchStart={() => setFocusedChapter(chapter.id)}
+                      onBlur={handleBlur}
+                      onTouchStart={() => handleTouchStart(chapter.id)}
+                      onClick={(e) => handleClick(e, chapter.id)}
                     >
                       {pct >= 100 ? "★" : chapter.number}
                     </Link>
