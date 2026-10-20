@@ -281,13 +281,13 @@ button, input, textarea, select { font: inherit; }
   max-height: 80px;
 }
 .stat-card.stat-card-compact strong {
-  font-size: 2rem !important;
+  font-size: 2rem;
   line-height: 1;
   margin: 0;
   font-family: var(--font-display);
 }
 .stat-card.stat-card-compact span {
-  font-size: 1rem !important;
+  font-size: 1rem;
   color: var(--muted);
   margin: 0;
 }
