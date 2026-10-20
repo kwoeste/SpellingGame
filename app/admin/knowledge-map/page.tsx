@@ -1,9 +1,6 @@
-export default function KnowledgeMapPage() {
-  return (
-    <div className="wrap">
-      <h1>Knowledge map</h1>
-      <p>Mastery states, P(L), and Elo are admin-only fields.</p>
-      <p>Nodes will color by mastered, in progress, missing, review due, and rusty once live data arrives.</p>
-    </div>
-  );
+import { KnowledgeMapView } from "@/app/admin/_ui/knowledge-map";
+import { loadKnowledgeMap } from "@/lib/admin/load";
+
+export default async function KnowledgeMapPage() {
+  return <KnowledgeMapView data={await loadKnowledgeMap()} />;
 }
