@@ -6,10 +6,10 @@ import { ZONE_HIGH, ZONE_LOW, type Overview } from "@/lib/admin/types";
 export function OverviewView({ data }: { data: Overview }) {
   const empty = data.itemsAttempted === 0 && data.xpTotal === 0;
   return (
-    <div className="ad-wrap">
-      <p className="ad-kicker">Parent dashboard · admin only</p>
+    <div className="pd-wrap">
+      <p className="pd-kicker">Parent dashboard · admin only</p>
       <h1>{data.learnerNickname}&rsquo;s week</h1>
-      <p className="ad-lead">
+      <p className="pd-lead">
         Time, XP, accuracy against the 70–95% target band, streak, and alerts. Mae never sees these
         numbers. As of {data.asOfEt}.
       </p>
@@ -19,55 +19,55 @@ export function OverviewView({ data }: { data: Overview }) {
           body="When Mae plays Study or a game, this page will show minutes, XP, first-try accuracy, goal rings, and alerts for gaps, reviews, rusty skills, and rushing."
         />
       ) : null}
-      <div className="ad-grid ad-metrics">
-        <div className="ad-metric">
-          <span className="ad-label">Time on task today</span>
-          <span className="ad-value">{data.engagedMinutesToday}</span>
-          <span className="ad-note">{data.engagedMinutesWeek} min this week</span>
+      <div className="pd-grid pd-metrics">
+        <div className="pd-metric">
+          <span className="pd-label">Time on task today</span>
+          <span className="pd-value">{data.engagedMinutesToday}</span>
+          <span className="pd-note">{data.engagedMinutesWeek} min this week</span>
         </div>
-        <div className="ad-metric">
-          <span className="ad-label">XP</span>
-          <span className="ad-value">{data.xpToday}</span>
-          <span className="ad-note">
+        <div className="pd-metric">
+          <span className="pd-label">XP</span>
+          <span className="pd-value">{data.xpToday}</span>
+          <span className="pd-note">
             {data.xpWeek} this week · {data.xpTotal} total
           </span>
         </div>
-        <div className="ad-metric">
-          <span className="ad-label">Items completed</span>
-          <span className="ad-value">{data.itemsCompleted}</span>
-          <span className="ad-note">{data.itemsAttempted} attempted</span>
+        <div className="pd-metric">
+          <span className="pd-label">Items completed</span>
+          <span className="pd-value">{data.itemsCompleted}</span>
+          <span className="pd-note">{data.itemsAttempted} attempted</span>
         </div>
-        <div className={`ad-metric ${data.inTargetBand === false ? "out-band" : data.inTargetBand ? "in-band" : ""}`}>
-          <span className="ad-label">First-try accuracy</span>
-          <span className="ad-value">{formatPct(data.firstTryAccuracy)}</span>
-          <span className="ad-note">
+        <div className={`pd-metric ${data.inTargetBand === false ? "out-band" : data.inTargetBand ? "in-band" : ""}`}>
+          <span className="pd-label">First-try accuracy</span>
+          <span className="pd-value">{formatPct(data.firstTryAccuracy)}</span>
+          <span className="pd-note">
             Target band {Math.round(ZONE_LOW * 100)}–{Math.round(ZONE_HIGH * 100)}%
             {data.inTargetBand === true ? " · in band" : data.inTargetBand === false ? " · outside band" : ""}
           </span>
         </div>
-        <div className="ad-metric">
-          <span className="ad-label">Streak</span>
-          <span className="ad-value">{data.streakDays}</span>
-          <span className="ad-note">days with engaged minutes</span>
+        <div className="pd-metric">
+          <span className="pd-label">Streak</span>
+          <span className="pd-value">{data.streakDays}</span>
+          <span className="pd-note">days with engaged minutes</span>
         </div>
       </div>
-      <div className="ad-grid ad-split" style={{ marginTop: 14 }}>
-        <section className="ad-card">
+      <div className="pd-grid pd-split" style={{ marginTop: 14 }}>
+        <section className="pd-card">
           <h2>Goal rings</h2>
-          <div className="ad-rings">
+          <div className="pd-rings">
             {data.rings.map((ring) => (
               <GoalRing key={ring.id} {...ring} />
             ))}
           </div>
         </section>
-        <section className="ad-card">
+        <section className="pd-card">
           <h2>Alerts</h2>
           {data.alerts.length === 0 ? (
             <EmptyState title="All quiet" body="No holes, overdue reviews, rusty skills, or rushing bursts right now." />
           ) : (
-            <div className="ad-alert">
+            <div className="pd-alert">
               {data.alerts.map((alert) => (
-                <div key={`${alert.kind}:${alert.targetId ?? alert.title}`} className="ad-alert-item" data-kind={alert.kind}>
+                <div key={`${alert.kind}:${alert.targetId ?? alert.title}`} className="pd-alert-item" data-kind={alert.kind}>
                   <strong>{alert.title}</strong>
                   <span>{alert.detail}</span>
                 </div>
@@ -76,8 +76,8 @@ export function OverviewView({ data }: { data: Overview }) {
           )}
         </section>
       </div>
-      <div className="ad-grid ad-two" style={{ marginTop: 14 }}>
-        <section className="ad-card">
+      <div className="pd-grid pd-two" style={{ marginTop: 14 }}>
+        <section className="pd-card">
           <h2>Engaged minutes</h2>
           {data.daily.length === 0 ? (
             <EmptyState title="No time logged" body="XP minutes will plot here after the first engaged minute." />
@@ -89,7 +89,7 @@ export function OverviewView({ data }: { data: Overview }) {
             />
           )}
         </section>
-        <section className="ad-card">
+        <section className="pd-card">
           <h2>Accuracy vs 70–95% band</h2>
           {data.weeklyAccuracy.length === 0 ? (
             <EmptyState title="No scored items" body="Weekly first-try accuracy will appear after she answers questions." />

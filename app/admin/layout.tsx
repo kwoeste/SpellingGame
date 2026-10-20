@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const user = await requirePageUser(["admin"], "/admin");
   if (!user) return <NotAllowed />;
   return (
-    <div className="ad-shell">
+    <div className="pd-shell">
       <AdminNav />
       {children}
       <ReportProblem />

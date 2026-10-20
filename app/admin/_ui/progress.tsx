@@ -11,10 +11,10 @@ function friendlyChapterName(subject: string, number: number, title: string): st
 export function ProgressViewPanel({ data }: { data: ProgressView }) {
   const anyMastery = data.subjects.some((subject) => subject.mastered > 0 || subject.inProgress > 0);
   return (
-    <div className="ad-wrap">
-      <p className="ad-kicker">Progress</p>
+    <div className="pd-wrap">
+      <p className="pd-kicker">Progress</p>
       <h1>By subject and chapter</h1>
-      <p className="ad-lead">
+      <p className="pd-lead">
         Mastery toward the 90% gate, grade-level spread from concept milestones, and a trend of
         mastered concepts over time.
       </p>
@@ -24,13 +24,13 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
           body="Subject bars and chapter rows fill in after Mae practices. Grade-level spread uses each concept's milestone, not a lock at grade 4."
         />
       ) : null}
-      <div className="ad-grid ad-two">
+      <div className="pd-grid pd-two">
         {data.subjects.map((subject) => (
-          <section className="ad-card" key={subject.subject}>
+          <section className="pd-card" key={subject.subject}>
             <h2>
               {subject.label} · {subject.toward90}% toward 90%
             </h2>
-            <p className="ad-lead" style={{ marginBottom: 10 }}>
+            <p className="pd-lead" style={{ marginBottom: 10 }}>
               {subject.mastered} mastered · {subject.inProgress} in progress · {subject.rusty} rusty
               {subject.frontier !== null ? ` · frontier ${subject.frontier.toFixed(1)}` : ""}
             </p>
@@ -41,8 +41,8 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
                 { label: "Review / rusty", pct: subject.concepts ? Math.round(((subject.reviewDue + subject.rusty) / subject.concepts) * 100) : 0 },
               ]}
             />
-            <div className="ad-table-wrap" style={{ marginTop: 10 }}>
-              <table className="ad-table">
+            <div className="pd-table-wrap" style={{ marginTop: 10 }}>
+              <table className="pd-table">
                 <thead>
                   <tr>
                     <th>Grade band</th>
@@ -64,7 +64,7 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
           </section>
         ))}
       </div>
-      <section className="ad-card" style={{ marginTop: 14 }}>
+      <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>Mastery and accuracy over time</h2>
         {data.trend.length === 0 ? (
           <EmptyState title="No trend yet" body="A daily line will show mastered-concept count and first-try accuracy." />
@@ -76,10 +76,10 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
           />
         )}
       </section>
-      <section className="ad-card" style={{ marginTop: 14 }}>
+      <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>Chapters</h2>
-        <div className="ad-table-wrap">
-          <table className="ad-table">
+        <div className="pd-table-wrap">
+          <table className="pd-table">
             <thead>
               <tr>
                 <th>Chapter</th>

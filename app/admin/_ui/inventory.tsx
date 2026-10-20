@@ -36,14 +36,14 @@ export function InventoryPanel({
   }, []);
 
   return (
-    <div className="ad-wrap">
-      <p className="ad-kicker">Parent dashboard · admin only</p>
+    <div className="pd-wrap">
+      <p className="pd-kicker">Parent dashboard · admin only</p>
       <h1>Inventory</h1>
-      <p className="ad-lead">
+      <p className="pd-lead">
         Track filament spools and shop item stock. Adjust quantities as items are used or restocked.
       </p>
 
-      <div className="ad-tabs" role="tablist">
+      <div className="pd-tabs" role="tablist">
         <button
           role="tab"
           aria-selected={tab === "filament"}
@@ -153,23 +153,23 @@ function FilamentTab({
   const lowStockSpools = spools.filter((s) => s.lowStock);
 
   return (
-    <div className="ad-card">
-      <div className="ad-card-header">
+    <div className="pd-card">
+      <div className="pd-card-header">
         <h2>Filament Spools</h2>
-        <button onClick={() => setShowForm(true)} className="ad-btn" disabled={showForm}>
+        <button onClick={() => setShowForm(true)} className="pd-btn" disabled={showForm}>
           + Add Spool
         </button>
       </div>
 
       {lowStockSpools.length > 0 && (
-        <div className="ad-alert-banner">
+        <div className="pd-alert-banner">
           ⚠️ {lowStockSpools.length} spool{lowStockSpools.length !== 1 ? "s" : ""} low on filament
         </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleCreate} className="ad-form">
-          <div className="ad-form-row">
+        <form onSubmit={handleCreate} className="pd-form">
+          <div className="pd-form-row">
             <label>
               Color
               <select name="color" required>
@@ -190,7 +190,7 @@ function FilamentTab({
               <input name="brand" defaultValue="Bambu" />
             </label>
           </div>
-          <div className="ad-form-row">
+          <div className="pd-form-row">
             <label>
               Total grams
               <input name="gramsTotal" type="number" defaultValue={1000} />
@@ -204,11 +204,11 @@ function FilamentTab({
               <input name="notes" placeholder="Optional notes" />
             </label>
           </div>
-          <div className="ad-form-actions">
-            <button type="submit" className="ad-btn primary" disabled={loading}>
+          <div className="pd-form-actions">
+            <button type="submit" className="pd-btn primary" disabled={loading}>
               {loading ? "Saving..." : "Create Spool"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="ad-btn">
+            <button type="button" onClick={() => setShowForm(false)} className="pd-btn">
               Cancel
             </button>
           </div>
@@ -216,9 +216,9 @@ function FilamentTab({
       )}
 
       {adjustTarget && (
-        <form onSubmit={handleAdjust} className="ad-form">
+        <form onSubmit={handleAdjust} className="pd-form">
           <h3>Adjust: {spools.find((s) => s.id === adjustTarget)?.color}</h3>
-          <div className="ad-form-row">
+          <div className="pd-form-row">
             <label>
               Type
               <select name="adjustmentType" required>
@@ -237,11 +237,11 @@ function FilamentTab({
               <input name="reason" placeholder="Optional reason" />
             </label>
           </div>
-          <div className="ad-form-actions">
-            <button type="submit" className="ad-btn primary" disabled={loading}>
+          <div className="pd-form-actions">
+            <button type="submit" className="pd-btn primary" disabled={loading}>
               {loading ? "Saving..." : "Record Adjustment"}
             </button>
-            <button type="button" onClick={() => setAdjustTarget(null)} className="ad-btn">
+            <button type="button" onClick={() => setAdjustTarget(null)} className="pd-btn">
               Cancel
             </button>
           </div>
@@ -249,13 +249,13 @@ function FilamentTab({
       )}
 
       {spools.length === 0 ? (
-        <div className="ad-empty-state">
-          <span className="ad-empty-icon">🎨</span>
-          <p className="ad-empty-title">No filament spools yet</p>
-          <p className="ad-empty-hint">Add your first spool to start tracking filament usage and get low-stock alerts.</p>
+        <div className="pd-empty-state">
+          <span className="pd-empty-icon">🎨</span>
+          <p className="pd-empty-title">No filament spools yet</p>
+          <p className="pd-empty-hint">Add your first spool to start tracking filament usage and get low-stock alerts.</p>
         </div>
       ) : (
-        <table className="ad-table">
+        <table className="pd-table">
           <thead>
             <tr>
               <th>Color</th>
@@ -275,11 +275,11 @@ function FilamentTab({
                 <td>
                   {spool.gramsLeft}g / {spool.gramsTotal}g
                 </td>
-                <td>{spool.lowStock ? <span className="ad-tag warning">Low Stock</span> : <span className="ad-tag ok">OK</span>}</td>
+                <td>{spool.lowStock ? <span className="pd-tag warning">Low Stock</span> : <span className="pd-tag ok">OK</span>}</td>
                 <td>
                   <button
                     onClick={() => setAdjustTarget(spool.id)}
-                    className="ad-btn small"
+                    className="pd-btn small"
                     disabled={adjustTarget !== null}
                   >
                     Adjust
@@ -358,23 +358,23 @@ function StoreItemTab({
   const lowStockItems = items.filter((i) => i.lowStock);
 
   return (
-    <div className="ad-card">
-      <div className="ad-card-header">
+    <div className="pd-card">
+      <div className="pd-card-header">
         <h2>Store Items</h2>
-        <button onClick={() => setShowForm(true)} className="ad-btn" disabled={showForm}>
+        <button onClick={() => setShowForm(true)} className="pd-btn" disabled={showForm}>
           + Add Item
         </button>
       </div>
 
       {lowStockItems.length > 0 && (
-        <div className="ad-alert-banner">
+        <div className="pd-alert-banner">
           ⚠️ {lowStockItems.length} item{lowStockItems.length !== 1 ? "s" : ""} low on stock
         </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleCreate} className="ad-form">
-          <div className="ad-form-row">
+        <form onSubmit={handleCreate} className="pd-form">
+          <div className="pd-form-row">
             <label>
               Product
               <select name="productId" required>
@@ -395,7 +395,7 @@ function StoreItemTab({
               <input name="variantDesc" placeholder="e.g. Blue body, white eyes" />
             </label>
           </div>
-          <div className="ad-form-row">
+          <div className="pd-form-row">
             <label>
               Stock Count
               <input name="stockCount" type="number" defaultValue={0} min={0} />
@@ -409,11 +409,11 @@ function StoreItemTab({
               <input name="notes" placeholder="Optional notes" />
             </label>
           </div>
-          <div className="ad-form-actions">
-            <button type="submit" className="ad-btn primary" disabled={loading}>
+          <div className="pd-form-actions">
+            <button type="submit" className="pd-btn primary" disabled={loading}>
               {loading ? "Saving..." : "Create Item"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="ad-btn">
+            <button type="button" onClick={() => setShowForm(false)} className="pd-btn">
               Cancel
             </button>
           </div>
@@ -421,9 +421,9 @@ function StoreItemTab({
       )}
 
       {adjustTarget && (
-        <form onSubmit={handleAdjust} className="ad-form">
+        <form onSubmit={handleAdjust} className="pd-form">
           <h3>Adjust: {items.find((i) => i.id === adjustTarget)?.name}</h3>
-          <div className="ad-form-row">
+          <div className="pd-form-row">
             <label>
               Type
               <select name="adjustmentType" required>
@@ -443,11 +443,11 @@ function StoreItemTab({
               <input name="reason" placeholder="Optional reason" />
             </label>
           </div>
-          <div className="ad-form-actions">
-            <button type="submit" className="ad-btn primary" disabled={loading}>
+          <div className="pd-form-actions">
+            <button type="submit" className="pd-btn primary" disabled={loading}>
               {loading ? "Saving..." : "Record Adjustment"}
             </button>
-            <button type="button" onClick={() => setAdjustTarget(null)} className="ad-btn">
+            <button type="button" onClick={() => setAdjustTarget(null)} className="pd-btn">
               Cancel
             </button>
           </div>
@@ -455,13 +455,13 @@ function StoreItemTab({
       )}
 
       {items.length === 0 ? (
-        <div className="ad-empty-state">
-          <span className="ad-empty-icon">📦</span>
-          <p className="ad-empty-title">No store items yet</p>
-          <p className="ad-empty-hint">Add your first item to track inventory for your shop products.</p>
+        <div className="pd-empty-state">
+          <span className="pd-empty-icon">📦</span>
+          <p className="pd-empty-title">No store items yet</p>
+          <p className="pd-empty-hint">Add your first item to track inventory for your shop products.</p>
         </div>
       ) : (
-        <table className="ad-table">
+        <table className="pd-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -478,12 +478,12 @@ function StoreItemTab({
                 <td>{item.variantDesc || "—"}</td>
                 <td>{item.stockCount}</td>
                 <td>
-                  {item.lowStock ? <span className="ad-tag warning">Low Stock</span> : <span className="ad-tag ok">OK</span>}
+                  {item.lowStock ? <span className="pd-tag warning">Low Stock</span> : <span className="pd-tag ok">OK</span>}
                 </td>
                 <td>
                   <button
                     onClick={() => setAdjustTarget(item.id)}
-                    className="ad-btn small"
+                    className="pd-btn small"
                     disabled={adjustTarget !== null}
                   >
                     Adjust
@@ -500,16 +500,16 @@ function StoreItemTab({
 
 function AdjustmentLog({ adjustments }: { adjustments: InventoryAdjustment[] }) {
   return (
-    <div className="ad-card">
+    <div className="pd-card">
       <h2>Recent Adjustments</h2>
       {adjustments.length === 0 ? (
-        <div className="ad-empty-state">
-          <span className="ad-empty-icon">📋</span>
-          <p className="ad-empty-title">No activity yet</p>
-          <p className="ad-empty-hint">Adjustments will appear here when you use, restock, or correct inventory.</p>
+        <div className="pd-empty-state">
+          <span className="pd-empty-icon">📋</span>
+          <p className="pd-empty-title">No activity yet</p>
+          <p className="pd-empty-hint">Adjustments will appear here when you use, restock, or correct inventory.</p>
         </div>
       ) : (
-        <table className="ad-table">
+        <table className="pd-table">
           <thead>
             <tr>
               <th>Date</th>

@@ -6,10 +6,10 @@ export const metadata: Metadata = {
 
 export default function AdminPrivacyPage() {
   return (
-    <div className="ad-wrap">
-      <p className="ad-kicker">Privacy</p>
+    <div className="pd-wrap">
+      <p className="pd-kicker">Privacy</p>
       <h1>What we keep</h1>
-      <div className="ad-card">
+      <div className="pd-card">
         <ul>
           <li>Collected: Google email for sign-in, nickname, learning events, likes, coarse device type.</li>
           <li>Not collected: date of birth, address, school ID, photos, voice, location.</li>

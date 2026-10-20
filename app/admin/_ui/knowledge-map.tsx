@@ -74,22 +74,22 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
   }, [bySubject]);
 
   return (
-    <div className="ad-wrap">
-      <p className="ad-kicker">Knowledge map</p>
+    <div className="pd-wrap">
+      <p className="pd-kicker">Knowledge map</p>
       <h1>Concepts</h1>
-      <p className="ad-lead">
+      <p className="pd-lead">
         Nodes color by state. Size is not used; attempt count is in the drill-down with P(L), Elo,
         and last seen. Click a node.
       </p>
-      <div className="ad-legend">
+      <div className="pd-legend">
         {STATES.map((state) => (
           <span key={state}>
-            <i className="ad-dot" data-state={state} style={{ background: "currentColor" }} />
-            <span className={`ad-pill ${state}`}>{stateLabel(state)}</span>
+            <i className="pd-dot" data-state={state} style={{ background: "currentColor" }} />
+            <span className={`pd-pill ${state}`}>{stateLabel(state)}</span>
           </span>
         ))}
       </div>
-      <div className="ad-filters">
+      <div className="pd-filters">
         <select value={subject} onChange={(event) => setSubject(event.target.value as SubjectId | "all")}>
           <option value="all">All subjects</option>
           <option value="math">Math</option>
@@ -101,14 +101,14 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
       {nodes.length === 0 ? (
         <EmptyState title="No concepts in this filter" body="The catalog will show nodes even before Mae practices. Try All subjects." />
       ) : (
-        <div className="ad-map">
-          <div className="ad-map-canvas">
-            <div className="ad-columns ad-columns-wide">
+        <div className="pd-map">
+          <div className="pd-map-canvas">
+            <div className="pd-columns pd-columns-wide">
               {(["math", "science", "religion"] as SubjectId[]).map((key) => {
                 const list = bySubject.get(key) ?? [];
                 if (subject !== "all" && subject !== key) return null;
                 return (
-                  <div className="ad-col" key={key}>
+                  <div className="pd-col" key={key}>
                     <h3>
                       {subjectLabel(key)}
                       {props.data.frontiers.find((row) => row.subject === key)?.frontier != null
@@ -119,7 +119,7 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
                       <button
                         key={node.id}
                         type="button"
-                        className="ad-node"
+                        className="pd-node"
                         data-state={node.state}
                         onClick={() => setSelectedId(node.id)}
                         aria-pressed={selectedId === node.id}
@@ -135,13 +135,13 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
               })}
               {(subject === "all" || subject === "ela") && (
                 <>
-                  <div className="ad-col">
+                  <div className="pd-col">
                     <h3>ELA Skills</h3>
                     {elaSkills.map((node) => (
                       <button
                         key={node.id}
                         type="button"
-                        className="ad-node"
+                        className="pd-node"
                         data-state={node.state}
                         onClick={() => setSelectedId(node.id)}
                         aria-pressed={selectedId === node.id}
@@ -154,13 +154,13 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
                     ))}
                   </div>
                   {elaChapters.length > 0 && (
-                    <div className="ad-col">
+                    <div className="pd-col">
                       <h3>ELA Chapters</h3>
                       {elaChapters.map((node) => (
                         <button
                           key={node.id}
                           type="button"
-                          className="ad-node"
+                          className="pd-node"
                           data-state={node.state}
                           onClick={() => setSelectedId(node.id)}
                           aria-pressed={selectedId === node.id}
@@ -177,19 +177,19 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
               )}
             </div>
           </div>
-          <aside className="ad-card">
+          <aside className="pd-card">
             <h2>Drill-down</h2>
             {!selected ? (
               <EmptyState title="Pick a node" body="P(L), Elo, attempts, and last seen stay here so the map stays readable." />
             ) : (
-              <dl className="ad-detail">
+              <dl className="pd-detail">
                 <dt>Concept</dt>
                 <dd>{selected.titleAdmin}</dd>
                 <dt>Kid title</dt>
                 <dd>{selected.titleKid}</dd>
                 <dt>State</dt>
                 <dd>
-                  <span className={`ad-pill ${selected.state}`}>{stateLabel(selected.state)}</span>
+                  <span className={`pd-pill ${selected.state}`}>{stateLabel(selected.state)}</span>
                 </dd>
                 <dt>P(L)</dt>
                 <dd>{formatPct(selected.pMastery, 0)}</dd>

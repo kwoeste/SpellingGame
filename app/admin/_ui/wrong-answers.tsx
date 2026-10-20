@@ -45,26 +45,26 @@ export function WrongAnswerTable({ data }: { data: WrongAnswerView }) {
   }
 
   return (
-    <div className="ad-wrap">
-      <p className="ad-kicker">Wrong answers</p>
+    <div className="pd-wrap">
+      <p className="pd-kicker">Wrong answers</p>
       <h1>Strategy log</h1>
-      <p className="ad-lead">
+      <p className="pd-lead">
         The item as she saw it, her answer, the correct answer, hints, latency, and the inferred or
         labeled strategy. First-attempt only is on by default.
       </p>
       {data.patterns.length > 0 ? (
-        <section className="ad-card" style={{ marginBottom: 14 }}>
+        <section className="pd-card" style={{ marginBottom: 14 }}>
           <h2>Patterns</h2>
-          <div className="ad-legend">
+          <div className="pd-legend">
             {data.patterns.map((pattern) => (
-              <span key={pattern.key} className="ad-pill in_progress">
+              <span key={pattern.key} className="pd-pill in_progress">
                 {pattern.label} · {pattern.count} · {pattern.detail}
               </span>
             ))}
           </div>
         </section>
       ) : null}
-      <div className="ad-filters">
+      <div className="pd-filters">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search item or answer" />
         <select value={subject} onChange={(event) => setSubject(event.target.value)}>
           <option value="all">All subjects</option>
@@ -92,8 +92,8 @@ export function WrongAnswerTable({ data }: { data: WrongAnswerView }) {
           body="Wrong first tries will land here with the stem, her response, and a strategy guess. You can relabel a row."
         />
       ) : (
-        <div className="ad-card ad-table-wrap">
-          <table className="ad-table">
+        <div className="pd-card pd-table-wrap">
+          <table className="pd-table">
             <thead>
               <tr>
                 <th>When (ET)</th>
@@ -125,10 +125,10 @@ export function WrongAnswerTable({ data }: { data: WrongAnswerView }) {
                     <div>
                       {row.strategySource} {row.strategyConfidence !== null ? formatPct(row.strategyConfidence) : ""}
                     </div>
-                    {row.misconception ? <span className="ad-pill rusty">{row.misconception}</span> : null}
+                    {row.misconception ? <span className="pd-pill rusty">{row.misconception}</span> : null}
                   </td>
                   <td>
-                    <button className="ad-btn secondary" type="button" disabled={busy === row.eventId} onClick={() => relabel(row.eventId)}>
+                    <button className="pd-btn secondary" type="button" disabled={busy === row.eventId} onClick={() => relabel(row.eventId)}>
                       Relabel
                     </button>
                   </td>

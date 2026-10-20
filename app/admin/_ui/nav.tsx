@@ -17,7 +17,7 @@ const LINKS = [
 export function AdminNav() {
   const pathname = usePathname();
   return (
-    <nav className="ad-nav" aria-label="Parent dashboard">
+    <nav className="pd-nav" aria-label="Parent dashboard">
       {LINKS.map((link) => {
         const current = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
         return (
