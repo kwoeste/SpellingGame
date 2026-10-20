@@ -197,6 +197,17 @@ class MemoryLearnerTx implements LearnerTx {
     return [...new Set(state.gates.filter((g) => g.learnerId === this.learnerId && g.scope === scope && g.passed).map((g) => g.scopeId))];
   }
 
+  async firstPassedAt(scope: GateAttempt["scope"]) {
+    const out = new Map<string, number>();
+    for (const g of state.gates) {
+      if (g.learnerId !== this.learnerId || g.scope !== scope || !g.passed) continue;
+      const t = g.finishedAt ?? g.startedAt;
+      const prev = out.get(g.scopeId);
+      if (prev === undefined || t < prev) out.set(g.scopeId, t);
+    }
+    return out;
+  }
+
   async awardXp(sessionId: string, minuteStart: number, xp: number) {
     const key = `${sessionId}:${minuteStart}`;
     if (state.xp.has(key)) return false;

@@ -136,6 +136,8 @@ export interface LearnerTx {
   lastGateAttempt(scope: GateAttempt["scope"], scopeId: string): Promise<GateAttempt | null>;
   insertGateAttempt(attempt: GateAttempt): Promise<void>;
   passedGateScopeIds(scope: GateAttempt["scope"]): Promise<string[]>;
+  /** Earliest pass time (ms) per scope id, for passed gates only. */
+  firstPassedAt(scope: GateAttempt["scope"]): Promise<Map<string, number>>;
   /** Returns true when the minute was newly awarded (unique per session and minute). */
   awardXp(sessionId: string, minuteStart: number, xp: number): Promise<boolean>;
   xpRows(): Promise<{ minuteStart: number; xp: number }[]>;

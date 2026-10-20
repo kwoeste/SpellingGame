@@ -296,6 +296,14 @@ class PgLearnerTx implements LearnerTx {
     return rows.map((r) => String(r.scope_id));
   }
 
+  async firstPassedAt(scope: GateAttempt["scope"]) {
+    const rows = await this.rows(
+      "SELECT scope_id, MIN(COALESCE(finished_at, started_at)) AS t FROM engine.gate_attempt WHERE learner_id = $1 AND scope = $2 AND passed GROUP BY scope_id",
+      [this.learnerId, scope],
+    );
+    return new Map(rows.map((r) => [String(r.scope_id), new Date(r.t as string | Date).getTime()] as [string, number]));
+  }
+
   async awardXp(sessionId: string, minuteStart: number, xp: number) {
     const result = await this.db.query(
       `INSERT INTO engine.xp_ledger (learner_id, session_id, minute_start, xp, reason) VALUES ($1, $2, $3, $4, 'engaged_minute')

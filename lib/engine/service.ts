@@ -658,10 +658,11 @@ export async function studentProgress(
     }
 
     const completedChapters = chapters.filter((c) => passed.has(c.id));
+    const firstPass = await tx.firstPassedAt("chapter");
     const badges = completedChapters.map((chapter) => ({
       id: `${chapter.id}-star`,
       label: `${chapter.titleKid} Star`,
-      earnedAt: etDateKey(now),
+      earnedAt: etDateKey(new Date(firstPass.get(chapter.id) ?? nowMs)),
     }));
 
     return {
