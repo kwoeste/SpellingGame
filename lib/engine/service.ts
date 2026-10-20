@@ -587,3 +587,93 @@ export async function getLikes(repo: EngineRepo, actor: EngineActor): Promise<Li
   if (!actor.learnerId) return [];
   return repo.withLearner(actor.learnerId, (tx) => tx.getLikes());
 }
+
+export type DailyXpEntry = { date: string; xp: number };
+
+export async function dailyXpCalendar(
+  repo: EngineRepo,
+  actor: EngineActor,
+  daysBack = 60,
+  nowMs = Date.now(),
+): Promise<DailyXpEntry[]> {
+  if (!actor.learnerId) return [];
+  const cutoff = nowMs - daysBack * 24 * 60 * 60 * 1000;
+  return repo.withLearner(actor.learnerId, async (tx) => {
+    const xp = await tx.xpRows();
+    const byDay = new Map<string, number>();
+    for (const row of xp) {
+      if (row.minuteStart < cutoff) continue;
+      const key = etDateKey(new Date(row.minuteStart));
+      byDay.set(key, (byDay.get(key) ?? 0) + row.xp);
+    }
+    return [...byDay.entries()]
+      .map(([date, xp]) => ({ date, xp }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  });
+}
+
+export type StudentProgress = {
+  starsEarned: number;
+  chaptersCompleted: string[];
+  totalChapters: number;
+  xpTotal: number;
+  streakDays: number;
+  badges: { id: string; label: string; earnedAt: string }[];
+  dailyXp: DailyXpEntry[];
+};
+
+export async function studentProgress(
+  repo: EngineRepo,
+  actor: EngineActor,
+  nowMs = Date.now(),
+): Promise<StudentProgress> {
+  const chapters = listChapters().filter((chapter) => chapterVisibleTo(chapter, actor.role));
+  if (!actor.learnerId) {
+    return {
+      starsEarned: 0,
+      chaptersCompleted: [],
+      totalChapters: chapters.length,
+      xpTotal: 0,
+      streakDays: 0,
+      badges: [],
+      dailyXp: [],
+    };
+  }
+  const now = new Date(nowMs);
+  return repo.withLearner(actor.learnerId, async (tx) => {
+    const passed = new Set(await tx.passedGateScopeIds("chapter"));
+    const xp = await tx.xpRows();
+    const dayKeys = new Set<string>();
+    let xpTotal = 0;
+    const cutoff = nowMs - 60 * 24 * 60 * 60 * 1000;
+    const byDay = new Map<string, number>();
+
+    for (const row of xp) {
+      const key = etDateKey(new Date(row.minuteStart));
+      dayKeys.add(key);
+      xpTotal += row.xp;
+      if (row.minuteStart >= cutoff) {
+        byDay.set(key, (byDay.get(key) ?? 0) + row.xp);
+      }
+    }
+
+    const completedChapters = chapters.filter((c) => passed.has(c.id));
+    const badges = completedChapters.map((chapter) => ({
+      id: `${chapter.id}-star`,
+      label: `${chapter.titleKid} Star`,
+      earnedAt: etDateKey(now),
+    }));
+
+    return {
+      starsEarned: completedChapters.length,
+      chaptersCompleted: completedChapters.map((c) => c.id),
+      totalChapters: chapters.length,
+      xpTotal,
+      streakDays: streakDays(dayKeys, now),
+      badges,
+      dailyXp: [...byDay.entries()]
+        .map(([date, xp]) => ({ date, xp }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    };
+  });
+}
