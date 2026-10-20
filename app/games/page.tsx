@@ -1,7 +1,7 @@
 import { NotAllowed } from "@/components/NotAllowed";
 import { GameArcade } from "@/components/GameArcade";
 import { requirePageUser } from "@/lib/auth/server";
-import { arcadeTiles } from "@/lib/games/arcade";
+import { arcadeTiles } from "@/lib/games/arcade-tiles";
 
 export default async function GamesPage() {
   const user = await requirePageUser(["student", "admin"], "/games");
