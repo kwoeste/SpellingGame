@@ -86,6 +86,8 @@ LEFT JOIN engine.review_schedule r
  AND r.target_type = 'concept'
  AND r.target_id = m.concept_id;
 
+-- Column order/types differ from 003; CREATE OR REPLACE cannot change them.
+DROP VIEW IF EXISTS admin_api.wrong_answers;
 CREATE OR REPLACE VIEW admin_api.wrong_answers AS
 SELECT
   e.id AS event_id,
@@ -190,6 +192,8 @@ SELECT * FROM engine.assignment;
 CREATE OR REPLACE VIEW admin_api.learner_goals AS
 SELECT * FROM engine.learner_goal;
 
+-- Column order/types differ from 003; CREATE OR REPLACE cannot change them.
+DROP VIEW IF EXISTS admin_api.time_daily;
 CREATE OR REPLACE VIEW admin_api.time_daily AS
 SELECT
   learner_id,
