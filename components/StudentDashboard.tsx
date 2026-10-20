@@ -43,7 +43,10 @@ export function StudentDashboard({
   const quest = resume ?? (firstOpen ? { chapterId: firstOpen.id, titleKid: firstOpen.titleKid } : null);
   const subjects = [...new Set(chapters.map((chapter) => chapter.subject))];
 
-  const gamesPreview = arcadeTiles.slice(0, 4);
+  const numberMatch = arcadeTiles.find(t => t.href === "/number-match");
+  const spellingFirst = arcadeTiles.find(t => t.group === "spelling");
+  const otherGames = arcadeTiles.filter(t => t.group !== "spelling" && t.href !== "/number-match").slice(0, 2);
+  const gamesPreview = [numberMatch, spellingFirst, ...otherGames].filter(Boolean).slice(0, 4) as typeof arcadeTiles;
 
   return (
     <div className="kid-shell">
@@ -88,18 +91,18 @@ export function StudentDashboard({
         </span>
       </Link>
 
-      {/* Stats row */}
-      <div className="stat-row" style={{ margin: "16px 0" }}>
-        <div className="stat-card">
+      {/* Stats row - compact */}
+      <div className="stat-row stat-row-compact">
+        <div className="stat-card stat-card-compact">
           <strong>{xpToday}</strong>
-          XP today
+          <span>XP today</span>
         </div>
-        <div className="stat-card">
+        <div className="stat-card stat-card-compact">
           <strong>{streakDays}</strong>
-          Day streak
+          <span>Day streak</span>
         </div>
-        <div className="stat-card" style={{ display: "grid", placeItems: "center" }}>
-          <ProgressRing pct={week?.pct ?? 0} label="Week" size={72} />
+        <div className="stat-card stat-card-compact">
+          <ProgressRing pct={week?.pct ?? 0} label="Week" size={56} />
         </div>
       </div>
 
@@ -137,8 +140,9 @@ export function StudentDashboard({
                   })}
                 </div>
                 {nextChapter && (
-                  <Link href={`/study/${nextChapter.id}`} className="pack-next">
-                    Next: {nextChapter.titleKid}
+                  <Link href={`/study/${nextChapter.id}`} className="pack-next-btn">
+                    <span className="pack-next-arrow">→</span>
+                    <span>Next: {nextChapter.titleKid}</span>
                   </Link>
                 )}
               </div>

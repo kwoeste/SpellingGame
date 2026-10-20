@@ -224,6 +224,7 @@ function DoneView({
   if (gate?.passed) {
     return (
       <div role="status" className="done-card success">
+        <p className="kid-kicker">Chapter complete</p>
         <Mascot mood="cheer" size={80} />
         <div className="done-content">
           <h3>⭐ Star earned!</h3>
@@ -247,6 +248,7 @@ function DoneView({
   }
   return (
     <div role="status" className="done-card">
+      <p className="kid-kicker">Chapter complete</p>
       <Mascot mood="think" size={72} />
       <div className="done-content">
         <h3>Nice work finishing!</h3>

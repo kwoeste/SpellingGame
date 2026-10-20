@@ -9,10 +9,11 @@ const SUBJECT_CONFIG: Record<SubjectId, { emoji: string; bg: string; label: stri
 
 export function ChapterHeader({ subject, title }: { subject: SubjectId; title: string }) {
   const config = SUBJECT_CONFIG[subject];
+  const emojis = Array.from(config.emoji);
   return (
     <div className="chapter-header" style={{ background: config.bg }}>
       <div className="chapter-header-art" aria-hidden="true">
-        {config.emoji.split("").map((char, i) => (
+        {emojis.map((char, i) => (
           <span key={i} className="chapter-emoji" style={{ animationDelay: `${i * 0.1}s` }}>
             {char}
           </span>

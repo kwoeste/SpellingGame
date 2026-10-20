@@ -8,9 +8,26 @@ type Props = {
   allChapters: { id: string; titleKid: string; subject: string }[];
 };
 
+const SUBJECT_LABEL: Record<string, string> = {
+  science: "🔬 Science",
+  ela: "📚 Reading",
+  religion: "✝️ Religion",
+  math: "🔢 Math",
+};
+
+const SUBJECT_ORDER = ["science", "math", "ela", "religion"];
+
 export function ProgressView({ displayName, progress, allChapters }: Props) {
   const hasProgress = progress.starsEarned > 0 || progress.streakDays > 0 || progress.xpTotal > 0;
   const earnedIds = new Set(progress.chaptersCompleted);
+  
+  const chaptersBySubject = SUBJECT_ORDER
+    .map(subject => ({
+      subject,
+      label: SUBJECT_LABEL[subject] ?? subject,
+      chapters: allChapters.filter(ch => ch.subject === subject),
+    }))
+    .filter(group => group.chapters.length > 0);
   
   return (
     <>
@@ -71,30 +88,41 @@ export function ProgressView({ displayName, progress, allChapters }: Props) {
 
       <section className="card" style={{ marginTop: 20 }}>
         <h3>Badges</h3>
-        <p style={{ color: "var(--muted)", marginBottom: 14 }}>
-          {progress.badges.length === 0 
-            ? "Complete chapters to earn star badges. Each chapter you master gives you a star!"
-            : `You've earned ${progress.badges.length} of ${allChapters.length} badges!`}
-        </p>
-        <div className="badges-grid">
-          {allChapters.map((chapter) => {
-            const earned = earnedIds.has(chapter.id);
-            const badge = progress.badges.find(b => b.id === `${chapter.id}-star`);
-            return (
-              <div key={chapter.id} className={`badge-card ${earned ? "earned" : "locked"}`}>
-                <span className="badge-icon">{earned ? "⭐" : "🔒"}</span>
-                <div className="badge-info">
-                  <span className="badge-label">{chapter.titleKid}</span>
-                  {earned && badge ? (
-                    <span className="badge-date">Earned {badge.earnedAt}</span>
-                  ) : (
-                    <span className="badge-hint">Complete this chapter</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {progress.badges.length === 0 ? (
+          <div className="badges-empty">
+            <Mascot mood="idle" size={64} />
+            <p>Complete chapters to earn star badges!</p>
+            <p className="badges-empty-hint">Each chapter you master gives you a shiny star.</p>
+          </div>
+        ) : (
+          <p style={{ color: "var(--muted)", marginBottom: 14 }}>
+            You&apos;ve earned {progress.badges.length} of {allChapters.length} badges!
+          </p>
+        )}
+        {chaptersBySubject.map(group => (
+          <div key={group.subject} className="badges-group">
+            <h4 className="badges-group-label">{group.label}</h4>
+            <div className="badges-grid">
+              {group.chapters.map((chapter) => {
+                const earned = earnedIds.has(chapter.id);
+                const badge = progress.badges.find(b => b.id === `${chapter.id}-star`);
+                return (
+                  <div key={chapter.id} className={`badge-card ${earned ? "earned" : "locked"}`}>
+                    <span className="badge-icon">{earned ? "⭐" : "🔒"}</span>
+                    <div className="badge-info">
+                      <span className="badge-label">{chapter.titleKid}</span>
+                      {earned && badge ? (
+                        <span className="badge-date">Earned {badge.earnedAt}</span>
+                      ) : (
+                        <span className="badge-hint">Complete this chapter</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </section>
 
       <div style={{ marginTop: 24, textAlign: "center" }}>
@@ -108,9 +136,10 @@ export function ProgressView({ displayName, progress, allChapters }: Props) {
 
 function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }) {
   const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
   const xpByDate = new Map(dailyXp.map((d) => [d.date, d.xp]));
 
-  const days: { date: Date; key: string; xp: number; dayOfWeek: number }[] = [];
+  const days: { date: Date; key: string; xp: number; isToday: boolean }[] = [];
   const start = new Date(today);
   start.setDate(start.getDate() - 34);
   while (start.getDay() !== 0) {
@@ -120,47 +149,44 @@ function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }
   const cursor = new Date(start);
   while (cursor <= today || days.length % 7 !== 0) {
     const key = cursor.toISOString().slice(0, 10);
-    days.push({ date: new Date(cursor), key, xp: xpByDate.get(key) ?? 0, dayOfWeek: cursor.getDay() });
+    days.push({ 
+      date: new Date(cursor), 
+      key, 
+      xp: xpByDate.get(key) ?? 0, 
+      isToday: key === todayKey 
+    });
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
-    <div className="streak-calendar-full">
-      <div className="streak-header">
-        {dayLabels.map((d) => (
-          <span key={d}>{d}</span>
+    <div className="streak-calendar-compact">
+      <div className="streak-header-compact">
+        {dayLabels.map((d, i) => (
+          <span key={i}>{d}</span>
         ))}
       </div>
-      <div className="streak-cells">
+      <div className="streak-cells-compact">
         {days.map((day) => {
           const future = day.date > today;
-          const level = future ? 0 : day.xp === 0 ? 0 : day.xp < 30 ? 1 : day.xp < 60 ? 2 : day.xp < 100 ? 3 : 4;
+          const played = day.xp > 0 && !future;
           const dayNum = day.date.getDate();
           return (
             <div
               key={day.key}
-              className={`streak-cell level-${level}${future ? " future" : ""}`}
+              className={`streak-cell-compact${played ? " played" : ""}${day.isToday ? " today" : ""}${future ? " future" : ""}`}
               title={future ? "" : `${day.key}: ${day.xp} XP`}
-              aria-label={future ? "Future" : `${day.key}: ${day.xp} XP`}
+              aria-label={day.isToday ? `Today: ${day.xp} XP` : future ? "Future" : `${day.key}: ${day.xp} XP`}
             >
-              <span className="cell-day">{dayNum}</span>
-              {day.xp > 0 && !future && <span className="cell-xp">{day.xp}</span>}
+              {dayNum}
             </div>
           );
         })}
       </div>
-      <div className="streak-legend-full">
-        <span>Less activity</span>
-        <div className="legend-cells">
-          <div className="streak-cell level-0 mini" />
-          <div className="streak-cell level-1 mini" />
-          <div className="streak-cell level-2 mini" />
-          <div className="streak-cell level-3 mini" />
-          <div className="streak-cell level-4 mini" />
-        </div>
-        <span>More activity</span>
+      <div className="streak-legend-compact">
+        <span className="streak-cell-compact played mini" /> Played
+        <span className="streak-cell-compact today mini" style={{ marginLeft: 12 }} /> Today
       </div>
     </div>
   );
