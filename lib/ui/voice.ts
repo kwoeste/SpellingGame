@@ -42,12 +42,32 @@ export function clampRate(rate: number): number {
   return Math.min(1.2, Math.max(0.5, rate));
 }
 
+/**
+ * Storage can be unavailable (Safari private mode, blocked site data, some in-app browsers):
+ * even touching window.localStorage throws a SecurityError. Never let that crash the page.
+ */
+function storageGet(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Preferences just won't persist.
+  }
+}
+
 export function readVoicePrefs(): VoicePrefs {
   if (typeof window === "undefined") return DEFAULT_VOICE_PREFS;
-  const rate = clampRate(parseFloat(window.localStorage.getItem(VOICE_RATE_KEY) || ""));
-  const sound = window.localStorage.getItem(SOUND_KEY);
+  const rate = clampRate(parseFloat(storageGet(VOICE_RATE_KEY) || ""));
+  const sound = storageGet(SOUND_KEY);
   return {
-    voiceName: window.localStorage.getItem(VOICE_NAME_KEY) ?? "",
+    voiceName: storageGet(VOICE_NAME_KEY) ?? "",
     rate,
     soundOn: sound !== "off",
   };
@@ -56,9 +76,9 @@ export function readVoicePrefs(): VoicePrefs {
 export function writeVoicePrefs(prefs: Partial<VoicePrefs>): VoicePrefs {
   const next = { ...readVoicePrefs(), ...prefs };
   if (typeof window === "undefined") return next;
-  window.localStorage.setItem(VOICE_NAME_KEY, next.voiceName);
-  window.localStorage.setItem(VOICE_RATE_KEY, String(next.rate));
-  window.localStorage.setItem(SOUND_KEY, next.soundOn ? "on" : "off");
+  storageSet(VOICE_NAME_KEY, next.voiceName);
+  storageSet(VOICE_RATE_KEY, String(next.rate));
+  storageSet(SOUND_KEY, next.soundOn ? "on" : "off");
   return next;
 }
 

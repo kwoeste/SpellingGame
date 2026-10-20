@@ -7,7 +7,7 @@ import { normalizePath } from "@/lib/auth/paths";
 
 function notAllowedPage(): NextResponse {
   return new NextResponse(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Not allowed</title></head><body><h1>Not allowed</h1><p>You do not have access to this page.</p></body></html>`,
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Not allowed</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 16px"><h1>Not allowed</h1><p>You do not have access to this page. If you think you should, sign out and sign in with your admin account.</p><p><a href="/">Go to the home page</a></p></body></html>`,
     {
       status: 403,
       headers: {
