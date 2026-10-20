@@ -78,6 +78,38 @@ export type GateAttempt = {
 
 export type LikeRow = { interestTag: string; liked: boolean };
 
+export type StrategyRow = {
+  eventId: string;
+  conceptId: string | null;
+  strategy: string;
+  source: string;
+  confidence: number | null;
+  misconception: string | null;
+  isCorrect: boolean | null;
+};
+
+export type AssignmentRecord = {
+  id: string;
+  learnerId: string;
+  kind: "manual" | "hole_fill";
+  targetType: "concept" | "chapter" | "game";
+  targetId: string;
+  title: string;
+  reason: string | null;
+  status: "open" | "paused" | "done" | "cancelled";
+  createdBy: string;
+  createdAt: number;
+  completedAt: number | null;
+};
+
+export type LearnerGoalRecord = {
+  learnerId: string;
+  weeklyXpGoal: number;
+  dailyMinutesGoal: number;
+  updatedAt: number;
+  updatedBy: string;
+};
+
 /** Every method is scoped to the learner the transaction was opened for. */
 export interface LearnerTx {
   readonly learnerId: string;
@@ -109,6 +141,7 @@ export interface LearnerTx {
   xpRows(): Promise<{ minuteStart: number; xp: number }[]>;
   saveLikes(tags: LikeRow[]): Promise<void>;
   getLikes(): Promise<LikeRow[]>;
+  insertStrategy(row: StrategyRow): Promise<void>;
 }
 
 export interface EngineRepo {
@@ -128,4 +161,15 @@ export interface AdminRepo {
   counts(): Promise<{ events: number; mastery: number; reviews: number }>;
   activeConfig(): Promise<Record<string, unknown> | null>;
   saveConfig(config: Record<string, unknown>, createdBy: string): Promise<string>;
+  sessions(limit: number): Promise<PlaySession[]>;
+  reviews(): Promise<Array<ReviewRow & { learnerId: string }>>;
+  xpLedger(): Promise<Array<{ learnerId: string; sessionId: string; minuteStart: number; xp: number }>>;
+  strategies(limit: number): Promise<Array<StrategyRow & { learnerId: string }>>;
+  gatedChapterIds(learnerId: string): Promise<string[]>;
+  assignments(): Promise<AssignmentRecord[]>;
+  createAssignment(row: Omit<AssignmentRecord, "id" | "createdAt" | "completedAt">): Promise<AssignmentRecord>;
+  updateAssignment(id: string, patch: Partial<Pick<AssignmentRecord, "status" | "completedAt">>): Promise<AssignmentRecord | null>;
+  goals(): Promise<LearnerGoalRecord[]>;
+  upsertGoal(goal: LearnerGoalRecord): Promise<void>;
+  relabelStrategy(eventId: string, learnerId: string, strategy: string, createdBy: string): Promise<void>;
 }

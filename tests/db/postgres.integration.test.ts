@@ -11,7 +11,7 @@ import { adminRepo, engineRepo } from "@/lib/engine/repos";
 import { progressSummary, saveLikes, startSession, submitAnswer, type EngineActor } from "@/lib/engine/service";
 
 /**
- * Applies migrations 001-003 to a throwaway database and drives the real repo through the
+ * Applies migrations 001-004 to a throwaway database and drives the real repo through the
  * app_student / app_admin / assistant_ro roles. Needs a superuser URL, e.g.
  * TEST_PG_SUPERUSER_URL=postgresql://it_owner:it_owner@127.0.0.1/postgres npm test
  * Note: sets passwords on the cluster-wide app_student, app_admin, and assistant_ro roles.
@@ -39,7 +39,7 @@ function rightAnswer(item: ChapterItem): unknown {
   return item.type === "tap_evidence" ? { choice: item.answer, evidence: item.evidenceSentenceId } : item.answer;
 }
 
-suite("Postgres persistence and RLS (migrations 001-003)", () => {
+suite("Postgres persistence and RLS (migrations 001-004)", () => {
   const database = `mae_it_${Date.now()}`;
   const roleUrls = {} as Record<DbRole, string>;
   let ownerUrl = "";
@@ -74,7 +74,12 @@ suite("Postgres persistence and RLS (migrations 001-003)", () => {
     await root.end();
     ownerUrl = urlFor(SUPERUSER_URL as string, database);
     await asOwner(async (owner) => {
-      for (const file of ["001_engine_schema.sql", "002_seed_users.sql", "003_runtime_persistence.sql", "003_runtime_persistence.sql"]) {
+      for (const file of [
+        "001_engine_schema.sql",
+        "002_seed_users.sql",
+        "003_runtime_persistence.sql",
+        "004_admin_dashboard.sql",
+      ]) {
         await owner.query(migration(file));
       }
       await owner.query("ALTER ROLE app_student PASSWORD 'it_student'");

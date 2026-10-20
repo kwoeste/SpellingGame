@@ -1,8 +1,13 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 export function migrationSql(): string {
-  return readFileSync(path.join(process.cwd(), "db/migrations/001_engine_schema.sql"), "utf8");
+  const dir = path.join(process.cwd(), "db/migrations");
+  return readdirSync(dir)
+    .filter((file) => file.endsWith(".sql"))
+    .sort()
+    .map((file) => readFileSync(path.join(dir, file), "utf8"))
+    .join("\n");
 }
 
 export function assertsStudentCannotReadAdmin(sql: string): string[] {
@@ -21,6 +26,15 @@ export function assertsStudentCannotReadAdmin(sql: string): string[] {
   }
   if (!/default_transaction_read_only/i.test(sql)) {
     missing.push("assistant_ro read only");
+  }
+  if (!/CREATE TABLE IF NOT EXISTS engine.assignment/i.test(sql)) {
+    missing.push("assignment table");
+  }
+  if (!/CREATE POLICY admin_all_rows ON engine.assignment/i.test(sql)) {
+    missing.push("assignment admin RLS");
+  }
+  if (!/REVOKE ALL ON SCHEMA admin_api FROM app_student/i.test(sql)) {
+    missing.push("004 revoke admin_api from student");
   }
   return missing;
 }

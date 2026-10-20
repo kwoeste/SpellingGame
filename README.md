@@ -47,11 +47,12 @@ Role assignment must agree in **both** the env allowlist and `engine.app_user` (
 
 ## Database
 
-SQL lives in `db/migrations/`. Apply all three, in order, with the owner `DATABASE_URL`, on a Neon branch Kevin creates:
+SQL lives in `db/migrations/`. Apply all four, in order, with the owner `DATABASE_URL`, on a Neon branch Kevin creates:
 
 1. `001_engine_schema.sql` – schema, roles, views
 2. `002_seed_users.sql` – Mae and the three admins in `engine.app_user`
 3. `003_runtime_persistence.sql` – **required.** Role-scoped RLS policies (admin sees every learner, student sees only her rows via a transaction-local `app.learner_id`), `security_invoker` student views, `student_api.resolve_user`, persisted audit log, engine state columns. Safe to re-run.
+4. `004_admin_dashboard.sql` – assignments, learner goals, richer `admin_api` views (knowledge map, session history, holes, accuracy), RLS on the new tables. Safe to re-run.
 
 Then set passwords for the login roles and use them in the role-scoped URLs:
 

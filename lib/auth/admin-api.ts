@@ -24,3 +24,19 @@ export async function adminRead(req: Request, read: () => Promise<Record<string,
     return NextResponse.json({ error: "server_error" }, { status: 500, headers: gate.headers });
   }
 }
+
+/** Same gate as adminRead for POST/PUT/PATCH/DELETE handlers. */
+export async function adminWrite(
+  req: Request,
+  write: (actor: { email: string }) => Promise<{ status?: number; body: Record<string, unknown> }>,
+): Promise<Response> {
+  const gate = await adminGate(req);
+  if (!gate.ok) return gate.response;
+  try {
+    const result = await write({ email: gate.actor.email });
+    return NextResponse.json(result.body, { status: result.status ?? 200, headers: gate.headers });
+  } catch (error) {
+    console.error("admin write failed", error);
+    return NextResponse.json({ error: "server_error" }, { status: 500, headers: gate.headers });
+  }
+}

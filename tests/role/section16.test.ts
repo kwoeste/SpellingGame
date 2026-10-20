@@ -13,6 +13,12 @@ import { GET as adminTrends } from "@/app/api/admin/trends/route";
 import { GET as adminInterests } from "@/app/api/admin/interests/route";
 import { GET as adminConfig, PUT as putConfig } from "@/app/api/admin/config/route";
 import { GET as adminExport } from "@/app/api/admin/export/route";
+import { GET as adminOverview } from "@/app/api/admin/overview/route";
+import { GET as adminProgress } from "@/app/api/admin/progress/route";
+import { GET as adminMap } from "@/app/api/admin/knowledge-map/route";
+import { GET as adminSessions } from "@/app/api/admin/sessions/route";
+import { GET as adminAssignments, POST as postAssignments } from "@/app/api/admin/assignments/route";
+import { POST as relabelStrategy } from "@/app/api/admin/strategy/relabel/route";
 import { GET as progress } from "@/app/api/engine/progress-summary/route";
 import { POST as nextItem } from "@/app/api/engine/next-item/route";
 import { POST as events } from "@/app/api/engine/events/route";
@@ -43,7 +49,16 @@ describe("section 16 role tests", () => {
   });
 
   it("R1 student is forbidden from admin pages", () => {
-    for (const pathname of ["/admin", "/admin/", "/admin/knowledge-map", "/admin/assets/app.js"]) {
+    for (const pathname of [
+      "/admin",
+      "/admin/",
+      "/admin/knowledge-map",
+      "/admin/progress",
+      "/admin/sessions",
+      "/admin/assignments",
+      "/admin/wrong-answers",
+      "/admin/assets/app.js",
+    ]) {
       const decision = decideRequest({ pathname, hasSession: true, role: "student" });
       expect(decision.kind).toBe("forbidden");
       if (decision.kind === "forbidden") expect(decision.page).toBe(true);
@@ -51,8 +66,36 @@ describe("section 16 role tests", () => {
   });
 
   it("R2 student GETs on admin APIs are 403 JSON", async () => {
-    const routes = [adminMastery, adminWrong, adminStrategy, adminTime, adminTrends, adminInterests, adminConfig, adminExport];
-    const paths = ["/api/admin/mastery", "/api/admin/wrong-answers", "/api/admin/strategy", "/api/admin/time", "/api/admin/trends", "/api/admin/interests", "/api/admin/config", "/api/admin/export"];
+    const routes = [
+      adminMastery,
+      adminWrong,
+      adminStrategy,
+      adminTime,
+      adminTrends,
+      adminInterests,
+      adminConfig,
+      adminExport,
+      adminOverview,
+      adminProgress,
+      adminMap,
+      adminSessions,
+      adminAssignments,
+    ];
+    const paths = [
+      "/api/admin/mastery",
+      "/api/admin/wrong-answers",
+      "/api/admin/strategy",
+      "/api/admin/time",
+      "/api/admin/trends",
+      "/api/admin/interests",
+      "/api/admin/config",
+      "/api/admin/export",
+      "/api/admin/overview",
+      "/api/admin/progress",
+      "/api/admin/knowledge-map",
+      "/api/admin/sessions",
+      "/api/admin/assignments",
+    ];
     for (const [handler, pathName] of routes.map((h, i) => [h, paths[i]] as const)) {
       const res = await handler(req(`http://local${pathName}`, "mae.woeste@gmail.com"));
       expect(res.status).toBe(403);
@@ -70,6 +113,22 @@ describe("section 16 role tests", () => {
     );
     expect(res.status).toBe(403);
     expect({ counts: await memoryAdminRepo.counts(), config: await memoryAdminRepo.activeConfig() }).toEqual(before);
+    const assignBefore = await memoryAdminRepo.assignments();
+    const assign = await postAssignments(
+      req("http://local/api/admin/assignments", "mae.woeste@gmail.com", {
+        method: "POST",
+        body: JSON.stringify({ action: "assign", targetType: "concept", targetId: "math.nf.compare_unlike" }),
+      }),
+    );
+    expect(assign.status).toBe(403);
+    expect(await memoryAdminRepo.assignments()).toEqual(assignBefore);
+    const relabel = await relabelStrategy(
+      req("http://local/api/admin/strategy/relabel", "mae.woeste@gmail.com", {
+        method: "POST",
+        body: JSON.stringify({ eventId: "11111111-1111-1111-1111-111111111111", strategy: "guess" }),
+      }),
+    );
+    expect(relabel.status).toBe(403);
   });
 
   it("R4 path tricks never allow admin", () => {
@@ -157,6 +216,15 @@ describe("section 16 role tests", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as { mastery: unknown };
     expect(json.mastery).toBeDefined();
+    const overview = await adminOverview(req("http://local/api/admin/overview", "woeste.kevin@gmail.com"));
+    expect(overview.status).toBe(200);
+    const assignments = await postAssignments(
+      req("http://local/api/admin/assignments", "molly.woeste@gmail.com", {
+        method: "POST",
+        body: JSON.stringify({ action: "assign", targetType: "concept", targetId: "math.nf.compare_unlike" }),
+      }),
+    );
+    expect(assignments.status).toBe(200);
   });
 
   it("R11 no-store on gated APIs", async () => {
