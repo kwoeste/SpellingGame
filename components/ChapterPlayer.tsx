@@ -278,6 +278,7 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
   const [error, setError] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [attempt, setAttempt] = useState(0);
   const shownAt = useRef(Date.now());
 
   useEffect(() => {
@@ -302,7 +303,7 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
       window.clearInterval(countdownInterval);
       window.clearTimeout(unlockTimer);
     };
-  }, [step.prompt]);
+  }, [step.prompt, attempt]);
 
   function response(): unknown {
     switch (step.kind) {
@@ -366,23 +367,9 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
     setEvidence("");
     setMatches({});
     shownAt.current = Date.now();
-    const words = step.prompt.split(/\s+/).length;
-    const totalMs = answerUnlockMs(words);
-    const totalSeconds = Math.ceil(totalMs / 1000);
-    setCountdown(totalSeconds);
     setUnlocked(false);
-
-    const countdownInterval = window.setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(countdownInterval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    window.setTimeout(() => setUnlocked(true), totalMs);
+    // The effect above restarts the countdown and cleans up its timers.
+    setAttempt((n) => n + 1);
   }
 
   const locked = Boolean(feedback) || !unlocked;
