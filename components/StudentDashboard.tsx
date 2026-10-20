@@ -183,9 +183,14 @@ function ChapterPack({
   questChapterId: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [focusedChapter, setFocusedChapter] = useState<string | null>(null);
   const isLarge = chapters.length > COMPACT_THRESHOLD;
   const visibleChapters = isLarge && !expanded ? chapters.slice(0, COMPACT_VISIBLE) : chapters;
   const hiddenCount = chapters.length - COMPACT_VISIBLE;
+
+  const focusedTitle = focusedChapter 
+    ? chapters.find(ch => ch.id === focusedChapter)?.titleKid 
+    : null;
 
   return (
     <div className={`pack-card ${subject}`}>
@@ -207,12 +212,16 @@ function ChapterPack({
                   className={`path-dot ${cls}`}
                   title={chapter.titleKid}
                   aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
+                  onFocus={() => setFocusedChapter(chapter.id)}
+                  onBlur={() => setFocusedChapter(null)}
+                  onTouchStart={() => setFocusedChapter(chapter.id)}
                 >
                   {pct >= 100 ? "★" : chapter.number}
                 </Link>
               );
             })}
           </div>
+          {focusedTitle && <div className="path-dot-label">{focusedTitle}</div>}
           <button
             type="button"
             className="pack-expand-btn"
@@ -242,23 +251,29 @@ function ChapterPack({
               })}
             </div>
           ) : (
-            <div className="path-dots">
-              {chapters.map((chapter) => {
-                const pct = chapterPct.get(chapter.id) ?? 0;
-                const cls = pct >= 100 ? "done" : questChapterId === chapter.id ? "now" : "";
-                return (
-                  <Link
-                    key={chapter.id}
-                    href={`/study/${chapter.id}`}
-                    className={`path-dot ${cls}`}
-                    title={chapter.titleKid}
-                    aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
-                  >
-                    {pct >= 100 ? "★" : chapter.number}
-                  </Link>
-                );
-              })}
-            </div>
+            <>
+              <div className="path-dots">
+                {chapters.map((chapter) => {
+                  const pct = chapterPct.get(chapter.id) ?? 0;
+                  const cls = pct >= 100 ? "done" : questChapterId === chapter.id ? "now" : "";
+                  return (
+                    <Link
+                      key={chapter.id}
+                      href={`/study/${chapter.id}`}
+                      className={`path-dot ${cls}`}
+                      title={chapter.titleKid}
+                      aria-label={`${chapter.number}. ${chapter.titleKid}, ${Math.round(pct)} percent`}
+                      onFocus={() => setFocusedChapter(chapter.id)}
+                      onBlur={() => setFocusedChapter(null)}
+                      onTouchStart={() => setFocusedChapter(chapter.id)}
+                    >
+                      {pct >= 100 ? "★" : chapter.number}
+                    </Link>
+                  );
+                })}
+              </div>
+              {focusedTitle && <div className="path-dot-label">{focusedTitle}</div>}
+            </>
           )}
           {isLarge && (
             <button

@@ -85,10 +85,7 @@ export function ProgressView({ displayName, progress, allChapters }: Props) {
 
       <section className="card" style={{ marginTop: 20 }}>
         <h3>Streak Calendar</h3>
-        <p style={{ color: "var(--muted)", marginBottom: 12 }}>
-          Days you played are highlighted. Keep the streak going!
-        </p>
-        <StreakCalendar dailyXp={progress.dailyXp} />
+        <StreakCalendar dailyXp={progress.dailyXp} streakDays={progress.streakDays} />
       </section>
 
       <section className="card" style={{ marginTop: 20 }}>
@@ -124,9 +121,7 @@ export function ProgressView({ displayName, progress, allChapters }: Props) {
   );
 }
 
-function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }) {
-  // Work in America/New_York calendar days (matching the server's etDateKey XP buckets),
-  // using UTC-noon Date objects so arithmetic is independent of the runtime's timezone.
+function StreakCalendar({ dailyXp, streakDays }: { dailyXp: { date: string; xp: number }[]; streakDays: number }) {
   const todayKey = etDateKey(new Date());
   const [ty, tm, td] = todayKey.split("-").map(Number);
   const today = new Date(Date.UTC(ty, tm - 1, td, 12));
@@ -134,7 +129,7 @@ function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }
 
   const days: { date: Date; key: string; xp: number; isToday: boolean }[] = [];
   const start = new Date(today);
-  start.setUTCDate(start.getUTCDate() - 34);
+  start.setUTCDate(start.getUTCDate() - 27);
   while (start.getUTCDay() !== 0) {
     start.setUTCDate(start.getUTCDate() - 1);
   }
@@ -151,35 +146,44 @@ function StreakCalendar({ dailyXp }: { dailyXp: { date: string; xp: number }[] }
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
+  const daysThisMonth = dailyXp.filter(d => d.date.startsWith(todayKey.slice(0, 7)) && d.xp > 0).length;
   const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
-    <div className="streak-calendar-compact">
-      <div className="streak-header-compact">
-        {dayLabels.map((d, i) => (
-          <span key={i}>{d}</span>
-        ))}
+    <div className="streak-calendar-wrap">
+      <div className="streak-summary">
+        <div className="streak-summary-item">
+          <strong>{streakDays}</strong>
+          <span>Current streak</span>
+        </div>
+        <div className="streak-summary-item">
+          <strong>{daysThisMonth}</strong>
+          <span>Days this month</span>
+        </div>
       </div>
-      <div className="streak-cells-compact">
-        {days.map((day) => {
-          const future = day.date > today;
-          const played = day.xp > 0 && !future;
-          const dayNum = day.date.getUTCDate();
-          return (
-            <div
-              key={day.key}
-              className={`streak-cell-compact${played ? " played" : ""}${day.isToday ? " today" : ""}${future ? " future" : ""}`}
-              title={future ? "" : `${day.key}: ${day.xp} XP`}
-              aria-label={day.isToday ? `Today: ${day.xp} XP` : future ? "Future" : `${day.key}: ${day.xp} XP`}
-            >
-              {dayNum}
-            </div>
-          );
-        })}
-      </div>
-      <div className="streak-legend-compact">
-        <span className="streak-cell-compact played mini" /> Played
-        <span className="streak-cell-compact today mini" style={{ marginLeft: 12 }} /> Today
+      <div className="streak-calendar-grid">
+        <div className="streak-header-compact">
+          {dayLabels.map((d, i) => (
+            <span key={i}>{d}</span>
+          ))}
+        </div>
+        <div className="streak-cells-compact">
+          {days.map((day) => {
+            const future = day.date > today;
+            const played = day.xp > 0 && !future;
+            const dayNum = day.date.getUTCDate();
+            return (
+              <div
+                key={day.key}
+                className={`streak-cell-compact${played ? " played" : ""}${day.isToday ? " today" : ""}${future ? " future" : ""}`}
+                title={future ? "" : `${day.key}: ${day.xp} XP`}
+                aria-label={day.isToday ? `Today: ${day.xp} XP` : future ? "Future" : `${day.key}: ${day.xp} XP`}
+              >
+                {dayNum}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -231,13 +235,13 @@ function BadgeGroup({
           </div>
         ))}
       </div>
-      {hasMoreLocked && !expanded && (
+      {hasMoreLocked && (
         <button
           type="button"
           className="badges-show-all"
-          onClick={() => setExpanded(true)}
+          onClick={() => setExpanded(!expanded)}
         >
-          Show all ({hiddenCount} more)
+          {expanded ? "Show less" : `Show all (${hiddenCount} more)`}
         </button>
       )}
     </div>

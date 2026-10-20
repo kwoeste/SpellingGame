@@ -20,14 +20,13 @@ export type ArcadeTile = {
   progress: number;
 };
 
-export const ARCADE_GROUPS: { id: ArcadeGroup | "all"; label: string }[] = [
+export const ARCADE_GROUPS: { id: ArcadeGroup | "all" | "more"; label: string }[] = [
   { id: "all", label: "All games" },
   { id: "spelling", label: "Spelling" },
-  { id: "math", label: "Math" },
   { id: "history", label: "History" },
   { id: "science", label: "Science" },
-  { id: "words", label: "Word play" },
   { id: "religion", label: "Religion" },
+  { id: "more", label: "More games" },
 ];
 
 export const NAMED_META: Record<

@@ -184,7 +184,7 @@ button, input, textarea, select { font: inherit; }
   z-index: 40;
 }
 .report-btn > button.btn {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   padding: 8px 14px;
   min-height: 36px;
   opacity: 0.8;
@@ -250,7 +250,7 @@ button, input, textarea, select { font: inherit; }
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   color: var(--brand);
 }
 .stat-row {
@@ -264,21 +264,33 @@ button, input, textarea, select { font: inherit; }
   padding: 16px;
   text-align: center;
 }
-.stat-card-compact {
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-}
-.stat-card-compact span { font-size: 0.95rem; color: var(--muted); margin-top: 2px; }
 .stat-card strong {
   display: block;
   font-family: var(--font-display);
   font-size: 1.8rem;
   line-height: 1;
 }
-.stat-card-compact strong { font-size: 1.4rem; line-height: 1; margin: 0; }
+.stat-card.stat-card-compact {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 72px;
+  max-height: 80px;
+}
+.stat-card.stat-card-compact strong {
+  font-size: 2rem !important;
+  line-height: 1;
+  margin: 0;
+  font-family: var(--font-display);
+}
+.stat-card.stat-card-compact span {
+  font-size: 1rem !important;
+  color: var(--muted);
+  margin: 0;
+}
 .subject-map {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -317,8 +329,31 @@ button, input, textarea, select { font: inherit; }
   transition: transform 0.15s ease;
 }
 .path-dot:hover { transform: scale(1.1); }
+.path-dot:focus-visible,
+.path-dot:active {
+  transform: scale(1.1);
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
 .path-dot.done { background: #19a37a; color: white; border-color: #0d7a5a; }
 .path-dot.now { background: #ffb703; border-color: #c48200; box-shadow: 0 0 0 4px rgba(255, 183, 3, 0.3); }
+
+/* Chapter name caption for touch */
+.path-dot-label {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: var(--ink);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* Settings corner with gear */
 .settings-corner {
@@ -417,7 +452,7 @@ button, input, textarea, select { font: inherit; }
   gap: 2px;
 }
 .continue-text strong { font-size: 1.1rem; }
-.continue-text span:not(strong) { opacity: 0.9; font-size: 0.9rem; }
+.continue-text span:not(strong) { opacity: 0.9; font-size: 0.95rem; }
 .continue-arrow { font-size: 1.5rem; font-weight: 700; }
 
 /* Progress button */
@@ -440,7 +475,7 @@ button, input, textarea, select { font: inherit; }
   margin-left: auto;
   display: flex;
   gap: 10px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   opacity: 0.9;
 }
 .streak-badge {
@@ -521,8 +556,6 @@ button, input, textarea, select { font: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 320px;
-  overflow-y: auto;
   margin-bottom: 8px;
 }
 .chapter-list-item {
@@ -547,7 +580,7 @@ button, input, textarea, select { font: inherit; }
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
 }
 .chapter-list-item.done .chapter-list-num { background: #19a37a; color: white; }
@@ -641,7 +674,7 @@ button, input, textarea, select { font: inherit; }
 .arcade-hero-content { flex: 1; }
 .arcade-hero-label {
   display: inline-block;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   opacity: 0.9;
@@ -810,7 +843,7 @@ button, input, textarea, select { font: inherit; }
   display: grid;
   gap: 4px;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 .voice-panel select {
   min-height: var(--touch);
@@ -897,6 +930,7 @@ button, input, textarea, select { font: inherit; }
   flex-wrap: wrap;
   gap: 10px;
   width: 100%;
+  justify-content: center;
 }
 .done-actions .btn {
   text-decoration: none;
@@ -1071,7 +1105,7 @@ button, input, textarea, select { font: inherit; }
 }
 .progress-stat-card span {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.95rem;
 }
 
 /* Streak Calendar - Full Width */
@@ -1141,6 +1175,58 @@ button, input, textarea, select { font: inherit; }
 }
 
 /* Compact Streak Calendar (5 weeks) */
+.streak-calendar-wrap {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  width: 100%;
+}
+.streak-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 100px;
+}
+.streak-summary-item {
+  text-align: center;
+  padding: 10px 8px;
+  background: var(--wash);
+  border-radius: 12px;
+  border: 2px solid var(--line);
+}
+.streak-summary-item strong {
+  display: block;
+  font-size: 1.5rem;
+  font-family: var(--font-display);
+  color: var(--ink);
+}
+.streak-summary-item span {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.streak-calendar-grid {
+  flex: 1;
+  max-width: 300px;
+}
+@media (max-width: 480px) {
+  .streak-calendar-wrap {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .streak-summary {
+    flex-direction: row;
+    justify-content: center;
+    min-width: 0;
+  }
+  .streak-summary-item {
+    flex: 1;
+    max-width: 140px;
+  }
+  .streak-calendar-grid {
+    max-width: 100%;
+  }
+}
 .streak-calendar-compact {
   width: 100%;
   max-width: 320px;
@@ -1167,14 +1253,14 @@ button, input, textarea, select { font: inherit; }
   gap: 5px;
 }
 .streak-cell-compact {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   background: var(--wash);
   border: 2px solid var(--line);
   display: grid;
   place-items: center;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--muted);
 }
@@ -1264,7 +1350,7 @@ button, input, textarea, select { font: inherit; }
   color: var(--ink);
 }
 .badge-date {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--ok);
   font-weight: 600;
 }
