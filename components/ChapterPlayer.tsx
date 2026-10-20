@@ -50,7 +50,15 @@ function viewFor(progress: Progress | null, steps: number): View {
   return progress.nextStep >= steps ? { kind: "read" } : { kind: "step", index: progress.nextStep };
 }
 
-export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; isAdmin: boolean }) {
+export function ChapterPlayer({
+  chapter,
+  isAdmin,
+  nextChapterHref,
+}: {
+  chapter: StudentChapter;
+  isAdmin: boolean;
+  nextChapterHref: string | null;
+}) {
   const [view, setView] = useState<View>({ kind: "loading" });
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
@@ -183,13 +191,22 @@ export function ChapterPlayer({ chapter, isAdmin }: { chapter: StudentChapter; i
             setReadReady(false);
             setView({ kind: "read" });
           }}
+          nextChapterHref={nextChapterHref}
         />
       ) : null}
     </div>
   );
 }
 
-function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => void }) {
+function DoneView({
+  gate,
+  onAgain,
+  nextChapterHref,
+}: {
+  gate: Feedback["gate"];
+  onAgain: () => void;
+  nextChapterHref: string | null;
+}) {
   if (gate?.passed) {
     return (
       <div role="status" className="feedback-card">
@@ -199,6 +216,16 @@ function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => vo
           You got {gate.correct} of {gate.total} right on the first try. Great place to stop, or pick another chapter.
         </p>
         <ConfettiLayer fire />
+        <div className="chips" style={{ marginTop: 16, justifyContent: "center" }}>
+          <a href="/study" className="btn secondary">
+            Back to Study
+          </a>
+          {nextChapterHref ? (
+            <a href={nextChapterHref} className="btn">
+              Next chapter
+            </a>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -213,9 +240,19 @@ function DoneView({ gate, onAgain }: { gate: Feedback["gate"]; onAgain: () => vo
       ) : (
         <p>You finished this chapter.</p>
       )}
-      <button className="btn" onClick={onAgain}>
-        Go again
-      </button>
+      <div className="chips" style={{ marginTop: 16, justifyContent: "center" }}>
+        <a href="/study" className="btn secondary">
+          Back to Study
+        </a>
+        <button className="btn" onClick={onAgain}>
+          Go again
+        </button>
+        {nextChapterHref ? (
+          <a href={nextChapterHref} className="btn">
+            Next chapter
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -240,13 +277,33 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [unlocked, setUnlocked] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [attempt, setAttempt] = useState(0);
   const shownAt = useRef(Date.now());
 
   useEffect(() => {
     const words = step.prompt.split(/\s+/).length;
-    const timer = window.setTimeout(() => setUnlocked(true), answerUnlockMs(words));
-    return () => window.clearTimeout(timer);
-  }, [step.prompt]);
+    const totalMs = answerUnlockMs(words);
+    const totalSeconds = Math.ceil(totalMs / 1000);
+    setCountdown(totalSeconds);
+    setUnlocked(false);
+
+    const countdownInterval = window.setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const unlockTimer = window.setTimeout(() => setUnlocked(true), totalMs);
+    return () => {
+      window.clearInterval(countdownInterval);
+      window.clearTimeout(unlockTimer);
+    };
+  }, [step.prompt, attempt]);
 
   function response(): unknown {
     switch (step.kind) {
@@ -311,7 +368,8 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
     setMatches({});
     shownAt.current = Date.now();
     setUnlocked(false);
-    window.setTimeout(() => setUnlocked(true), answerUnlockMs(step.prompt.split(/\s+/).length));
+    // The effect above restarts the countdown and cleans up its timers.
+    setAttempt((n) => n + 1);
   }
 
   const locked = Boolean(feedback) || !unlocked;
@@ -322,7 +380,11 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
         Step {number} of {total}
       </p>
       <h3>{step.prompt}</h3>
-      {!unlocked ? <p className="notice">Read the question first. Answers unlock in a moment.</p> : null}
+      {!unlocked ? (
+        <p className="notice">
+          Read the question first. Answers unlock in {countdown} second{countdown !== 1 ? "s" : ""}.
+        </p>
+      ) : null}
 
       {step.kind === "vocab" ? (
         <MatchPairs

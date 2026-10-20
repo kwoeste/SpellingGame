@@ -7,6 +7,7 @@ import { Mascot } from "@/components/ui/Mascot";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
 import { playSound } from "@/lib/ui/sounds";
 import { spellingAudioFile, type SpellingList } from "@/lib/games/spelling-lists";
+import { loadProgress, saveProgress, clearProgress } from "@/lib/games/spelling-progress";
 
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -28,6 +29,7 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
   const [flash, setFlash] = useState<Record<number, "correct" | "incorrect">>({});
   const [done, setDone] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [restored, setRestored] = useState(false);
   const token = useRef(0);
   const clip = useRef<HTMLAudioElement | null>(null);
 
@@ -76,6 +78,7 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
     if (!current) {
       setDone(true);
       setCelebrate(true);
+      clearProgress(list.id);
       playSound("fanfare", prefs.soundOn);
       return;
     }
@@ -83,11 +86,20 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
     setLetterIndex(0);
     setLetters(buildLetters(current, nextRound));
     setMessage("");
+    setFlash({});
     speakWord(current);
   }
 
   useEffect(() => {
-    show(0, 1);
+    const saved = loadProgress(list.id);
+    if (saved && saved.index < list.words.length) {
+      setIndex(saved.index);
+      setRound(saved.round);
+      setRestored(true);
+      show(saved.index, saved.round);
+    } else {
+      show(0, 1);
+    }
     return () => {
       token.current += 1;
       if (clip.current) clip.current.pause();
@@ -111,19 +123,25 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
     setGuessed(joined);
     setLetterIndex((n) => n + 1);
     setFlash((prev) => ({ ...prev, [buttonIndex]: "correct" }));
+    setMessage("Nice!");
     playSound("tap", prefs.soundOn);
     if (joined === word) {
       setMessage("Yes!");
       playSound("correct", prefs.soundOn);
       window.setTimeout(() => {
+        let nextIndex = index;
+        let nextRound = round;
         if (index + 1 >= list.words.length && round < totalRounds) {
-          setRound(round + 1);
-          setIndex(0);
-          show(0, round + 1);
+          nextRound = round + 1;
+          nextIndex = 0;
+          setRound(nextRound);
+          setIndex(nextIndex);
         } else {
-          setIndex(index + 1);
-          show(index + 1, round);
+          nextIndex = index + 1;
+          setIndex(nextIndex);
         }
+        saveProgress(list.id, nextIndex, nextRound);
+        show(nextIndex, nextRound);
       }, 900);
     }
   }
@@ -133,16 +151,19 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
       <div className="card" style={{ textAlign: "center" }}>
         <ConfettiLayer fire={celebrate} />
         <Mascot mood="cheer" size={120} />
-        <h1>You finished {list.shortTitle}!</h1>
+        <h1>You finished Spelling Safari · {list.shortTitle}!</h1>
         <p>Great place to stop, or play another list.</p>
       </div>
     );
   }
 
+  const displayTitle = `Spelling Safari · ${list.shortTitle}`;
+
   return (
     <div className="card" style={{ textAlign: "center" }}>
       <p className="kid-kicker">Spelling Safari</p>
-      <h1>{list.title}</h1>
+      <h1>{displayTitle}</h1>
+      {restored && index > 0 ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
       <p>{list.tagline}</p>
       <p id="word-counter">
         Round {round} of {totalRounds}, Word {index + 1} of {list.words.length}

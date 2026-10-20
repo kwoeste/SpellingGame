@@ -13,19 +13,27 @@ export function NamedGame({ gameId, title, spec }: { gameId: GameId; title: stri
   const [picked, setPicked] = useState("");
   const [feedback, setFeedback] = useState("");
   const [won, setWon] = useState(false);
+  const [misplaced, setMisplaced] = useState<Set<string>>(new Set());
   const leftover = useMemo(() => spec.items.filter((item) => !placed[item.label]), [placed, spec.items]);
 
   function place(label: string, bin: string) {
     setPlaced((prev) => ({ ...prev, [label]: bin }));
     setPicked("");
+    setMisplaced(new Set());
+    setFeedback("");
     playSound("pair", prefs.soundOn);
   }
 
   function check() {
-    const correct = spec.items.every((item) => placed[item.label] === item.bin);
+    const wrongLabels = spec.items.filter((item) => placed[item.label] !== item.bin).map((item) => item.label);
+    const correct = wrongLabels.length === 0;
+    setMisplaced(new Set(wrongLabels));
+    const wrongCount = wrongLabels.length;
     const message = correct
       ? "Yes — that set holds. Great place to stop, or play again."
-      : "Not yet — here's the trick. Read the label again and move one card.";
+      : wrongCount === 1
+        ? "Not yet — one card is misplaced (highlighted). Read the label and try again."
+        : `Not yet — ${wrongCount} cards are misplaced (highlighted). Read each label and try again.`;
     setFeedback(message);
     setWon(correct);
     playSound(correct ? "fanfare" : "wrong", prefs.soundOn);
@@ -76,7 +84,11 @@ export function NamedGame({ gameId, title, spec }: { gameId: GameId; title: stri
             {spec.items
               .filter((item) => placed[item.label] === bin)
               .map((item) => (
-                <p key={item.label}>
+                <p
+                  key={item.label}
+                  className={misplaced.has(item.label) ? "misplaced" : ""}
+                  style={misplaced.has(item.label) ? { backgroundColor: "var(--warning-bg, #fff3cd)", borderRadius: 6, padding: "4px 8px" } : undefined}
+                >
                   {item.label}{" "}
                   <button
                     type="button"
@@ -88,6 +100,8 @@ export function NamedGame({ gameId, title, spec }: { gameId: GameId; title: stri
                         delete next[item.label];
                         return next;
                       });
+                      setMisplaced(new Set());
+                      setFeedback("");
                     }}
                   >
                     Move

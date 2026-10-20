@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { GameArcade } from "@/components/GameArcade";
 import { pairWord } from "@/components/ChapterPlayer";
 import { SiteHeaderView } from "@/components/SiteHeader";
@@ -9,6 +9,7 @@ import { arcadeTiles } from "@/lib/games/arcade-tiles";
 import { allWordsRevealed, answerUnlockMs, flattenPassage } from "@/lib/ui/careful-read";
 import { INTEREST_CARDS } from "@/lib/ui/interests";
 import { SPELLING_LISTS } from "@/lib/games/spelling-lists";
+import { storageKey } from "@/lib/games/spelling-progress";
 import { headerNav } from "@/lib/nav";
 import { clampRate, pickVoice, rankVoices, voiceScore } from "@/lib/ui/voice";
 
@@ -18,8 +19,16 @@ describe("careful reading helpers", () => {
     expect(words.map((word) => word.text)).toEqual(["Ice", "feels", "cold.", "The", "sun", "can", "melt", "it."]);
     expect(allWordsRevealed(words.length, [0, 1, 2])).toBe(false);
     expect(allWordsRevealed(words.length, words.map((_, i) => i))).toBe(true);
-    expect(answerUnlockMs(3)).toBeGreaterThan(700);
-    expect(answerUnlockMs(80)).toBe(2400);
+    expect(answerUnlockMs(3)).toBeGreaterThanOrEqual(4000);
+    expect(answerUnlockMs(80)).toBe(5000);
+  });
+});
+
+describe("spelling progress storage", () => {
+  it("generates unique storage keys per list", () => {
+    expect(storageKey("d1")).toBe("spelling-safari:d1");
+    expect(storageKey("wk6-2")).toBe("spelling-safari:wk6-2");
+    expect(storageKey("d1")).not.toBe(storageKey("wk6-2"));
   });
 });
 

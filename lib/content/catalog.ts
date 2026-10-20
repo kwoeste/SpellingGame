@@ -17,6 +17,16 @@ export function chaptersBySubject(subject: ChapterPack["subject"]): ChapterPack[
   return chapters.filter((chapter) => chapter.subject === subject);
 }
 
+export function getNextChapter(currentId: string): ChapterPack | null {
+  const current = getChapter(currentId);
+  if (!current) return null;
+  const sameBook = chapters.filter((chapter) => chapter.book === current.book);
+  const sortedByNumber = [...sameBook].sort((a, b) => a.number - b.number);
+  const currentIndex = sortedByNumber.findIndex((chapter) => chapter.id === currentId);
+  if (currentIndex === -1 || currentIndex >= sortedByNumber.length - 1) return null;
+  return sortedByNumber[currentIndex + 1];
+}
+
 export function chapterCount(): { total: number; savvas: number; ckla: number; col: number } {
   return {
     total: chapters.length,

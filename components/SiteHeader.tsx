@@ -40,9 +40,9 @@ export function SiteHeaderView({ nav }: { nav: HeaderNav }) {
             </div>
           ) : null}
           {nav.account === "sign-in" ? (
-            <Link href="/sign-in" className="header-account">
+            <a href="/sign-in" className="header-account">
               Sign in
-            </Link>
+            </a>
           ) : (
             <form
               action={async () => {
