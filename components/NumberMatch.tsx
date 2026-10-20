@@ -90,9 +90,14 @@ export function NumberMatch() {
     let text = "";
     if (matched) {
       nextGuesses = !playerGuesses;
-      text = nextGuesses
-        ? "The computer matched your number! No points. Now the computer holds the number and you guess."
-        : "You matched it! No points. Now you hold the number!";
+      if (playerGuesses) {
+        nextPlayer += 1;
+        text = "You matched it! +1 for you! Now you hold the number.";
+        playSound("correct", prefs.soundOn);
+      } else {
+        nextComputer += 1;
+        text = "The computer matched your number! +1 for it. Now you guess.";
+      }
     } else if (playerGuesses) {
       nextComputer += 1;
       text = "No match. +1 for the computer, and it keeps its turn.";
@@ -141,14 +146,14 @@ export function NumberMatch() {
               </button>
             ))}
           </div>
-          <p>One player hides a number and the other guesses it. Only the player hiding the number can score.</p>
+          <p>One player hides a number and the other guesses it. The guesser scores a point on a correct match!</p>
         </div>
       ) : null}
 
       {phase !== "setup" ? (
         <>
           <p>First to {winScore} points wins!</p>
-          <div className="stat-row" aria-live="polite">
+          <div className="stat-row" aria-live="polite" style={{ justifyContent: "center" }}>
             <div className="stat-card">
               <strong>{playerScore}</strong>You
             </div>
@@ -162,7 +167,7 @@ export function NumberMatch() {
       {phase === "roll" ? (
         <div>
           <p>Roll the dice to see who goes first!</p>
-          <div className="stat-row">
+          <div className="stat-row" style={{ justifyContent: "center" }}>
             <div className="stat-card">
               <strong>🎲 {rolls.player}</strong>Your roll
             </div>
@@ -190,7 +195,7 @@ export function NumberMatch() {
 
       {phase === "reveal" ? (
         <div>
-          <div className="stat-row">
+          <div className="stat-row" style={{ justifyContent: "center" }}>
             <div className="stat-card">
               <strong>{playerNumber}</strong>
               {playerGuesses ? "Your guess" : "Your secret number"}
