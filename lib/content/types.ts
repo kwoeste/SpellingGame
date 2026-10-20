@@ -32,7 +32,7 @@ export type ChapterItem = {
 
 export type ChapterPack = {
   id: string;
-  book: "savvas" | "ckla" | "col";
+  book: "savvas" | "ckla" | "col" | "math";
   number: number;
   titleKid: string;
   unit?: string;

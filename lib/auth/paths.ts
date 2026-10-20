@@ -29,7 +29,7 @@ export function isGatedStudentPath(pathname: string): boolean {
   const segs = segments(pathname);
   const first = segs[0];
   if (!first) return false;
-  if (["study", "games", "spelling-game", "number-match"].includes(first)) return true;
+  if (["study", "games", "spelling-game", "number-match", "my-progress"].includes(first)) return true;
   if (first === "api" && segs[1] === "engine") return true;
   return false;
 }

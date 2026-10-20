@@ -20,7 +20,7 @@ function conceptKind(conceptId: string): ConceptNode["kind"] {
 }
 
 function formatChapterName(chapter: ChapterPack): string {
-  const bookName = chapter.book === "savvas" ? "Savvas" : chapter.book === "ckla" ? "CKLA" : chapter.book === "col" ? "CoL" : chapter.book;
+  const bookName = chapter.book === "savvas" ? "Savvas" : chapter.book === "ckla" ? "CKLA" : chapter.book === "col" ? "CoL" : chapter.book === "math" ? "Math" : chapter.book;
   return `${bookName} Ch${chapter.number}: ${chapter.titleKid}`;
 }
 

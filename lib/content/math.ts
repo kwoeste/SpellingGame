@@ -1,3 +1,4 @@
+import { seededShuffle } from "@/lib/content/shuffle";
 import type { ChapterItem, ChapterPack } from "@/lib/content/types";
 
 function multiplicationItem(
@@ -8,7 +9,7 @@ function multiplicationItem(
   options: number[],
 ): ChapterItem {
   const product = a * b;
-  const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+  const shuffledOptions = seededShuffle(options, `${chapterId}.${idx}`);
   return {
     id: `${chapterId}.mult.${idx}`,
     activityId: `${chapterId}.practice`,
@@ -38,8 +39,8 @@ function generateMultOptions(correct: number, factor: number): number[] {
 const mathChaptersData: ChapterPack[] = [
   {
     id: "math.mult.2s",
-    book: "savvas",
-    number: 101,
+    book: "math",
+    number: 1,
     titleKid: "Times 2: Doubling",
     subject: "math",
     bigQuestion: "What pattern shows when you multiply by 2?",
@@ -78,8 +79,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.5s",
-    book: "savvas",
-    number: 102,
+    book: "math",
+    number: 2,
     titleKid: "Times 5: Counting by fives",
     subject: "math",
     bigQuestion: "What pattern shows when you multiply by 5?",
@@ -117,8 +118,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.10s",
-    book: "savvas",
-    number: 103,
+    book: "math",
+    number: 3,
     titleKid: "Times 10: Just add a zero!",
     subject: "math",
     bigQuestion: "What happens when you multiply by 10?",
@@ -156,8 +157,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.3s",
-    book: "savvas",
-    number: 104,
+    book: "math",
+    number: 4,
     titleKid: "Times 3: Triple it!",
     subject: "math",
     bigQuestion: "How can doubling help you multiply by 3?",
@@ -195,8 +196,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.4s",
-    book: "savvas",
-    number: 105,
+    book: "math",
+    number: 5,
     titleKid: "Times 4: Double double!",
     subject: "math",
     bigQuestion: "How can you use what you know about 2s to multiply by 4?",
@@ -234,8 +235,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.6s",
-    book: "savvas",
-    number: 106,
+    book: "math",
+    number: 6,
     titleKid: "Times 6: Triple the double",
     subject: "math",
     bigQuestion: "How can you build 6s from facts you already know?",
@@ -272,8 +273,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.7s",
-    book: "savvas",
-    number: 107,
+    book: "math",
+    number: 7,
     titleKid: "Times 7: A week of facts",
     subject: "math",
     bigQuestion: "What strategies help with the trickier 7s?",
@@ -310,8 +311,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.8s",
-    book: "savvas",
-    number: 108,
+    book: "math",
+    number: 8,
     titleKid: "Times 8: Double, double, double",
     subject: "math",
     bigQuestion: "How does doubling three times give you 8s?",
@@ -348,8 +349,8 @@ const mathChaptersData: ChapterPack[] = [
   },
   {
     id: "math.mult.9s",
-    book: "savvas",
-    number: 109,
+    book: "math",
+    number: 9,
     titleKid: "Times 9: The finger trick",
     subject: "math",
     bigQuestion: "What cool patterns do the 9s facts have?",
