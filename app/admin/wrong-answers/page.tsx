@@ -1,8 +1,6 @@
-export default function WrongAnswersPage() {
-  return (
-    <div className="wrap">
-      <h1>Wrong-answer and strategy log</h1>
-      <p>This table is admin-only and includes strategy labels and misconception tags.</p>
-    </div>
-  );
+import { WrongAnswerTable } from "@/app/admin/_ui/wrong-answers";
+import { loadWrongAnswers } from "@/lib/admin/load";
+
+export default async function WrongAnswersPage() {
+  return <WrongAnswerTable data={await loadWrongAnswers()} />;
 }

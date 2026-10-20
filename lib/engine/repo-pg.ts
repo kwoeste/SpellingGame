@@ -1,16 +1,19 @@
 import { withTransaction, type DbClient } from "@/lib/db/client";
 import type {
   AdminRepo,
+  AssignmentRecord,
   EngineRepo,
   FirstAnswer,
   GateAttempt,
   ItemRating,
+  LearnerGoalRecord,
   LearnerTx,
   LikeRow,
   MasteryRow,
   PlaySession,
   ReviewRow,
   StoredEvent,
+  StrategyRow,
 } from "@/lib/engine/repo";
 import type { ReviewBox } from "@/lib/engine/scheduler";
 
@@ -320,6 +323,24 @@ class PgLearnerTx implements LearnerTx {
     const rows = await this.rows("SELECT interest_tag, liked FROM student_api.my_likes WHERE learner_id = $1", [this.learnerId]);
     return rows.map((r) => ({ interestTag: String(r.interest_tag), liked: Boolean(r.liked) }));
   }
+
+  async insertStrategy(row: StrategyRow) {
+    await this.db.query(
+      `INSERT INTO engine.strategy_observation (event_id, learner_id, concept_id, strategy, source, confidence, misconception, features, is_correct)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        row.eventId,
+        this.learnerId,
+        row.conceptId,
+        row.strategy,
+        row.source,
+        row.confidence,
+        row.misconception,
+        null,
+        row.isCorrect,
+      ],
+    );
+  }
 }
 
 export const pgEngineRepo: EngineRepo = {
@@ -391,4 +412,122 @@ export const pgAdminRepo: AdminRepo = {
     });
     return version;
   },
+  async sessions(limit) {
+    const rows = await adminRows("SELECT * FROM engine.session WHERE NOT is_preview ORDER BY started_at DESC LIMIT $1", [limit]);
+    return rows.map(toSession);
+  },
+  async reviews() {
+    const rows = await adminRows("SELECT * FROM engine.review_schedule");
+    return rows.map((r) => ({
+      learnerId: String(r.learner_id),
+      targetType: String(r.target_type),
+      targetId: String(r.target_id),
+      box: Number(r.box) as ReviewBox,
+      dueAt: ms(r.due_at),
+      lastResult: (r.last_result as ReviewRow["lastResult"]) ?? null,
+      lapses: Number(r.lapses),
+    }));
+  },
+  async xpLedger() {
+    const rows = await adminRows("SELECT learner_id, session_id, minute_start, xp FROM engine.xp_ledger");
+    return rows.map((r) => ({
+      learnerId: String(r.learner_id),
+      sessionId: String(r.session_id),
+      minuteStart: ms(r.minute_start),
+      xp: Number(r.xp),
+    }));
+  },
+  async strategies(limit) {
+    const rows = await adminRows("SELECT * FROM engine.strategy_observation ORDER BY id DESC LIMIT $1", [limit]);
+    return rows.map((r) => ({
+      eventId: String(r.event_id),
+      learnerId: String(r.learner_id),
+      conceptId: r.concept_id ? String(r.concept_id) : null,
+      strategy: String(r.strategy),
+      source: String(r.source),
+      confidence: r.confidence === null ? null : Number(r.confidence),
+      misconception: r.misconception ? String(r.misconception) : null,
+      isCorrect: (r.is_correct as boolean | null) ?? null,
+    }));
+  },
+  async gatedChapterIds(learnerId) {
+    const rows = await adminRows(
+      "SELECT DISTINCT scope_id FROM engine.gate_attempt WHERE learner_id = $1 AND scope = 'chapter' AND passed",
+      [learnerId],
+    );
+    return rows.map((r) => String(r.scope_id));
+  },
+  async assignments() {
+    const rows = await adminRows("SELECT * FROM admin_api.assignments ORDER BY created_at DESC");
+    return rows.map(toAssignment);
+  },
+  async createAssignment(row) {
+    const [created] = await adminRows(
+      `INSERT INTO engine.assignment (learner_id, kind, target_type, target_id, title, reason, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [row.learnerId, row.kind, row.targetType, row.targetId, row.title, row.reason, row.status, row.createdBy],
+    );
+    return toAssignment(created);
+  },
+  async updateAssignment(id, patch) {
+    const [row] = await adminRows(
+      `UPDATE engine.assignment
+       SET status = COALESCE($2, status), completed_at = COALESCE($3, completed_at)
+       WHERE id = $1
+       RETURNING *`,
+      [id, patch.status ?? null, patch.completedAt !== undefined ? isoOrNull(patch.completedAt) : null],
+    );
+    return row ? toAssignment(row) : null;
+  },
+  async goals() {
+    const rows = await adminRows("SELECT * FROM engine.learner_goal");
+    return rows.map(toGoal);
+  },
+  async upsertGoal(goal) {
+    await withTransaction("admin", null, async (db) => {
+      await db.query(
+        `INSERT INTO engine.learner_goal (learner_id, weekly_xp_goal, daily_minutes_goal, updated_at, updated_by)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (learner_id) DO UPDATE SET weekly_xp_goal = EXCLUDED.weekly_xp_goal,
+           daily_minutes_goal = EXCLUDED.daily_minutes_goal, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by`,
+        [goal.learnerId, goal.weeklyXpGoal, goal.dailyMinutesGoal, iso(goal.updatedAt), goal.updatedBy],
+      );
+    });
+  },
+  async relabelStrategy(eventId, learnerId, strategy, createdBy) {
+    await withTransaction("admin", null, async (db) => {
+      await db.query(
+        `INSERT INTO engine.strategy_observation (event_id, learner_id, concept_id, strategy, source, confidence, misconception, features, is_correct)
+         VALUES ($1, $2, NULL, $3, 'admin_label', 1, NULL, $4, NULL)`,
+        [eventId, learnerId, strategy, JSON.stringify({ labeled_by: createdBy })],
+      );
+    });
+  },
 };
+
+function toAssignment(row: Row): AssignmentRecord {
+  return {
+    id: String(row.id),
+    learnerId: String(row.learner_id),
+    kind: row.kind as AssignmentRecord["kind"],
+    targetType: row.target_type as AssignmentRecord["targetType"],
+    targetId: String(row.target_id),
+    title: String(row.title),
+    reason: row.reason ? String(row.reason) : null,
+    status: row.status as AssignmentRecord["status"],
+    createdBy: String(row.created_by),
+    createdAt: ms(row.created_at),
+    completedAt: msOrNull(row.completed_at),
+  };
+}
+
+function toGoal(row: Row): LearnerGoalRecord {
+  return {
+    learnerId: String(row.learner_id),
+    weeklyXpGoal: Number(row.weekly_xp_goal),
+    dailyMinutesGoal: Number(row.daily_minutes_goal),
+    updatedAt: ms(row.updated_at),
+    updatedBy: String(row.updated_by),
+  };
+}

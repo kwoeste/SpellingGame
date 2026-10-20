@@ -1,15 +1,18 @@
 import type {
   AdminRepo,
+  AssignmentRecord,
   EngineRepo,
   FirstAnswer,
   GateAttempt,
   ItemRating,
+  LearnerGoalRecord,
   LearnerTx,
   LikeRow,
   MasteryRow,
   PlaySession,
   ReviewRow,
   StoredEvent,
+  StrategyRow,
 } from "@/lib/engine/repo";
 
 type MemoryState = {
@@ -24,6 +27,9 @@ type MemoryState = {
   xp: Map<string, { learnerId: string; sessionId: string; minuteStart: number; xp: number }>;
   likes: { learnerId: string; interestTag: string; liked: boolean; ts: number }[];
   configs: { version: string; json: Record<string, unknown>; createdBy: string }[];
+  strategies: Array<StrategyRow & { learnerId: string; id: string }>;
+  assignments: AssignmentRecord[];
+  goals: Map<string, LearnerGoalRecord>;
 };
 
 function emptyState(): MemoryState {
@@ -39,6 +45,9 @@ function emptyState(): MemoryState {
     xp: new Map(),
     likes: [],
     configs: [],
+    strategies: [],
+    assignments: [],
+    goals: new Map(),
   };
 }
 
@@ -211,6 +220,10 @@ class MemoryLearnerTx implements LearnerTx {
     }
     return [...latest.values()];
   }
+
+  async insertStrategy(row: StrategyRow) {
+    state.strategies.push({ ...clone(row), learnerId: this.learnerId, id: crypto.randomUUID() });
+  }
 }
 
 export const memoryEngineRepo: EngineRepo = {
@@ -255,5 +268,59 @@ export const memoryAdminRepo: AdminRepo = {
     const version = `v${state.configs.length + 2}-${Date.now()}`;
     state.configs.push({ version, json: clone(config), createdBy });
     return version;
+  },
+  async sessions(limit) {
+    return clone([...state.sessions.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, limit));
+  },
+  async reviews() {
+    return clone([...state.reviews.values()]);
+  },
+  async xpLedger() {
+    return clone([...state.xp.values()]);
+  },
+  async strategies(limit) {
+    return clone(state.strategies.slice(-limit).reverse());
+  },
+  async gatedChapterIds(learnerId) {
+    return [...new Set(state.gates.filter((g) => g.learnerId === learnerId && g.scope === "chapter" && g.passed).map((g) => g.scopeId))];
+  },
+  async assignments() {
+    return clone(state.assignments);
+  },
+  async createAssignment(row) {
+    const created: AssignmentRecord = {
+      ...clone(row),
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      completedAt: null,
+    };
+    state.assignments.push(created);
+    return clone(created);
+  },
+  async updateAssignment(id, patch) {
+    const found = state.assignments.find((row) => row.id === id);
+    if (!found) return null;
+    Object.assign(found, patch);
+    return clone(found);
+  },
+  async goals() {
+    return clone([...state.goals.values()]);
+  },
+  async upsertGoal(goal) {
+    state.goals.set(goal.learnerId, clone(goal));
+  },
+  async relabelStrategy(eventId, learnerId, strategy, createdBy) {
+    state.strategies.push({
+      id: crypto.randomUUID(),
+      eventId,
+      learnerId,
+      conceptId: null,
+      strategy,
+      source: "admin_label",
+      confidence: 1,
+      misconception: null,
+      isCorrect: null,
+      features: { labeled_by: createdBy },
+    } as StrategyRow & { learnerId: string; id: string });
   },
 };

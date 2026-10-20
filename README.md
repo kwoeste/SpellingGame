@@ -47,11 +47,12 @@ Role assignment must agree in **both** the env allowlist and `engine.app_user` (
 
 ## Database
 
-SQL lives in `db/migrations/`. Apply all three, in order, with the owner `DATABASE_URL`, on a Neon branch Kevin creates:
+SQL lives in `db/migrations/`. Apply all four, in order, with the owner `DATABASE_URL`, on a Neon branch Kevin creates:
 
 1. `001_engine_schema.sql` – schema, roles, views
 2. `002_seed_users.sql` – Mae and the three admins in `engine.app_user`
 3. `003_runtime_persistence.sql` – **required.** Role-scoped RLS policies (admin sees every learner, student sees only her rows via a transaction-local `app.learner_id`), `security_invoker` student views, `student_api.resolve_user`, persisted audit log, engine state columns. Safe to re-run.
+4. `004_admin_dashboard.sql` – assignments, learner goals, richer `admin_api` views (knowledge map, session history, holes, accuracy), RLS on the new tables. Safe to re-run.
 
 Then set passwords for the login roles and use them in the role-scoped URLs:
 
@@ -61,7 +62,9 @@ ALTER ROLE app_admin PASSWORD '…';
 ALTER ROLE assistant_ro PASSWORD '…';
 ```
 
-Never edit an applied migration; add `004_…` instead. Do not create a production Neon project or point DNS at this preview without Kevin's yes.
+Never edit an applied migration; add `005_…` instead. Do not create a production Neon project or point DNS at this preview without Kevin's yes.
+
+Demo parent-dashboard rows exist only in `scripts/seed-admin-demo.mjs`. That script refuses `VERCEL_ENV=production` and requires `MAE_ALLOW_DEMO_SEED=1`. Do not run it against Mae's real database.
 
 ## GitHub Pages
 
@@ -84,7 +87,7 @@ npm run check:student-bundle
 
 Section 16 role tests live in `tests/role/section16.test.ts`. Engine tests cover BKT, Elo/zone, XP, gating, spaced review, and the session service. `tests/role/gated-content.test.ts` also scans `.next/static` (after `npm run build`) for chapter and game text.
 
-The Postgres RLS tests in `tests/db/postgres.integration.test.ts` are skipped unless a throwaway superuser URL is set. They create a scratch database, apply 001–003, and check the role boundaries:
+The Postgres RLS tests in `tests/db/postgres.integration.test.ts` are skipped unless a throwaway superuser URL is set. They create a scratch database, apply 001–004, and check the role boundaries:
 
 ```bash
 TEST_PG_SUPERUSER_URL=postgresql://user:pass@127.0.0.1/postgres npm test

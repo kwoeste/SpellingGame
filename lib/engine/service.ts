@@ -8,6 +8,7 @@ import { chapterGatePassed, conceptGatePassed, masteryState } from "@/lib/engine
 import type { EngineRepo, LearnerTx, LikeRow, MasteryRow, PlaySession, ResumeState } from "@/lib/engine/repo";
 import { dueAt, etDateKey, nextBoxOnPass, onFail } from "@/lib/engine/scheduler";
 import { scoreItem } from "@/lib/engine/scoring";
+import { classifyGuess } from "@/lib/engine/strategy";
 import { ringPercent, truncateMinute, xpForMinute } from "@/lib/engine/xp";
 import { ewma, targetSuccess, zoneAction } from "@/lib/engine/zone";
 
@@ -352,7 +353,13 @@ export async function submitAnswer(
       isCorrect: scored.correct,
       latencyMs,
       hintLevel,
-      payload: { chapter_id: chapter.id },
+      payload: {
+        chapter_id: chapter.id,
+        item_stem: item.stem,
+        correct_answer: typeof item.answer === "string" ? item.answer : JSON.stringify(item.answer),
+        subject: chapter.subject,
+        concept_id: item.conceptId,
+      },
       isPreview: false,
     });
     if (!inserted) {
@@ -361,6 +368,16 @@ export async function submitAnswer(
 
     const rapidGuess = latencyMs !== null && latencyMs < RAPID_GUESS_MS && !scored.correct;
     await applyAnswer(tx, session, item, { correct: scored.correct, hintLevel, firstAttempt: attemptNo === 1, rapidGuess, now });
+    const guessed = latencyMs !== null && classifyGuess(latencyMs, 8000, scored.correct, 0);
+    await tx.insertStrategy({
+      eventId,
+      conceptId: item.conceptId,
+      strategy: guessed ? "guess" : scored.correct ? "unknown" : "unknown",
+      source: "inferred_rules",
+      confidence: guessed ? 0.7 : 0.3,
+      misconception: null,
+      isCorrect: scored.correct,
+    });
     await awardMinute(tx, session.id, now, rapidGuess);
 
     let state = await chapterState(tx, chapter);

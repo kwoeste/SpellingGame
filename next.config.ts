@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/admin",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
         source: "/admin/:path*",
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
