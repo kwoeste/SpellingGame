@@ -206,6 +206,19 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
   const alerts: Alert[] = [...detectHoles(nodes, snap.now)];
   const now = new Date(snap.now);
   for (const review of forLearner(snap.reviews, snap.learnerId)) {
+    if (review.targetType === "reteach") {
+      if (review.lastResult !== "fail") continue;
+      alerts.push({
+        kind: "review_due",
+        title: `Needs re-teach: ${review.targetId}`,
+        detail: isDue(new Date(review.dueAt), now)
+          ? "Shown to her as \"Let's try this again\" until she gets it right on the first try."
+          : `Shows as "Let's try this again" from ${formatEtDateTime(review.dueAt)}.`,
+        targetId: review.targetId,
+        severity: 2,
+      });
+      continue;
+    }
     if (!isDue(new Date(review.dueAt), now)) continue;
     const concept = review.targetType === "concept" ? catalogConcept(review.targetId) : null;
     const rusty = isRusty(new Date(review.dueAt), review.box, now);
@@ -268,7 +281,7 @@ export function buildOverview(snap: DashboardSnapshot): Overview {
   const minutesWeek = xp.filter((row) => dayKey(row.minuteStart) >= weekStart).length;
   const firstTryAccuracy = first.length ? first.filter((event) => event.isCorrect).length / first.length : null;
   const inTargetBand = firstTryAccuracy === null ? null : firstTryAccuracy >= ZONE_LOW && firstTryAccuracy <= ZONE_HIGH;
-  const reviewsDue = forLearner(snap.reviews, snap.learnerId).filter((review) => isDue(new Date(review.dueAt), new Date(snap.now)));
+  const reviewsDue = forLearner(snap.reviews, snap.learnerId).filter((review) => review.targetType !== "reteach" && isDue(new Date(review.dueAt), new Date(snap.now)));
   const reviewsDoneToday = forLearner(snap.reviews, snap.learnerId).filter((review) => {
     if (!review.lastResult) return false;
     // A due review that is no longer due was completed; we approximate with lastResult and dueAt in the future after a pass.

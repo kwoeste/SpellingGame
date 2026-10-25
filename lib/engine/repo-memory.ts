@@ -168,6 +168,16 @@ class MemoryLearnerTx implements LearnerTx {
     state.reviews.set(`${this.learnerId}:${row.targetType}:${row.targetId}`, clone({ ...row, learnerId: this.learnerId }));
   }
 
+  async listReviews(targetType: string) {
+    const out: ReviewRow[] = [];
+    for (const row of state.reviews.values()) {
+      if (row.learnerId !== this.learnerId || row.targetType !== targetType) continue;
+      const { learnerId: _ignored, ...rest } = row;
+      out.push(clone(rest));
+    }
+    return out;
+  }
+
   async getItemRating(itemId: string) {
     const rating = state.ratings.get(itemId);
     return rating ? clone(rating) : null;

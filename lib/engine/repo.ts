@@ -130,6 +130,8 @@ export interface LearnerTx {
   upsertMastery(row: MasteryRow): Promise<void>;
   getReview(targetType: string, targetId: string): Promise<ReviewRow | null>;
   upsertReview(row: ReviewRow): Promise<void>;
+  /** Every review row of one target type for this learner. */
+  listReviews(targetType: string): Promise<ReviewRow[]>;
   getItemRating(itemId: string): Promise<ItemRating | null>;
   upsertItemRating(rating: ItemRating): Promise<void>;
   insertDecision(sessionId: string, decision: string, reasonCode: string, inputs: Record<string, unknown>): Promise<void>;
