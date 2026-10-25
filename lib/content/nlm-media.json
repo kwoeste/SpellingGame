@@ -65,6 +65,12 @@
       "contentType": "audio/mp4",
       "size": 2530605,
       "sha256": "53ba4fdf5134149153449dbe2b7a75374d5318eb74f3a34f13c131385304e648"
+    },
+    "video": {
+      "pathname": "nlm/savvas.ch3/video-19a039ea4a19.mp4",
+      "contentType": "video/mp4",
+      "size": 28637633,
+      "sha256": "19a039ea4a1962e20bd22dea7cb76f7b9c8185d47ea027bde96483a3f593ca4a"
     }
   },
   "savvas.ch4": {
