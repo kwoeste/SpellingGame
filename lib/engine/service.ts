@@ -12,7 +12,7 @@ import { chapterItemHelp } from "@/lib/engine/help";
 import { getRecap } from "@/lib/content/recaps";
 import { HINT_AT_MISS, SHOW_ME_AT_MISS, type StuckHelp } from "@/lib/help/ladder";
 import { classifyGuess } from "@/lib/engine/strategy";
-import { ringPercent, truncateMinute, xpForMinute } from "@/lib/engine/xp";
+import { accuracyWeightedXp, ringPercent, truncateMinute, xpForMinute } from "@/lib/engine/xp";
 import { ewma, targetSuccess, zoneAction } from "@/lib/engine/zone";
 
 export const SESSION_IDLE_MS = 30 * 60 * 1000;
@@ -291,8 +291,8 @@ async function runChapterGate(tx: LearnerTx, chapter: ChapterPack, since: number
   return { passed, correct, total: itemIds.length, needPct: 90 };
 }
 
-async function awardMinute(tx: LearnerTx, sessionId: string, now: number, rapidGuess: boolean): Promise<void> {
-  const xp = xpForMinute({ qualifyingActions: 1, idleGapMs: 0, majorityRapidGuess: rapidGuess, videoHidden: false });
+async function awardMinute(tx: LearnerTx, sessionId: string, now: number, rapidGuess: boolean, accuracy: number | null = null): Promise<void> {
+  const xp = accuracyWeightedXp(xpForMinute({ qualifyingActions: 1, idleGapMs: 0, majorityRapidGuess: rapidGuess, videoHidden: false }), accuracy);
   if (xp > 0) await tx.awardXp(sessionId, truncateMinute(now), xp);
 }
 
@@ -411,7 +411,7 @@ export async function submitAnswer(
       misconception: null,
       isCorrect: scored.correct,
     });
-    await awardMinute(tx, session.id, now, rapidGuess);
+    await awardMinute(tx, session.id, now, rapidGuess, session.rollingSuccess);
     const nudge = rapidGuess ? await rushNudge(tx, session, item, now) : null;
 
     let state = await chapterState(tx, chapter);
