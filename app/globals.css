@@ -1438,3 +1438,7 @@ button, input, textarea, select { font: inherit; }
 .ruled-out { opacity: 0.25; text-decoration: line-through; pointer-events: none; }
 .tile.next-letter { box-shadow: 0 0 0 4px #38bdf8; }
 .spell-hint { font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 700; }
+
+/* "Let's try this again" re-teach cards */
+.try-again { display: grid; gap: 8px; margin: 12px 0; }
+.try-again-card { border: 2px solid #f5b942; background: #fff8e6; }

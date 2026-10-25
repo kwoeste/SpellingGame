@@ -15,6 +15,8 @@ export type DashChapter = {
   subject: "science" | "ela" | "religion" | "math";
 };
 
+export type TryAgainItem = { href: string; chapterTitle: string; stepNumber: number; startWith: "watch_recap" | "careful_read" };
+
 const SUBJECT_LABEL = { science: "Science", ela: "Reading", religion: "Religion", math: "Math" } as const;
 const SUBJECT_EMOJI = { science: "🔬", ela: "📚", religion: "✝️", math: "🔢" } as const;
 
@@ -28,6 +30,7 @@ export function StudentDashboard({
   chapters,
   likes,
   arcadeTiles,
+  tryAgain = [],
 }: {
   displayName: string;
   resume: { chapterId: string; titleKid: string } | null;
@@ -38,6 +41,8 @@ export function StudentDashboard({
   chapters: DashChapter[];
   likes: string[];
   arcadeTiles: ArcadeTile[];
+  /** Re-teach items due today ("Let's try this again"), shown before the regular quest. */
+  tryAgain?: TryAgainItem[];
 }) {
   const week = rings.find((ring) => ring.id === "week");
   const subjectRings = rings.filter((ring) => ring.id.startsWith("subject:"));
@@ -71,6 +76,26 @@ export function StudentDashboard({
           )}
         </div>
       </section>
+
+      {/* Re-teach: concepts she got stuck on last time come first */}
+      {tryAgain.length > 0 && (
+        <section className="try-again" aria-label="Let's try this again">
+          <p className="kid-kicker">Let&apos;s try this again</p>
+          {tryAgain.slice(0, 3).map((row) => (
+            <Link key={row.href} href={row.href} className="continue-card try-again-card">
+              <span className="continue-icon">↻</span>
+              <span className="continue-text">
+                <strong>Let&apos;s try this again</strong>
+                <span>
+                  {row.chapterTitle} · question {row.stepNumber} ·{" "}
+                  {row.startWith === "watch_recap" ? "watch the recap first" : "read it again first"}
+                </span>
+              </span>
+              <span className="continue-arrow">→</span>
+            </Link>
+          ))}
+        </section>
+      )}
 
       {/* Continue card */}
       {quest && (

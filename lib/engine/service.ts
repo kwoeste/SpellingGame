@@ -392,6 +392,7 @@ export async function submitAnswer(
     await applyAnswer(tx, session, item, { correct: scored.correct, hintLevel, firstAttempt: attemptNo === 1, rapidGuess, now });
     // Every earlier answer this session was wrong (a right one ends the step), so attemptNo is the miss count.
     const misses = scored.correct ? 0 : attemptNo;
+    if (scored.correct && attemptNo === 1 && hintLevel <= 1) await maybeClearReteach(tx, session, chapter, item, now);
     if (misses === HINT_AT_MISS) await queueReteach(tx, session, chapter, item, "stuck_after_misses", now);
     const guessed = latencyMs !== null && classifyGuess(latencyMs, 8000, scored.correct, 0);
     await tx.insertStrategy({
@@ -425,6 +426,54 @@ export async function submitAnswer(
 
 /** Mastery is capped here when she needs the strong hint: the concept is "not learned yet". */
 export const RETEACH_P_MASTERY_CAP = 0.3;
+/** review_schedule target_type for the per-item re-teach flag. */
+export const RETEACH_TARGET = "reteach";
+
+export type ReteachEntry = {
+  itemId: string;
+  chapterId: string;
+  chapterTitle: string;
+  stepIndex: number;
+  conceptId: string;
+  /** What she sees first: the chapter's Watch it recap, else the Careful Read; then the original step. */
+  startWith: "watch_recap" | "careful_read";
+  href: string;
+  queuedDueAt: number;
+};
+
+/** Open re-teach flags that are due (the day after she got stuck), oldest first. */
+export async function reteachQueue(repo: EngineRepo, actor: EngineActor, nowMs = Date.now()): Promise<ReteachEntry[]> {
+  if (!actor.learnerId) return [];
+  return repo.withLearner(actor.learnerId, async (tx) => {
+    const rows = await tx.listReviews(RETEACH_TARGET);
+    const out: ReteachEntry[] = [];
+    for (const row of rows.sort((a, b) => a.dueAt - b.dueAt)) {
+      if (row.lastResult !== "fail" || row.dueAt > nowMs) continue;
+      const located = locateItem(row.targetId);
+      if (!located || !chapterVisibleTo(located.chapter, actor.role)) continue;
+      const { chapter, item } = located;
+      out.push({
+        itemId: item.id,
+        chapterId: chapter.id,
+        chapterTitle: chapter.titleKid,
+        stepIndex: chapter.items.indexOf(item),
+        conceptId: item.conceptId,
+        startWith: getRecap(chapter.id) ? "watch_recap" : "careful_read",
+        href: `/study/${encodeURIComponent(chapter.id)}?reteach=${encodeURIComponent(item.id)}`,
+        queuedDueAt: row.dueAt,
+      });
+    }
+    return out;
+  });
+}
+
+/** A first-try, unhinted right answer in a later session clears the re-teach flag. */
+async function maybeClearReteach(tx: LearnerTx, session: PlaySession, chapter: ChapterPack, item: ChapterItem, now: number) {
+  const flag = await tx.getReview(RETEACH_TARGET, item.id);
+  if (!flag || flag.lastResult !== "fail") return;
+  await tx.upsertReview({ ...flag, lastResult: "pass", dueAt: now });
+  await tx.insertDecision(session.id, "reteach_cleared", "correct_later", { item_id: item.id, chapter_id: chapter.id, concept_id: item.conceptId });
+}
 
 /**
  * Stuck at HINT_AT_MISS (or skipped): mark the concept not mastered, put the item on the review queue
@@ -444,6 +493,16 @@ async function queueReteach(tx: LearnerTx, session: PlaySession, chapter: Chapte
     dueAt: dueAt(new Date(now), 1).getTime(),
     lastResult: "fail",
     lapses: (review?.lapses ?? 0) + 1,
+  });
+  // The re-teach flag: due next day, surfaced on the dashboard as "Let's try this again" until she gets it right.
+  const flag = await tx.getReview(RETEACH_TARGET, item.id);
+  await tx.upsertReview({
+    targetType: RETEACH_TARGET,
+    targetId: item.id,
+    box: 1,
+    dueAt: dueAt(new Date(now), 1).getTime(),
+    lastResult: "fail",
+    lapses: (flag?.lapses ?? 0) + 1,
   });
   await tx.insertDecision(session.id, "reteach_queued", reason, {
     item_id: item.id,

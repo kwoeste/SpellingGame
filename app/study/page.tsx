@@ -6,7 +6,7 @@ import { listChapters } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
 import { arcadeTiles } from "@/lib/games/arcade-tiles";
 import { engineRepo } from "@/lib/engine/repos";
-import { getLikes, progressSummary, resumePoint } from "@/lib/engine/service";
+import { getLikes, progressSummary, resumePoint, reteachQueue } from "@/lib/engine/service";
 
 export const metadata: Metadata = {
   title: "Study | Mae's Lab",
@@ -19,10 +19,11 @@ export default async function StudyIndexPage() {
   const chapters = listChapters()
     .filter((chapter) => chapterVisibleTo(chapter, user.role))
     .map((chapter) => ({ id: chapter.id, number: chapter.number, titleKid: chapter.titleKid, subject: chapter.subject }));
-  const [resume, progress, likes] = await Promise.all([
+  const [resume, progress, likes, reteach] = await Promise.all([
     resumePoint(engineRepo(), actor).catch(() => null),
     progressSummary(engineRepo(), actor).catch(() => ({ rings: [], xp_total: 0, xp_today: 0, streak_days: 0, badges: [] })),
     getLikes(engineRepo(), actor).catch(() => []),
+    reteachQueue(engineRepo(), actor).catch(() => []),
   ]);
   const tiles = arcadeTiles({ role: user.role, badges: progress.badges, recommendedSpellingId: "d1" });
   return (
@@ -37,6 +38,7 @@ export default async function StudyIndexPage() {
         chapters={chapters}
         likes={likes.filter((row) => row.liked).map((row) => row.interestTag)}
         arcadeTiles={tiles}
+        tryAgain={reteach.map((row) => ({ href: row.href, chapterTitle: row.chapterTitle, stepNumber: row.stepIndex + 1, startWith: row.startWith }))}
       />
       <nav className="sr-only" aria-label="Games">
         <a href="/spelling-game">Spelling Safari</a>

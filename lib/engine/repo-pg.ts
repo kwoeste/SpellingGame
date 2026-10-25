@@ -252,6 +252,21 @@ class PgLearnerTx implements LearnerTx {
     );
   }
 
+  async listReviews(targetType: string) {
+    const rows = await this.rows(
+      "SELECT * FROM engine.review_schedule WHERE learner_id = $1 AND target_type = $2 ORDER BY due_at",
+      [this.learnerId, targetType],
+    );
+    return rows.map((row) => ({
+      targetType: String(row.target_type),
+      targetId: String(row.target_id),
+      box: Number(row.box) as ReviewBox,
+      dueAt: ms(row.due_at),
+      lastResult: (row.last_result as ReviewRow["lastResult"]) ?? null,
+      lapses: Number(row.lapses),
+    }));
+  }
+
   async getItemRating(itemId: string) {
     const [row] = await this.rows("SELECT * FROM engine.item_rating WHERE item_id = $1", [itemId]);
     return row ? { itemId, difficulty: Number(row.difficulty), seed: Number(row.seed), n: Number(row.n) } : null;

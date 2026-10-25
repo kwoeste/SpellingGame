@@ -14,8 +14,16 @@ export async function generateMetadata({ params }: { params: Promise<{ chapterId
   return { title: `${chapter.titleKid} | Mae's Lab` };
 }
 
-export default async function ChapterPage({ params }: { params: Promise<{ chapterId: string }> }) {
+export default async function ChapterPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ chapterId: string }>;
+  searchParams?: Promise<{ reteach?: string | string[] }>;
+}) {
   const { chapterId } = await params;
+  const query = (await searchParams) ?? {};
+  const reteachParam = Array.isArray(query.reteach) ? query.reteach[0] : query.reteach;
   const user = await requirePageUser(["student", "admin"], `/study/${chapterId}`);
   if (!user) return <NotAllowed />;
   const chapter = getChapter(chapterId);
@@ -24,6 +32,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
   const nextChapter = getNextChapter(chapterId);
   const nextChapterHref = nextChapter && chapterVisibleTo(nextChapter, user.role) ? `/study/${nextChapter.id}` : null;
   const studentChapter = toStudentChapter(chapter);
+  const reteachItemId = reteachParam && chapter.items.some((item) => item.id === reteachParam) ? reteachParam : null;
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
@@ -33,7 +42,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
       {isAdmin && chapter.pendingReligionReview ? (
         <p className="notice">Admin note: Religion chapters are hidden from Mae until approved.</p>
       ) : null}
-      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} />
+      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} />
     </div>
   );
 }
