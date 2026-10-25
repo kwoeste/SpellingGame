@@ -9,6 +9,8 @@ import type {
   SessionPlanRecord,
   ModalityEpisode,
   Modality,
+  EpisodeOutcome,
+  LearningInsight,
   LearnerGoalRecord,
   LearnerTx,
   LikeRow,
@@ -303,13 +305,17 @@ class PgLearnerTx implements LearnerTx {
     return row ? toEpisode(row) : null;
   }
 
-  async resolveEpisode(id: string, success: boolean, at: number) {
-    await this.db.query("UPDATE engine.modality_episode SET success = $3, resolved_at = $4 WHERE id = $1 AND learner_id = $2 AND resolved_at IS NULL", [
-      id,
-      this.learnerId,
-      success,
-      iso(at),
-    ]);
+  async resolveEpisode(id: string, outcome: EpisodeOutcome, at: number) {
+    await this.db.query(
+      `UPDATE engine.modality_episode SET success = $3, resolved_at = $4, followup_latency_ms = $5, followup_rushed = $6
+       WHERE id = $1 AND learner_id = $2 AND resolved_at IS NULL`,
+      [id, this.learnerId, outcome.success, iso(at), outcome.latencyMs, outcome.rushed],
+    );
+  }
+
+  async latestInsight() {
+    const [row] = await this.rows("SELECT * FROM engine.learning_insight WHERE learner_id = $1 ORDER BY created_at DESC LIMIT 1", [this.learnerId]);
+    return row ? toInsight(row) : null;
   }
 
   async listEpisodes() {
@@ -586,6 +592,25 @@ export const pgAdminRepo: AdminRepo = {
     const rows = await adminRows("SELECT * FROM admin_api.modality_episodes ORDER BY started_at");
     return rows.map((row) => ({ ...toEpisode(row), learnerId: String(row.learner_id) }));
   },
+  async firstTryAnswers(learnerId: string, since: number) {
+    const rows = await adminRows(
+      `SELECT payload->>'concept_id' AS concept_id, is_correct, server_ts FROM engine.interaction_event
+       WHERE learner_id = $1 AND type = 'answer_submitted' AND attempt_no = 1 AND NOT is_preview AND server_ts > $2 ORDER BY server_ts`,
+      [learnerId, iso(since)],
+    );
+    return rows.map((r) => ({ conceptId: String(r.concept_id ?? ""), isCorrect: r.is_correct === true, serverTs: ms(r.server_ts) }));
+  },
+  async insights(learnerId: string, limit: number) {
+    const rows = await adminRows("SELECT * FROM admin_api.learning_insights WHERE learner_id = $1 ORDER BY created_at DESC LIMIT $2", [learnerId, limit]);
+    return rows.map(toInsight);
+  },
+  async insertInsight(learnerId: string, r: LearningInsight) {
+    await adminRows(
+      `INSERT INTO engine.learning_insight (id, learner_id, created_at, trigger, source, model, stats, summary, confidence, weights, requested_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10::jsonb, $11)`,
+      [r.id, learnerId, iso(r.createdAt), r.trigger, r.source, r.model, JSON.stringify(r.stats), r.summary, r.confidence, JSON.stringify(r.weights), r.requestedBy],
+    );
+  },
   async sessionPlans(sinceDay: string) {
     const rows = await adminRows("SELECT * FROM admin_api.session_plans WHERE day >= $1::date ORDER BY created_at DESC", [sinceDay]);
     return rows.map((row) => ({ ...toSessionPlan(row), learnerId: String(row.learner_id) }));
@@ -648,13 +673,30 @@ function toEpisode(row: Row): ModalityEpisode {
     itemId: String(row.item_id),
     conceptId: String(row.concept_id),
     subject: String(row.subject),
-    context: "reteach",
+    context: row.context === "first_teach" ? "first_teach" : "reteach",
     modality: String(row.modality) as Modality,
     chosenBy: String(row.chosen_by) as ModalityEpisode["chosenBy"],
     samples: (row.samples ?? {}) as Record<string, number>,
     startedAt: ms(row.started_at),
     resolvedAt: row.resolved_at ? ms(row.resolved_at) : null,
     success: row.success === null || row.success === undefined ? null : Boolean(row.success),
+    followupLatencyMs: row.followup_latency_ms === null || row.followup_latency_ms === undefined ? null : Number(row.followup_latency_ms),
+    followupRushed: row.followup_rushed === null || row.followup_rushed === undefined ? null : Boolean(row.followup_rushed),
+  };
+}
+
+function toInsight(row: Row): LearningInsight {
+  return {
+    id: String(row.id),
+    createdAt: ms(row.created_at),
+    trigger: row.trigger === "weekly" ? "weekly" : "admin",
+    source: row.source === "ai" ? "ai" : "deterministic",
+    model: row.model ? String(row.model) : null,
+    stats: (row.stats ?? {}) as Record<string, unknown>,
+    summary: String(row.summary ?? ""),
+    confidence: String(row.confidence ?? ""),
+    weights: (row.weights ?? {}) as LearningInsight["weights"],
+    requestedBy: row.requested_by ? String(row.requested_by) : null,
   };
 }
 

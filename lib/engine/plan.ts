@@ -7,6 +7,8 @@ import { etDayStart } from "@/lib/engine/plan-time";
 import { etDateKey } from "@/lib/engine/scheduler";
 import { RAPID_GUESS_MS, RETEACH_TARGET, locateItem } from "@/lib/engine/service";
 import { warmupQueue } from "@/lib/engine/warmup";
+import { preferredBySubject } from "@/lib/engine/learning-insight";
+import { eligibleArms } from "@/lib/engine/modality";
 import { aiOrderPlan, type PlannerFacts, type AiPlanResult } from "@/lib/engine/ai-planner";
 
 export const DEFAULT_DAILY_MINUTES = 15;
@@ -151,8 +153,13 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
   const week = await tx.eventsSince(nowMs - 7 * 86_400_000, ["answer_submitted"]);
   const firstTries = week.filter((e) => e.attemptNo === 1);
   const rushed = week.filter((e) => e.latencyMs !== null && e.latencyMs < RAPID_GUESS_MS && e.isCorrect === false);
+  const hint = preferredBySubject((await tx.latestInsight().catch(() => null))?.weights);
   const candidates = [];
   for (const b of blocks.filter((x) => !x.done)) {
+    const m = /^\/study\/([^/?#]+)/.exec(b.href);
+    const ch = m ? getChapter(decodeURIComponent(m[1])) : null;
+    const pref = ch ? hint[ch.subject] : undefined;
+    const suggested = ch && pref && eligibleArms(ch.id, b.kind === "reteach" ? "reteach" : "first_teach").includes(pref) ? pref : undefined;
     const ms = [];
     for (const c of b.conceptIds.slice(0, 6)) {
       const row = await tx.getMastery(c);
@@ -167,6 +174,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
       concept_ids: b.conceptIds.slice(0, 6),
       mastery: ms.length ? Math.round((ms.reduce((s, v) => s + v, 0) / ms.length) * 100) / 100 : null,
       due_reviews: b.due ?? 0,
+      ...(suggested ? { suggested_start: suggested } : {}),
     });
   }
   const facts: PlannerFacts = {
@@ -175,6 +183,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
     recent_accuracy: firstTries.length ? Math.round((firstTries.filter((e) => e.isCorrect).length / firstTries.length) * 100) / 100 : null,
     recent_answers: firstTries.length,
     rush_rate: week.length ? Math.round((rushed.length / week.length) * 100) / 100 : 0,
+    ...(Object.keys(hint).length ? { learning_hint: hint } : {}),
     candidates,
   };
   return { blocks, goalMinutes, minutesToday, facts };

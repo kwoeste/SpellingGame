@@ -397,9 +397,16 @@ export async function submitAnswer(
     // Every earlier answer this session was wrong (a right one ends the step), so attemptNo is the miss count.
     const misses = scored.correct ? 0 : attemptNo;
     if (scored.correct && attemptNo === 1 && hintLevel <= 1) await maybeClearReteach(tx, session, chapter, item, now);
-    // Close the re-teach modality episode on her next answer to this item: success = first try, unhinted.
+    // Close the modality episode (re-teach or first teach) on her next answer to this item. Every
+    // modality is scored the same: success = first try, unhinted; plus follow-up time and a rush flag.
     const episode = await tx.openEpisode(item.id);
-    if (episode) await tx.resolveEpisode(episode.id, scored.correct && attemptNo === 1 && hintLevel <= 1, now);
+    if (episode) {
+      await tx.resolveEpisode(
+        episode.id,
+        { success: scored.correct && attemptNo === 1 && hintLevel <= 1, latencyMs, rushed: latencyMs !== null && latencyMs < RAPID_GUESS_MS },
+        now,
+      );
+    }
     if (misses === HINT_AT_MISS) await queueReteach(tx, session, chapter, item, "stuck_after_misses", now);
     const guessed = latencyMs !== null && classifyGuess(latencyMs, 8000, scored.correct, 0);
     await tx.insertStrategy({

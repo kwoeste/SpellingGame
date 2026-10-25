@@ -72,6 +72,10 @@ export async function loadAssignments(now = Date.now()) {
 export async function loadLearnsBest(now = Date.now()) {
   const repo = adminRepo();
   const since = new Date(now - 14 * 86_400_000).toISOString().slice(0, 10);
-  const [episodes, plans] = await Promise.all([repo.modalityEpisodes(), repo.sessionPlans(since)]);
-  return buildLearnsBest(episodes, plans, DEFAULT_LEARNER.id);
+  const [episodes, plans, insights] = await Promise.all([
+    repo.modalityEpisodes(),
+    repo.sessionPlans(since),
+    repo.insights(DEFAULT_LEARNER.id, 6).catch(() => []),
+  ]);
+  return buildLearnsBest(episodes, plans, DEFAULT_LEARNER.id, insights);
 }

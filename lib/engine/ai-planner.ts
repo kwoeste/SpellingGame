@@ -15,6 +15,8 @@ export type PlannerCandidate = {
   concept_ids: string[];
   mastery: number | null;
   due_reviews: number;
+  /** Hint only: the way Mae seems to learn this subject best, if this chapter offers it. */
+  suggested_start?: string;
 };
 
 export type PlannerFacts = {
@@ -23,6 +25,8 @@ export type PlannerFacts = {
   recent_accuracy: number | null;
   recent_answers: number;
   rush_rate: number;
+  /** Hint only: latest learning-insight preference per subject (modality name). */
+  learning_hint?: Record<string, string>;
   candidates: PlannerCandidate[];
 };
 
@@ -34,6 +38,7 @@ const SYSTEM = [
   "Order ONLY the unlocked candidate ids you are given (locked ones are already first).",
   "Return every unlocked id exactly once. Do not invent ids.",
   "why_kid: one cheerful sentence for the student, max 100 characters, no names.",
+  "learning_hint and suggested_start are soft hints about how she learns best per subject; they may nudge order but never override mastery and due reviews.",
   "admin_note: one plain sentence for the parent explaining the ordering, max 180 characters.",
 ].join(" ");
 

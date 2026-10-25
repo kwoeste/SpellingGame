@@ -7,7 +7,7 @@ import { WatchListen } from "@/components/WatchListen";
 import { watchListenFor } from "@/lib/content/nlm";
 import { requirePageUser } from "@/lib/auth/server";
 import { engineRepo } from "@/lib/engine/repos";
-import { chooseReteachModality } from "@/lib/engine/modality";
+import { chooseFirstTeachModality, chooseReteachModality } from "@/lib/engine/modality";
 import { getChapter, getNextChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo, toStudentChapter } from "@/lib/content/student";
 
@@ -41,6 +41,10 @@ export default async function ChapterPage({
     ? await chooseReteachModality(engineRepo(), { role: user.role, learnerId: user.learnerId }, reteachItemId).catch(() => null)
     : null;
   const watchListen = watchListenFor(chapter.id);
+  // First teach: only for a chapter she hasn't answered anything in (the chooser checks).
+  const firstTeachStartWith = reteachItemId
+    ? null
+    : await chooseFirstTeachModality(engineRepo(), { role: user.role, learnerId: user.learnerId }, chapter.id).catch(() => null);
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
@@ -50,7 +54,7 @@ export default async function ChapterPage({
       {isAdmin && chapter.pendingReligionReview ? (
         <p className="notice">Admin note: Religion chapters are hidden from Mae until approved.</p>
       ) : null}
-      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} reteachStartWith={reteachStartWith} />
+      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} reteachStartWith={reteachStartWith} firstTeachStartWith={firstTeachStartWith} media={watchListen} />
       {watchListen ? <WatchListen data={watchListen} /> : null}
     </div>
   );

@@ -7,6 +7,8 @@ import type {
   ItemRating,
   SessionPlanRecord,
   ModalityEpisode,
+  EpisodeOutcome,
+  LearningInsight,
   LearnerGoalRecord,
   LearnerTx,
   LikeRow,
@@ -34,6 +36,7 @@ type MemoryState = {
   goals: Map<string, LearnerGoalRecord>;
   plans: Map<string, SessionPlanRecord & { learnerId: string }>;
   episodes: (ModalityEpisode & { learnerId: string })[];
+  insights: (LearningInsight & { learnerId: string })[];
 };
 
 function emptyState(): MemoryState {
@@ -54,6 +57,7 @@ function emptyState(): MemoryState {
     goals: new Map(),
     plans: new Map(),
     episodes: [],
+    insights: [],
   };
 }
 
@@ -214,9 +218,17 @@ class MemoryLearnerTx implements LearnerTx {
     void _l;
     return clone(rest);
   }
-  async resolveEpisode(id: string, success: boolean, at: number) {
+  async resolveEpisode(id: string, outcome: EpisodeOutcome, at: number) {
     const row = state.episodes.find((e) => e.id === id && e.learnerId === this.learnerId);
-    if (row && row.resolvedAt === null) Object.assign(row, { success, resolvedAt: at });
+    if (row && row.resolvedAt === null)
+      Object.assign(row, { success: outcome.success, followupLatencyMs: outcome.latencyMs, followupRushed: outcome.rushed, resolvedAt: at });
+  }
+  async latestInsight() {
+    const mine = state.insights.filter((r) => r.learnerId === this.learnerId).sort((a, b) => b.createdAt - a.createdAt)[0];
+    if (!mine) return null;
+    const { learnerId: _l, ...rest } = mine;
+    void _l;
+    return clone(rest);
   }
   async listEpisodes() {
     return clone(state.episodes.filter((e) => e.learnerId === this.learnerId).map(({ learnerId: _l, ...rest }) => (void _l, rest)));
@@ -386,6 +398,23 @@ export const memoryAdminRepo: AdminRepo = {
   },
   async modalityEpisodes() {
     return clone(state.episodes);
+  },
+  async firstTryAnswers(learnerId, since) {
+    return state.events
+      .filter((e) => e.learnerId === learnerId && e.type === "answer_submitted" && e.attemptNo === 1 && !e.isPreview && e.serverTs > since)
+      .map((e) => ({ conceptId: String(e.payload?.concept_id ?? ""), isCorrect: e.isCorrect === true, serverTs: e.serverTs }));
+  },
+  async insights(learnerId, limit) {
+    return clone(
+      state.insights
+        .filter((r) => r.learnerId === learnerId)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, limit)
+        .map(({ learnerId: _l, ...rest }) => (void _l, rest)),
+    );
+  },
+  async insertInsight(learnerId, row) {
+    state.insights.push(clone({ ...row, learnerId }));
   },
   async sessionPlans(sinceDay: string) {
     return clone([...state.plans.values()].filter((row) => row.day >= sinceDay).sort((a, b) => b.createdAt - a.createdAt));
