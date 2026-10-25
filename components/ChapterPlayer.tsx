@@ -354,9 +354,11 @@ type StepProps = {
   sessionId: string | null;
   onAnswered: (feedback: Feedback) => void;
   onNext: (feedback: Feedback) => void;
+  /** "review" for spaced warm-up answers: scored, but no chapter gate or resume move. */
+  mode?: "review";
 };
 
-function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext }: StepProps) {
+export function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext, mode }: StepProps) {
   const prefs = useKidPrefs();
   const [matches, setMatches] = useState<Record<string, string>>({});
   const [order, setOrder] = useState<string[]>([]);
@@ -442,6 +444,7 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
           misses,
           latencyMs: Date.now() - shownAt.current,
           eventId: crypto.randomUUID(),
+          ...(mode ? { mode } : {}),
         },
       });
       setFeedback(json.feedback);

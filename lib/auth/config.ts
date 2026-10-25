@@ -77,6 +77,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.role = (token.role as "student" | "admin" | null) ?? null;
       session.user.learnerId = (token.learnerId as string | null) ?? null;
       session.user.userId = (token.userId as string | null) ?? null;
+      // One value per Google sign-in; Today's plan is regenerated only when this changes.
+      session.user.loginId = token.signedInAt ? `login-${Number(token.signedInAt)}` : null;
       return session;
     },
   },

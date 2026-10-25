@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TodayPlanCard, type TodayPlanView } from "@/components/TodayPlanCard";
 import { useCallback, useRef, useState } from "react";
 import { LikesPicker } from "@/components/LikesPicker";
 import { SettingsPopover } from "@/components/SettingsPopover";
@@ -31,6 +32,7 @@ export function StudentDashboard({
   likes,
   arcadeTiles,
   tryAgain = [],
+  plan = null,
 }: {
   displayName: string;
   resume: { chapterId: string; titleKid: string } | null;
@@ -43,6 +45,8 @@ export function StudentDashboard({
   arcadeTiles: ArcadeTile[];
   /** Re-teach items due today ("Let's try this again"), shown before the regular quest. */
   tryAgain?: TryAgainItem[];
+  /** Today's plan (replaces the quest, try-again and continue cards when present). */
+  plan?: TodayPlanView | null;
 }) {
   const week = rings.find((ring) => ring.id === "week");
   const subjectRings = rings.filter((ring) => ring.id.startsWith("subject:"));
@@ -67,9 +71,9 @@ export function StudentDashboard({
       <section className="kid-hero kid-hero-large">
         <Mascot mood={streakDays > 0 ? "cheer" : "idle"} size={140} />
         <div>
-          <p className="kid-kicker">Today&apos;s quest</p>
+          <p className="kid-kicker">{plan ? "Today's plan" : "Today's quest"}</p>
           <h1 style={{ margin: "0 0 8px" }}>Hi {displayName}!</h1>
-          {quest ? (
+          {plan ? null : quest ? (
             <p style={{ fontWeight: 700, fontSize: "1.1rem", margin: 0 }}>{quest.titleKid}</p>
           ) : (
             <p style={{ margin: 0 }}>You cleared today&apos;s chapters!</p>
@@ -78,7 +82,9 @@ export function StudentDashboard({
       </section>
 
       {/* Re-teach: concepts she got stuck on last time come first */}
-      {tryAgain.length > 0 && (
+      {plan && <TodayPlanCard plan={plan} />}
+
+      {!plan && tryAgain.length > 0 && (
         <section className="try-again" aria-label="Let's try this again">
           <p className="kid-kicker">Let&apos;s try this again</p>
           {tryAgain.slice(0, 3).map((row) => (
@@ -98,7 +104,7 @@ export function StudentDashboard({
       )}
 
       {/* Continue card */}
-      {quest && (
+      {!plan && quest && (
         <Link href={`/study/${quest.chapterId}`} className="continue-card">
           <span className="continue-icon">▶</span>
           <span className="continue-text">

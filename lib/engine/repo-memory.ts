@@ -5,6 +5,7 @@ import type {
   FirstAnswer,
   GateAttempt,
   ItemRating,
+  SessionPlanRecord,
   LearnerGoalRecord,
   LearnerTx,
   LikeRow,
@@ -30,6 +31,7 @@ type MemoryState = {
   strategies: Array<StrategyRow & { learnerId: string; id: string }>;
   assignments: AssignmentRecord[];
   goals: Map<string, LearnerGoalRecord>;
+  plans: Map<string, SessionPlanRecord & { learnerId: string }>;
 };
 
 function emptyState(): MemoryState {
@@ -48,6 +50,7 @@ function emptyState(): MemoryState {
     strategies: [],
     assignments: [],
     goals: new Map(),
+    plans: new Map(),
   };
 }
 
@@ -166,6 +169,39 @@ class MemoryLearnerTx implements LearnerTx {
 
   async upsertReview(row: ReviewRow) {
     state.reviews.set(`${this.learnerId}:${row.targetType}:${row.targetId}`, clone({ ...row, learnerId: this.learnerId }));
+  }
+
+  async getGoal() {
+    const goal = state.goals.get(this.learnerId);
+    return goal ? clone(goal) : null;
+  }
+
+  async openAssignments() {
+    return clone(state.assignments.filter((row) => row.learnerId === this.learnerId && row.status === "open").sort((a, b) => a.createdAt - b.createdAt));
+  }
+
+  async eventsSince(since: number, types: string[]) {
+    return clone(
+      state.events
+        .filter((e) => e.learnerId === this.learnerId && !e.isPreview && e.serverTs > since && types.includes(e.type))
+        .sort((a, b) => a.serverTs - b.serverTs),
+    );
+  }
+
+  async getSessionPlan(loginId: string) {
+    const row = state.plans.get(`${this.learnerId}:${loginId}`);
+    if (!row) return null;
+    const { learnerId: _ignored, ...rest } = row;
+    return clone(rest);
+  }
+
+  async saveSessionPlan(row: SessionPlanRecord) {
+    const key = `${this.learnerId}:${row.loginId}`;
+    if (!state.plans.has(key)) state.plans.set(key, clone({ ...row, learnerId: this.learnerId }));
+  }
+
+  async aiPlanAttempts(day: string) {
+    return [...state.plans.values()].filter((row) => row.learnerId === this.learnerId && row.day === day && row.aiAttempted).length;
   }
 
   async listReviews(targetType: string) {
@@ -323,6 +359,9 @@ export const memoryAdminRepo: AdminRepo = {
     if (!found) return null;
     Object.assign(found, patch);
     return clone(found);
+  },
+  async sessionPlans(sinceDay: string) {
+    return clone([...state.plans.values()].filter((row) => row.day >= sinceDay).sort((a, b) => b.createdAt - a.createdAt));
   },
   async goals() {
     return clone([...state.goals.values()]);

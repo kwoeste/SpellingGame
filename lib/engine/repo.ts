@@ -146,7 +146,27 @@ export interface LearnerTx {
   saveLikes(tags: LikeRow[]): Promise<void>;
   getLikes(): Promise<LikeRow[]>;
   insertStrategy(row: StrategyRow): Promise<void>;
+  /** The learner's goal row (daily minutes, weekly XP), if an admin set one. */
+  getGoal(): Promise<LearnerGoalRecord | null>;
+  /** Open assignments for this learner, oldest first. */
+  openAssignments(): Promise<AssignmentRecord[]>;
+  /** Non-preview events of the given types strictly after `since`, oldest first. */
+  eventsSince(since: number, types: string[]): Promise<StoredEvent[]>;
+  getSessionPlan(loginId: string): Promise<SessionPlanRecord | null>;
+  /** Insert once per sign-in; a concurrent duplicate is ignored. */
+  saveSessionPlan(row: SessionPlanRecord): Promise<void>;
+  /** Sign-ins on this ET day that called the AI planner (for the per-day safety cap). */
+  aiPlanAttempts(day: string): Promise<number>;
 }
+
+export type SessionPlanRecord = {
+  loginId: string;
+  day: string;
+  plan: Record<string, unknown>;
+  source: "deterministic" | "ai";
+  aiAttempted: boolean;
+  createdAt: number;
+};
 
 export interface EngineRepo {
   withLearner<T>(learnerId: string, work: (tx: LearnerTx) => Promise<T>): Promise<T>;
@@ -174,6 +194,7 @@ export interface AdminRepo {
   createAssignment(row: Omit<AssignmentRecord, "id" | "createdAt" | "completedAt">): Promise<AssignmentRecord>;
   updateAssignment(id: string, patch: Partial<Pick<AssignmentRecord, "status" | "completedAt">>): Promise<AssignmentRecord | null>;
   goals(): Promise<LearnerGoalRecord[]>;
+  sessionPlans(sinceDay: string): Promise<Array<SessionPlanRecord & { learnerId: string }>>;
   upsertGoal(goal: LearnerGoalRecord): Promise<void>;
   relabelStrategy(eventId: string, learnerId: string, strategy: string, createdBy: string): Promise<void>;
 }

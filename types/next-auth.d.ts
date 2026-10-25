@@ -6,6 +6,7 @@ declare module "next-auth" {
       role: "student" | "admin" | null;
       learnerId: string | null;
       userId: string | null;
+      loginId?: string | null;
     };
   }
 }
