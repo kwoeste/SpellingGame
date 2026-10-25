@@ -6,7 +6,7 @@ import { listChapters } from "@/lib/content/catalog";
 import { MATH_SEEDS, visualValue } from "@/lib/content/recaps-math";
 
 /** Subjects whose Watch it recaps have shipped. Grows to cover the whole catalog. */
-const COVERED = ["savvas.", "math."];
+const COVERED = ["savvas.", "math.", "ckla."];
 const covered = (id: string) => COVERED.some((p) => id.startsWith(p));
 const pub = (p: string) => path.join(process.cwd(), "public", p);
 
