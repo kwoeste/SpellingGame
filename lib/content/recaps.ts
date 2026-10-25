@@ -5,20 +5,24 @@ import { eliminateChoices, helpStage, type StuckHelp } from "@/lib/help/ladder";
  * Keyed by chapter id so CKLA and religion chapters can get recaps later by adding entries here.
  */
 
+import { MATH_RECAPS } from "@/lib/content/recaps-math";
+import { CKLA_RECAPS } from "@/lib/content/recaps-ckla";
+import { COL_RECAPS } from "@/lib/content/recaps-col";
+
 export type RecapSlide = { id: string; image: string; alt: string; text: string };
 export type RecapChoice = { id: string; image: string; alt: string };
 export type RecapCheck = { prompt: string; choices: RecapChoice[]; answer: string; feedbackCorrect: string; feedbackWrong: string };
 export type TryAtHome = { title: string; materials: string[]; steps: string[]; safety: string };
 export type Recap = { chapterId: string; slides: RecapSlide[]; check: RecapCheck; tryAtHome: TryAtHome };
 
-type SlideSeed = [alt: string, text: string];
-type CompactRecap = {
+export type SlideSeed = [alt: string, text: string];
+export type CompactRecap = {
   slides: SlideSeed[];
   check: { prompt: string; choices: number[]; answer: number; right: string; wrong: string };
   tryAtHome: TryAtHome;
 };
 
-const compact: Record<string, CompactRecap> = {
+const science: Record<string, CompactRecap> = {
   "savvas.ch1": {
     slides: [
       ["A curious kid scientist holding a big magnifying glass over a leaf", "Scientists are like detectives. They ask questions about the world."],
@@ -167,6 +171,8 @@ function build(chapterId: string, c: CompactRecap): Recap {
     tryAtHome: c.tryAtHome,
   };
 }
+
+const compact: Record<string, CompactRecap> = { ...science, ...MATH_RECAPS, ...CKLA_RECAPS, ...COL_RECAPS };
 
 const RECAPS: Record<string, Recap> = Object.fromEntries(Object.entries(compact).map(([id, c]) => [id, build(id, c)]));
 
