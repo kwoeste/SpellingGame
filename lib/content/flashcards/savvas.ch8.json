@@ -1,0 +1,90 @@
+[
+  {
+    "front": "Electricity is the flow of tiny charged particles called _____.",
+    "back": "electrons"
+  },
+  {
+    "front": "What is a circuit?",
+    "back": "A complete loop that electricity can travel around."
+  },
+  {
+    "front": "A material that electricity can easily move through, such as a wire, is called a _____.",
+    "back": "conductor"
+  },
+  {
+    "front": "What is an insulator in a circuit?",
+    "back": "A material, like rubber or plastic, that electricity cannot move through easily."
+  },
+  {
+    "front": "What happens to a light bulb if there is a gap in the circuit's loop?",
+    "back": "The bulb stays dark because electricity cannot flow."
+  },
+  {
+    "front": "What does a switch do in a circuit?",
+    "back": "It closes the loop to turn the flow on, or opens it to turn the flow off."
+  },
+  {
+    "front": "In a circuit, what is a load?",
+    "back": "The thing being powered by electricity, such as a light bulb."
+  },
+  {
+    "front": "Name two common power sources for a circuit.",
+    "back": "A battery and a wall outlet."
+  },
+  {
+    "front": "Name forms of energy that electricity can change into.",
+    "back": "Light, heat, sound, and motion."
+  },
+  {
+    "front": "What safety rule should you follow when unplugging a device from the wall?",
+    "back": "Pull by the plug itself, not by the cord."
+  },
+  {
+    "front": "Why should you never put heavy objects on top of electrical cords?",
+    "back": "The cords can get damaged and start a fire."
+  },
+  {
+    "front": "What is magnetism?",
+    "back": "An invisible force that pulls some metals, like iron, toward a magnet."
+  },
+  {
+    "front": "What two poles does every magnet have?",
+    "back": "A North pole and a South pole."
+  },
+  {
+    "front": "What happens when you bring two matching poles together (like North and North)?",
+    "back": "They repel, or push each other apart."
+  },
+  {
+    "front": "What happens when you bring opposite poles together (North and South)?",
+    "back": "They attract, or pull together."
+  },
+  {
+    "front": "Do magnets attract all types of metal?",
+    "back": "No. Magnets attract iron, nickel, and steel, but not aluminum, copper, or gold."
+  },
+  {
+    "front": "Can a magnet pull on something without touching it?",
+    "back": "Yes. Magnetic force can act across a small distance."
+  },
+  {
+    "front": "What tool uses a small magnetic needle that points north to help you find directions?",
+    "back": "A compass."
+  },
+  {
+    "front": "Why does a compass needle point north?",
+    "back": "Earth acts like a giant magnet."
+  },
+  {
+    "front": "What is an electromagnet?",
+    "back": "A magnet made by wrapping wire around an iron bar and running electricity through the wire."
+  },
+  {
+    "front": "How can you turn an electromagnet off?",
+    "back": "Stop the electricity flowing through the wire."
+  },
+  {
+    "front": "What device uses electromagnets to change electrical energy into motion?",
+    "back": "An electric motor."
+  }
+]
