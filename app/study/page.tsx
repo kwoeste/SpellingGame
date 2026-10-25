@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { StudentDashboard } from "@/components/StudentDashboard";
 import { NotAllowed } from "@/components/NotAllowed";
-import { requirePageUser } from "@/lib/auth/server";
+import { currentLoginId, requirePageUser } from "@/lib/auth/server";
+import { todayPlan } from "@/lib/engine/plan";
 import { listChapters } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
 import { arcadeTiles } from "@/lib/games/arcade-tiles";
@@ -19,11 +20,13 @@ export default async function StudyIndexPage() {
   const chapters = listChapters()
     .filter((chapter) => chapterVisibleTo(chapter, user.role))
     .map((chapter) => ({ id: chapter.id, number: chapter.number, titleKid: chapter.titleKid, subject: chapter.subject }));
-  const [resume, progress, likes, reteach] = await Promise.all([
+  const loginId = await currentLoginId().catch(() => null);
+  const [resume, progress, likes, reteach, plan] = await Promise.all([
     resumePoint(engineRepo(), actor).catch(() => null),
     progressSummary(engineRepo(), actor).catch(() => ({ rings: [], xp_total: 0, xp_today: 0, streak_days: 0, badges: [] })),
     getLikes(engineRepo(), actor).catch(() => []),
     reteachQueue(engineRepo(), actor).catch(() => []),
+    todayPlan(engineRepo(), actor, loginId).catch(() => null),
   ]);
   const tiles = arcadeTiles({ role: user.role, badges: progress.badges, recommendedSpellingId: "d1" });
   return (
@@ -38,6 +41,17 @@ export default async function StudyIndexPage() {
         chapters={chapters}
         likes={likes.filter((row) => row.liked).map((row) => row.interestTag)}
         arcadeTiles={tiles}
+        plan={
+          plan
+            ? {
+                blocks: plan.blocks.map((b) => ({ id: b.id, kind: b.kind, title: b.title, href: b.href, minutes: b.minutes, done: b.done })),
+                goalMinutes: plan.goalMinutes,
+                minutesToday: plan.minutesToday,
+                timeBack: plan.timeBack,
+                whyKid: plan.whyKid,
+              }
+            : null
+        }
         tryAgain={reteach.map((row) => ({ href: row.href, chapterTitle: row.chapterTitle, stepNumber: row.stepIndex + 1, startWith: row.startWith }))}
       />
       <nav className="sr-only" aria-label="Games">

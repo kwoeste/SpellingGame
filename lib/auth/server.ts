@@ -14,3 +14,9 @@ export async function requirePageUser(allowed: AppRole[], from: string): Promise
   const user = await resolveUser(email);
   return user && allowed.includes(user.role) ? user : null;
 }
+
+/** The current sign-in's id (stable for every page load until she signs in again). */
+export async function currentLoginId(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.loginId ?? null;
+}

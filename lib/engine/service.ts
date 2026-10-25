@@ -17,7 +17,7 @@ import { ewma, targetSuccess, zoneAction } from "@/lib/engine/zone";
 
 export const SESSION_IDLE_MS = 30 * 60 * 1000;
 export const ZONE_MIN_SCORED = 5;
-const RAPID_GUESS_MS = 1500;
+export const RAPID_GUESS_MS = 1500;
 const WEEKLY_XP_GOAL = 600;
 const MAX_HINT_LEVEL = 3;
 const MAX_EVENTS_PER_BATCH = 50;
@@ -175,7 +175,7 @@ function defaultMastery(conceptId: string): MasteryRow {
   };
 }
 
-function guessRate(item: ChapterItem): number {
+export function guessRate(item: ChapterItem): number {
   return item.options?.length ? guessFromOptions(item.options.length) : 0.05;
 }
 
@@ -333,6 +333,8 @@ export async function submitAnswer(
     now?: number;
     /** Wrong tries before this one, as the browser counted them. Used only for preview (no saved history). */
     misses?: unknown;
+    /** "review": a spaced warm-up answer. Scores and schedules, but never runs the chapter gate or moves resume. */
+    mode?: unknown;
   },
 ): Promise<AnswerFeedback> {
   const now = input.now ?? Date.now();
@@ -356,6 +358,7 @@ export async function submitAnswer(
   const hintLevel = clampInt(input.hintLevel, 0, MAX_HINT_LEVEL, 0);
   const latencyMs = typeof input.latencyMs === "number" ? clampInt(input.latencyMs, 0, 3_600_000, 0) : null;
   const eventId = input.eventId && UUID_RE.test(input.eventId) ? input.eventId : crypto.randomUUID();
+  const review = input.mode === "review";
 
   return repo.withLearner(actor.learnerId, async (tx) => {
     const session = await currentSession(tx, input.sessionId ?? null, "study", now);
@@ -381,6 +384,7 @@ export async function submitAnswer(
         correct_answer: typeof item.answer === "string" ? item.answer : JSON.stringify(item.answer),
         subject: chapter.subject,
         concept_id: item.conceptId,
+        ...(review ? { mode: "review" } : {}),
       },
       isPreview: false,
     });
@@ -408,17 +412,19 @@ export async function submitAnswer(
 
     let state = await chapterState(tx, chapter);
     let gate: GateOutcome | null = null;
-    if (state.nextStep >= chapter.items.length) {
+    if (!review && state.nextStep >= chapter.items.length) {
       gate = await runChapterGate(tx, chapter, state.attemptSince, now);
       state = await chapterState(tx, chapter);
     }
     session.lastEventAt = now;
-    session.resumeState = {
-      ...session.resumeState,
-      chapterId: chapter.id,
-      activityId: item.activityId,
-      itemId: chapter.items[state.nextStep]?.id ?? null,
-    };
+    if (!review) {
+      session.resumeState = {
+        ...session.resumeState,
+        chapterId: chapter.id,
+        activityId: item.activityId,
+        itemId: chapter.items[state.nextStep]?.id ?? null,
+      };
+    }
     await tx.updateSession(session);
     return { ...base, session_id: session.id, preview: false, chapter: publicProgress(state), gate, help: chapterItemHelp(chapter, item, misses) };
   });

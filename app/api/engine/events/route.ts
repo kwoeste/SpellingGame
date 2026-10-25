@@ -25,6 +25,7 @@ export async function POST(req: Request) {
         latencyMs: submit.latencyMs,
         eventId: typeof submit.eventId === "string" ? submit.eventId : null,
         misses: submit.misses,
+        mode: submit.mode === "review" ? "review" : undefined,
       });
       return engineJson({ feedback });
     }

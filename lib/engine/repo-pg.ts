@@ -6,6 +6,7 @@ import type {
   FirstAnswer,
   GateAttempt,
   ItemRating,
+  SessionPlanRecord,
   LearnerGoalRecord,
   LearnerTx,
   LikeRow,
@@ -250,6 +251,42 @@ class PgLearnerTx implements LearnerTx {
          last_result = EXCLUDED.last_result, lapses = EXCLUDED.lapses`,
       [this.learnerId, r.targetType, r.targetId, r.box, iso(r.dueAt), r.lastResult, r.lapses],
     );
+  }
+
+  async getGoal() {
+    const [row] = await this.rows("SELECT * FROM engine.learner_goal WHERE learner_id = $1", [this.learnerId]);
+    return row ? toGoal(row) : null;
+  }
+
+  async openAssignments() {
+    const rows = await this.rows("SELECT * FROM engine.assignment WHERE learner_id = $1 AND status = 'open' ORDER BY created_at", [this.learnerId]);
+    return rows.map(toAssignment);
+  }
+
+  async eventsSince(since: number, types: string[]) {
+    const rows = await this.rows(
+      "SELECT * FROM engine.interaction_event WHERE learner_id = $1 AND server_ts > $2 AND type = ANY($3::text[]) AND NOT is_preview ORDER BY server_ts",
+      [this.learnerId, iso(since), types],
+    );
+    return rows.map(toEvent);
+  }
+
+  async getSessionPlan(loginId: string) {
+    const [row] = await this.rows("SELECT * FROM engine.session_plan WHERE learner_id = $1 AND login_id = $2", [this.learnerId, loginId]);
+    return row ? toSessionPlan(row) : null;
+  }
+
+  async saveSessionPlan(r: SessionPlanRecord) {
+    await this.db.query(
+      `INSERT INTO engine.session_plan (learner_id, login_id, day, plan, source, ai_attempted, created_at)
+       VALUES ($1, $2, $3::date, $4::jsonb, $5, $6, $7) ON CONFLICT (learner_id, login_id) DO NOTHING`,
+      [this.learnerId, r.loginId, r.day, JSON.stringify(r.plan), r.source, r.aiAttempted, iso(r.createdAt)],
+    );
+  }
+
+  async aiPlanAttempts(day: string) {
+    const [row] = await this.rows("SELECT count(*)::int AS n FROM engine.session_plan WHERE learner_id = $1 AND day = $2::date AND ai_attempted", [this.learnerId, day]);
+    return Number(row?.n ?? 0);
   }
 
   async listReviews(targetType: string) {
@@ -503,6 +540,10 @@ export const pgAdminRepo: AdminRepo = {
     );
     return row ? toAssignment(row) : null;
   },
+  async sessionPlans(sinceDay: string) {
+    const rows = await adminRows("SELECT * FROM admin_api.session_plans WHERE day >= $1::date ORDER BY created_at DESC", [sinceDay]);
+    return rows.map((row) => ({ ...toSessionPlan(row), learnerId: String(row.learner_id) }));
+  },
   async goals() {
     const rows = await adminRows("SELECT * FROM engine.learner_goal");
     return rows.map(toGoal);
@@ -552,5 +593,17 @@ function toGoal(row: Row): LearnerGoalRecord {
     dailyMinutesGoal: Number(row.daily_minutes_goal),
     updatedAt: ms(row.updated_at),
     updatedBy: String(row.updated_by),
+  };
+}
+
+function toSessionPlan(row: Row): SessionPlanRecord {
+  const day = row.day instanceof Date ? row.day.toISOString().slice(0, 10) : String(row.day).slice(0, 10);
+  return {
+    loginId: String(row.login_id),
+    day,
+    plan: (row.plan ?? {}) as Record<string, unknown>,
+    source: row.source === "ai" ? "ai" : "deterministic",
+    aiAttempted: row.ai_attempted === true,
+    createdAt: ms(row.created_at),
   };
 }
