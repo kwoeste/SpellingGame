@@ -32,6 +32,8 @@ type Feedback = {
   chapter: Progress | null;
   gate: { passed: boolean; correct: number; total: number; needPct: number } | null;
   help?: StuckHelp | null;
+  /** Server saw rapid wrong guesses: show a slow-down nudge and a short cooldown. */
+  nudge?: "slow_down" | null;
 };
 
 type View =
@@ -376,6 +378,7 @@ export function StepView({ step, number, total, chapter, sessionId, onAnswered, 
   const [misses, setMisses] = useState(0);
   const [help, setHelp] = useState<StuckHelp | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
     const words = step.prompt.split(/\s+/).length;
@@ -449,6 +452,10 @@ export function StepView({ step, number, total, chapter, sessionId, onAnswered, 
       });
       setFeedback(json.feedback);
       onAnswered(json.feedback);
+      if (json.feedback.nudge === "slow_down") {
+        setCooldown(4);
+        const timer = setInterval(() => setCooldown((n) => { if (n <= 1) clearInterval(timer); return Math.max(0, n - 1); }), 1000);
+      }
       if (!json.feedback.correct) {
         setMisses((n) => n + 1);
         if (json.feedback.help) setHelp(json.feedback.help);
@@ -586,6 +593,11 @@ export function StepView({ step, number, total, chapter, sessionId, onAnswered, 
             <strong>{feedback.correct ? "Yes!" : "Not yet."}</strong>{" "}
             {feedback.explanation.replace(/^(Yes!|Not yet\.)\s*/i, "")}
           </p>
+          {feedback.nudge === "slow_down" ? (
+            <p className="rush-nudge" role="note" style={{ fontWeight: 700 }}>
+              🐢 Whoa, speedy! Slow down and read it again. Careful answers grow your brain more than fast ones.
+            </p>
+          ) : null}
           <VoicePicker compact />
           <button className="btn secondary" onClick={() => prefs.speak(feedback.read_aloud_text)}>
             Hear it
@@ -595,8 +607,8 @@ export function StepView({ step, number, total, chapter, sessionId, onAnswered, 
               Next
             </button>
           ) : (
-            <button className="btn" onClick={tryAgain}>
-              Try again
+            <button className="btn" onClick={tryAgain} disabled={cooldown > 0}>
+              {cooldown > 0 ? `Read again… ${cooldown}` : "Try again"}
             </button>
           )}
         </div>

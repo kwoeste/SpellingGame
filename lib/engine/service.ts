@@ -409,6 +409,7 @@ export async function submitAnswer(
       isCorrect: scored.correct,
     });
     await awardMinute(tx, session.id, now, rapidGuess);
+    const nudge = rapidGuess ? await rushNudge(tx, session, item, now) : null;
 
     let state = await chapterState(tx, chapter);
     let gate: GateOutcome | null = null;
@@ -426,8 +427,25 @@ export async function submitAnswer(
       };
     }
     await tx.updateSession(session);
-    return { ...base, session_id: session.id, preview: false, chapter: publicProgress(state), gate, help: chapterItemHelp(chapter, item, misses) };
+    return { ...base, session_id: session.id, preview: false, chapter: publicProgress(state), gate, help: chapterItemHelp(chapter, item, misses), nudge };
   });
+}
+
+/** Rapid wrong answers in the last RUSH_WINDOW answers of a session that trigger a "slow down" nudge. */
+export const RUSH_NUDGE_AT = 2;
+export const RUSH_WINDOW = 3;
+/** How long the kid's Try again button waits after a slow-down nudge. */
+export const RUSH_COOLDOWN_MS = 4000;
+
+async function rushNudge(tx: LearnerTx, session: PlaySession, item: ChapterItem, now: number): Promise<"slow_down" | null> {
+  const recent = (await tx.eventsSince(session.startedAt, ["answer_submitted"]))
+    .filter((e) => e.sessionId === session.id)
+    .sort((a, b) => b.serverTs - a.serverTs)
+    .slice(0, RUSH_WINDOW);
+  const rushed = recent.filter((e) => e.latencyMs !== null && e.latencyMs < RAPID_GUESS_MS && e.isCorrect === false).length;
+  if (rushed < RUSH_NUDGE_AT) return null;
+  await tx.insertDecision(session.id, "rush_nudge", "rapid_guesses", { item_id: item.id, concept_id: item.conceptId, rushed, window: recent.length, at: now });
+  return "slow_down";
 }
 
 /** Mastery is capped here when she needs the strong hint: the concept is "not learned yet". */

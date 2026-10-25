@@ -76,6 +76,26 @@ export function OverviewView({ data }: { data: Overview }) {
           )}
         </section>
       </div>
+      <section className="pd-card" style={{ marginTop: 14 }} aria-label="Rush meter">
+        <h2>Rush meter</h2>
+        {data.rushMeter.level === "none" ? (
+          <EmptyState title="No answers this week" body="Shows how often answers are fast wrong guesses (under 1.5 s)." />
+        ) : (
+          <div>
+            <p style={{ margin: "0 0 8px" }}>
+              <span className={`pd-pill ${data.rushMeter.level === "calm" ? "" : "rush"}`}>
+                {data.rushMeter.level === "calm" ? "Calm" : data.rushMeter.level === "watch" ? "Watch" : "Rushing"}
+              </span>{" "}
+              {Math.round((data.rushMeter.rate7d ?? 0) * 100)}% of the last 7 days&apos; answers were rapid guesses ({data.rushMeter.rushed7d} of{" "}
+              {data.rushMeter.answers7d}); {data.rushMeter.rushedToday} today. Two rapid misses in three answers shows her a slow-down nudge.
+            </p>
+            <div role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((data.rushMeter.rate7d ?? 0) * 100)} style={{ height: 12, borderRadius: 6, background: "#eee", overflow: "hidden" }}>
+              <div style={{ width: `${Math.min(100, Math.round((data.rushMeter.rate7d ?? 0) * 100 * 2.5))}%`, height: "100%", background: data.rushMeter.level === "calm" ? "#2bb673" : data.rushMeter.level === "watch" ? "#f0a500" : "#d64545" }} />
+            </div>
+            <p className="pd-note" style={{ marginTop: 6 }}>Scale: 0–40%. Watch at 10%, rushing at 20%.</p>
+          </div>
+        )}
+      </section>
       <div className="pd-grid pd-two" style={{ marginTop: 14 }}>
         <section className="pd-card">
           <h2>Engaged minutes</h2>

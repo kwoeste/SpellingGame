@@ -56,6 +56,17 @@ export type Overview = {
   alerts: Alert[];
   daily: DayPoint[];
   weeklyAccuracy: { week: string; accuracy: number | null; items: number }[];
+  /** Rapid wrong guesses (under 1.5 s) as a share of answers. */
+  rushMeter: RushMeter;
+};
+
+export type RushMeter = {
+  level: "calm" | "watch" | "rushing" | "none";
+  rate7d: number | null;
+  rushed7d: number;
+  answers7d: number;
+  rushedToday: number;
+  daily: { day: string; rate: number | null; answers: number }[];
 };
 
 export type SubjectProgress = {
