@@ -21,6 +21,7 @@ import {
   type LearnerGoal,
   type MasteryState,
   type Overview,
+  type RushMeter,
   type ProgressView,
   type SessionHistoryRow,
   type SessionHistoryView,
@@ -381,6 +382,32 @@ export function buildOverview(snap: DashboardSnapshot): Overview {
         accuracy: bucket.total ? bucket.correct / bucket.total : null,
         items: bucket.total,
       })),
+    rushMeter: buildRushMeter(events, snap.now),
+  };
+}
+
+/** Rush meter thresholds: share of the last 7 days' answers that were rapid wrong guesses. */
+export const RUSH_WATCH = 0.1;
+export const RUSH_HIGH = 0.2;
+
+export function buildRushMeter(answers: AdminEventRow[], now: number): RushMeter {
+  const days: string[] = [];
+  for (let i = 6; i >= 0; i -= 1) days.push(dayKey(now - i * 86_400_000));
+  const inWindow = answers.filter((event) => dayKey(event.serverTs) >= days[0] && event.serverTs <= now);
+  const rushed = (rows: AdminEventRow[]) => rows.filter((event) => isRapidGuess(event.latencyMs, event.isCorrect)).length;
+  const rushed7d = rushed(inWindow);
+  const rate7d = inWindow.length ? rushed7d / inWindow.length : null;
+  const today = todayKey(now);
+  return {
+    level: rate7d === null ? "none" : rate7d >= RUSH_HIGH ? "rushing" : rate7d >= RUSH_WATCH ? "watch" : "calm",
+    rate7d,
+    rushed7d,
+    answers7d: inWindow.length,
+    rushedToday: rushed(inWindow.filter((event) => dayKey(event.serverTs) === today)),
+    daily: days.map((day) => {
+      const rows = inWindow.filter((event) => dayKey(event.serverTs) === day);
+      return { day, rate: rows.length ? rushed(rows) / rows.length : null, answers: rows.length };
+    }),
   };
 }
 
