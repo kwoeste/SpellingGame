@@ -66,7 +66,7 @@ export function HomeSummaryView({ data }: { data: HomeSummary }) {
                 <li key={r.key} className="pd-list-row">
                   <span>
                     {r.label}
-                    {r.count && r.count > 1 ? <span className="pd-note"> · {r.count} times</span> : null}
+                    {r.count && r.count > 1 ? <span className="pd-note"> · re-taught {r.count} times</span> : null}
                   </span>
                   {r.chapter ? <span className="pd-note">{r.chapter}</span> : null}
                 </li>
@@ -82,7 +82,7 @@ export function HomeSummaryView({ data }: { data: HomeSummary }) {
                 <li key={m.id} className="pd-list-row">
                   <span>
                     {m.question}
-                    {m.count && m.count > 1 ? <span className="pd-badge warn" style={{ marginLeft: 6 }}>missed {m.count}×</span> : null}
+                    {m.count && m.count > 1 ? <span className="pd-badge warn" style={{ marginLeft: 6 }}>missed {m.count} times total</span> : null}
                   </span>
                   <span className="pd-note">
                     {m.chapter ? `${m.chapter} · ` : ""}

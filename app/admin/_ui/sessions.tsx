@@ -1,5 +1,5 @@
 import { EmptyState } from "@/app/admin/_ui/empty";
-import { formatEtSpan, formatEtTime, formatPct } from "@/lib/admin/format";
+import { formatEtDay, formatEtSpan, formatEtTime, formatPct } from "@/lib/admin/format";
 import type { SessionHistoryView } from "@/lib/admin/types";
 
 export function SessionTimeline({ data }: { data: SessionHistoryView }) {
@@ -17,7 +17,9 @@ export function SessionTimeline({ data }: { data: SessionHistoryView }) {
         <div className="pd-timeline">
           {data.sessions.map((session) => (
             <article className="pd-card pd-session" key={session.id}>
-              <time className="pd-session-time" dateTime={new Date(session.startedAt).toISOString()}>{formatEtSpan(session.startedAt, session.endedAt ?? session.lastActivityAt)}</time>
+              <time className="pd-session-time" dateTime={new Date(session.startedAt).toISOString()}><span className="pd-session-day">{formatEtDay(session.startedAt)}</span>
+                <span className="pd-session-clock">{formatEtSpan(session.startedAt, session.endedAt ?? session.lastActivityAt).replace(/^[^,]*,\s*/, "")}</span>
+              </time>
               <div>
                 <strong>
                   {placeLabel(session.entryPoint)} · {session.engagedMinutes} min working
