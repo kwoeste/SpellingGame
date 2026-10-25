@@ -28,7 +28,7 @@ export type LearnsBestView = {
   minAttempts: number;
   totalEpisodes: number;
   subjects: { subject: string; arms: ArmView[]; best: Modality | null; summary: string }[];
-  notes: { createdAt: number; source: "ai" | "deterministic"; adminNote: string; whyKid: string }[];
+  notes: { createdAt: number; source: "ai" | "deterministic"; adminNote: string; whyKid: string; preview: boolean }[];
 };
 
 export function buildLearnsBest(
@@ -76,6 +76,7 @@ export function buildLearnsBest(
         const plan = p.plan as { adminNote?: unknown; whyKid?: unknown };
         return {
           createdAt: p.createdAt,
+          preview: p.loginId.startsWith("preview:"),
           source: p.source,
           adminNote: typeof plan.adminNote === "string" ? plan.adminNote : "",
           whyKid: typeof plan.whyKid === "string" ? plan.whyKid : "",

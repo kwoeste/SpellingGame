@@ -53,7 +53,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
           <ul style={{ margin: 0, paddingLeft: 18 }}>
             {data.notes.map((note) => (
               <li key={note.createdAt} style={{ marginBottom: 8 }}>
-                <strong>{formatEtDateTime(note.createdAt)}</strong> · {note.source === "ai" ? "Grok" : "Fallback"}: {note.adminNote || "—"}
+                <strong>{formatEtDateTime(note.createdAt)}</strong> · {note.source === "ai" ? "Grok" : "Fallback"}{note.preview ? " (your preview)" : ""}: {note.adminNote || "—"}
                 {note.whyKid ? <span className="pd-note"> (Mae saw: “{note.whyKid}”)</span> : null}
               </li>
             ))}

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { StudentDashboard } from "@/components/StudentDashboard";
 import { NotAllowed } from "@/components/NotAllowed";
 import { currentLoginId, requirePageUser } from "@/lib/auth/server";
-import { todayPlan } from "@/lib/engine/plan";
+import { previewPlanForLearner, todayPlan } from "@/lib/engine/plan";
+import { SEEDED_LEARNER_ID } from "@/lib/auth/users";
 import { listChapters } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
 import { arcadeTiles } from "@/lib/games/arcade-tiles";
@@ -26,7 +27,13 @@ export default async function StudyIndexPage() {
     progressSummary(engineRepo(), actor).catch(() => ({ rings: [], xp_total: 0, xp_today: 0, streak_days: 0, badges: [] })),
     getLikes(engineRepo(), actor).catch(() => []),
     reteachQueue(engineRepo(), actor).catch(() => []),
-    todayPlan(engineRepo(), actor, loginId).catch(() => null),
+    (user.role === "admin" && !user.learnerId
+      ? previewPlanForLearner(engineRepo(), SEEDED_LEARNER_ID, loginId)
+      : todayPlan(engineRepo(), actor, loginId)
+    ).catch((error) => {
+      console.error("today_plan_failed", { role: user.role, message: error instanceof Error ? error.message : "unknown" });
+      return null;
+    }),
   ]);
   const tiles = arcadeTiles({ role: user.role, badges: progress.badges, recommendedSpellingId: "d1" });
   return (
