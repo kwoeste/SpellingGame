@@ -45,9 +45,10 @@ export function TodayPlanCard({ plan }: { plan: TodayPlanView }) {
           <p className="kid-kicker" style={{ margin: 0 }}>Today&apos;s plan</p>
           {plan.timeBack ? (
             <p className="time-back" style={{ fontWeight: 800, fontSize: "1.3rem", margin: "4px 0" }}>Time back! 🎉 You&apos;re done for today.</p>
-          ) : (
-            <p style={{ margin: "4px 0" }}>{plan.whyKid}</p>
-          )}
+          ) : null}
+          {plan.whyKid ? (
+            <p className="plan-why" style={{ margin: "4px 0" }}>{plan.whyKid}</p>
+          ) : null}
         </div>
       </div>
       <ol className="today-plan-list" style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 8 }}>
