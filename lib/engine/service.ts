@@ -394,8 +394,9 @@ export async function submitAnswer(
 
     const rapidGuess = latencyMs !== null && latencyMs < RAPID_GUESS_MS && !scored.correct;
     await applyAnswer(tx, session, item, { correct: scored.correct, hintLevel, firstAttempt: attemptNo === 1, rapidGuess, now });
-    // Every earlier answer this session was wrong (a right one ends the step), so attemptNo is the miss count.
-    const misses = scored.correct ? 0 : attemptNo;
+    // Misses in a row on this item since her last right answer or skip, across sessions, so an idle
+    // gap or a new day can't reset the ladder. Same rule for every item type.
+    const misses = scored.correct ? 0 : await tx.missStreak(item.id);
     if (scored.correct && attemptNo === 1 && hintLevel <= 1) await maybeClearReteach(tx, session, chapter, item, now);
     // Close the modality episode (re-teach or first teach) on her next answer to this item. Every
     // modality is scored the same: success = first try, unhinted; plus follow-up time and a rush flag.
@@ -564,7 +565,7 @@ export async function skipItem(
   if (!actor.learnerId) return { session_id: null, preview: true, chapter: null, gate: null };
   return repo.withLearner(actor.learnerId, async (tx) => {
     const session = await currentSession(tx, input.sessionId ?? null, "study", now);
-    const misses = await tx.countAnswers(session.id, item.id);
+    const misses = await tx.missStreak(item.id);
     if (misses < SHOW_ME_AT_MISS) throw new EngineError(400, "skip_not_offered_yet");
     await tx.insertEvent({
       id: crypto.randomUUID(),

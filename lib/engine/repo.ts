@@ -122,6 +122,11 @@ export interface LearnerTx {
   /** Returns false when an event with the same id already exists (idempotent retry). */
   insertEvent(event: StoredEvent): Promise<boolean>;
   countAnswers(sessionId: string, itemId: string): Promise<number>;
+  /**
+   * Wrong answers on this item since her last right answer or skip, across every session.
+   * Drives the stuck-help ladder so an idle gap or a new day doesn't reset it.
+   */
+  missStreak(itemId: string): Promise<number>;
   /** Earliest non-preview answer per item strictly after `since`. */
   firstAnswersSince(itemIds: string[], since: number): Promise<FirstAnswer[]>;
   /** Items with at least one correct non-preview answer after `since`. */

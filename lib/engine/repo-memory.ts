@@ -141,6 +141,15 @@ class MemoryLearnerTx implements LearnerTx {
     return new Set(answersFor(this.learnerId, itemIds, since).filter((e) => e.isCorrect).map((e) => e.itemId as string));
   }
 
+  async missStreak(itemId: string) {
+    const mine = state.events.filter((e) => e.learnerId === this.learnerId && e.itemId === itemId && !e.isPreview);
+    const resetAt = Math.max(
+      -Infinity,
+      ...mine.filter((e) => (e.type === "answer_submitted" && e.isCorrect) || e.type === "item_skipped").map((e) => e.serverTs),
+    );
+    return mine.filter((e) => e.type === "answer_submitted" && e.isCorrect === false && e.serverTs > resetAt).length;
+  }
+
   async lastEventOfType(type: string, activityId: string, since: number) {
     const hits = state.events.filter(
       (e) => e.learnerId === this.learnerId && e.type === type && e.activityId === activityId && e.serverTs > since,

@@ -170,6 +170,20 @@ class PgLearnerTx implements LearnerTx {
     return Number(row?.n ?? 0);
   }
 
+  async missStreak(itemId: string) {
+    const [row] = await this.rows(
+      `SELECT count(*)::int AS n FROM engine.interaction_event e
+       WHERE e.learner_id = $1 AND e.item_id = $2 AND e.type = 'answer_submitted' AND NOT e.is_preview AND e.is_correct = false
+         AND e.server_ts > COALESCE((
+           SELECT max(r.server_ts) FROM engine.interaction_event r
+           WHERE r.learner_id = $1 AND r.item_id = $2 AND NOT r.is_preview
+             AND ((r.type = 'answer_submitted' AND r.is_correct) OR r.type = 'item_skipped')
+         ), '-infinity'::timestamptz)`,
+      [this.learnerId, itemId],
+    );
+    return Number(row?.n ?? 0);
+  }
+
   async firstAnswersSince(itemIds: string[], since: number): Promise<FirstAnswer[]> {
     const rows = await this.rows(
       `SELECT DISTINCT ON (item_id) item_id, is_correct, hint_level
