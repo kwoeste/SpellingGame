@@ -10,6 +10,8 @@ import { useKidPrefs } from "@/components/ui/KidPrefs";
 import { playSound } from "@/lib/ui/sounds";
 import { answerUnlockMs } from "@/lib/ui/careful-read";
 import type { StudentChapter, StudentStep } from "@/lib/content/student";
+import { StuckHelpPanel } from "@/components/ui/StuckHelpPanel";
+import { hintLevelFor, type StuckHelp } from "@/lib/help/ladder";
 
 type Progress = {
   chapterId: string;
@@ -29,6 +31,7 @@ type Feedback = {
   preview: boolean;
   chapter: Progress | null;
   gate: { passed: boolean; correct: number; total: number; needPct: number } | null;
+  help?: StuckHelp | null;
 };
 
 type View =
@@ -341,6 +344,10 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
   const [countdown, setCountdown] = useState(initialCountdown);
   const [attempt, setAttempt] = useState(0);
   const shownAt = useRef(Date.now());
+  // Stuck-help ladder: wrong tries on this step, the server's help, and whether Show me was used.
+  const [misses, setMisses] = useState(0);
+  const [help, setHelp] = useState<StuckHelp | null>(null);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     const words = step.prompt.split(/\s+/).length;
@@ -405,13 +412,18 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
           sessionId,
           itemId: step.itemId,
           response: response(),
-          hintLevel: 0,
+          hintLevel: hintLevelFor(help?.stage ?? "none", revealed),
+          misses,
           latencyMs: Date.now() - shownAt.current,
           eventId: crypto.randomUUID(),
         },
       });
       setFeedback(json.feedback);
       onAnswered(json.feedback);
+      if (!json.feedback.correct) {
+        setMisses((n) => n + 1);
+        if (json.feedback.help) setHelp(json.feedback.help);
+      }
       playSound(json.feedback.correct ? "correct" : "wrong", prefs.soundOn);
       if (json.feedback.correct) prefs.speak(json.feedback.read_aloud_text);
     } catch {
@@ -426,13 +438,39 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
     setOrder([]);
     setChoice("");
     setEvidence("");
-    setMatches({});
+    setMatches(help?.lockMatches ?? {});
+    if (help?.lockOrder?.first) setOrder([help.lockOrder.first]);
     shownAt.current = Date.now();
     setUnlocked(false);
     // The effect above restarts the countdown and cleans up its timers.
     setAttempt((n) => n + 1);
   }
 
+  function showMe() {
+    const r = help?.reveal;
+    if (!r) return;
+    setRevealed(true);
+    setFeedback(null);
+    setChoice("");
+    setEvidence("");
+    setOrder([]);
+    setMatches(step.kind === "vocab" ? (r.response as Record<string, string>) : {});
+    prefs.speak(`${r.answer} ${r.why}`);
+  }
+
+  async function skip() {
+    try {
+      const json = await postJson<Omit<Feedback, "correct" | "explanation" | "read_aloud_text">>("/api/engine/events", {
+        skip: { sessionId, itemId: step.itemId },
+      });
+      onNext({ ...json, correct: false, explanation: "", read_aloud_text: "" });
+    } catch {
+      setError("We couldn't skip that. Check the internet and try again.");
+    }
+  }
+
+  const ruledOut = (option: string) => Boolean(help && !feedback && (revealed ? option !== (help.reveal?.response as { choice?: string })?.choice : help.removeChoices?.includes(option)));
+  const glow = (id: string) => Boolean(help && !feedback && help.highlightSentenceId === id);
   const locked = Boolean(feedback) || !unlocked;
 
   return (
@@ -467,9 +505,9 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
             {step.options.map((option) => (
               <button
                 key={option}
-                className={`choice-btn ${choice === option ? "selected" : ""} ${locked && !feedback ? "locked" : ""}`}
+                className={`choice-btn ${choice === option ? "selected" : ""} ${locked && !feedback ? "locked" : ""} ${ruledOut(option) ? "ruled-out" : ""}`}
                 aria-pressed={choice === option}
-                disabled={locked}
+                disabled={locked || ruledOut(option)}
                 onClick={() => {
                   playSound("tap", prefs.soundOn);
                   setChoice(option);
@@ -486,7 +524,7 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
                 {chapter.sentences.map((sentence) => (
                   <button
                     key={sentence.id}
-                    className={`choice-btn ${evidence === sentence.id ? "selected" : ""} ${feedback && !feedback.correct && feedback.proving_sentence_id === sentence.id ? "proving" : ""}`}
+                    className={`choice-btn ${evidence === sentence.id ? "selected" : ""} ${feedback && !feedback.correct && feedback.proving_sentence_id === sentence.id ? "proving" : ""} ${glow(sentence.id) ? "glow" : ""}`}
                     aria-pressed={evidence === sentence.id}
                     disabled={locked}
                     onClick={() => setEvidence(sentence.id)}
@@ -505,6 +543,8 @@ function StepView({ step, number, total, chapter, sessionId, onAnswered, onNext 
           {error}
         </p>
       ) : null}
+
+      <StuckHelpPanel help={help} revealed={revealed} onShowMe={showMe} onSkip={skip} />
 
       {!feedback ? (
         <button className="btn" onClick={check} disabled={!ready() || sending || !unlocked} style={{ marginTop: 12 }}>

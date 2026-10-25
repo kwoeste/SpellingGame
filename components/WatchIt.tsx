@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { VoicePicker } from "@/components/ui/VoicePicker";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
 import type { StudentRecap } from "@/lib/content/recaps";
+import { StuckHelpPanel } from "@/components/ui/StuckHelpPanel";
+import type { StuckHelp } from "@/lib/help/ladder";
 
 /** Pause after narration ends before Next unlocks / the slide auto-advances. */
 export const WATCH_NEXT_UNLOCK_MS = 1500;
@@ -41,6 +43,11 @@ export function WatchIt({
   const [feedback, setFeedback] = useState<{ correct: boolean; text: string } | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  // Stuck-help ladder for the quick check (misses = wrong picks so far).
+  const [misses, setMisses] = useState(0);
+  const [help, setHelp] = useState<StuckHelp | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [skipped, setSkipped] = useState(false);
   const timer = useRef<number | null>(null);
   const runId = useRef(0);
 
@@ -115,11 +122,18 @@ export function WatchIt({
       const res = await fetch("/api/engine/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ watchCheck: { chapterId, choiceId } }),
+        body: JSON.stringify({ watchCheck: { chapterId, choiceId, misses } }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const json = (await res.json()) as { correct: boolean; feedback: string };
+      const json = (await res.json()) as { correct: boolean; feedback: string; help?: StuckHelp | null };
       setTries((t) => t + 1);
+      if (!json.correct) {
+        setMisses((n) => n + 1);
+        if (json.help) {
+          setHelp(json.help);
+          logHelp(json.help.stage === "show_me" ? "show_me_offered" : "hint_shown");
+        }
+      }
       if (firstTry === null) setFirstTry(json.correct);
       setFeedback({ correct: json.correct, text: json.feedback });
       prefs.speak(json.feedback);
@@ -129,6 +143,26 @@ export function WatchIt({
       setChecking(false);
     }
   }
+
+  function logHelp(detail: string) {
+    void fetch("/api/engine/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        events: [{ type: "hint_requested", activityId: chapterId, clientTs: Date.now(), payload: { source: "watch_check", detail, level: detail === "revealed" ? 3 : 2, misses: misses + 1 } }],
+      }),
+    }).catch(() => {});
+  }
+
+  function showMe() {
+    setRevealed(true);
+    setFeedback(null);
+    setPicked(null);
+    logHelp("revealed");
+    if (help?.reveal) prefs.speak(`${help.reveal.answer} ${help.reveal.why}`);
+  }
+
+  const ruledOut = (id: string) => Boolean(help && !feedback?.correct && help.removeChoices?.includes(id));
 
   if (phase.kind === "slides") {
     const slide = recap.slides[phase.index];
@@ -181,9 +215,9 @@ export function WatchIt({
           {recap.check.choices.map((c) => (
             <button
               key={c.id}
-              className={`watch-choice${picked === c.id && feedback ? (feedback.correct ? " right" : " wrong") : ""}`}
+              className={`watch-choice${picked === c.id && feedback ? (feedback.correct ? " right" : " wrong") : ""}${ruledOut(c.id) ? " ruled-out" : ""}`}
               onClick={() => pick(c.id)}
-              disabled={checking || Boolean(feedback?.correct)}
+              disabled={checking || Boolean(feedback?.correct) || ruledOut(c.id)}
               aria-label={c.alt}
             >
               <img src={c.image} alt={c.alt} width={400} height={300} />
@@ -195,11 +229,23 @@ export function WatchIt({
             {feedback.text}
           </p>
         ) : null}
+        {feedback?.correct ? null : (
+          <StuckHelpPanel
+            help={help}
+            revealed={revealed}
+            onShowMe={showMe}
+            onSkip={() => {
+              setSkipped(true);
+              logHelp("skipped");
+              go({ kind: "home" });
+            }}
+          />
+        )}
         <div className="watch-controls">
           <button className="btn secondary big" onClick={() => go({ kind: "slides", index: 0 })}>
             🔁 Watch again
           </button>
-          <button className="btn big" disabled={!feedback?.correct} onClick={() => go({ kind: "home" })}>
+          <button className="btn big" disabled={!feedback?.correct && !skipped} onClick={() => go({ kind: "home" })}>
             Next ▶
           </button>
         </div>

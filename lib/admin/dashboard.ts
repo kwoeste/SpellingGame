@@ -27,8 +27,10 @@ import {
   type SubjectProgress,
   type WrongAnswerRow,
   type WrongAnswerView,
+  type NeedsReteachRow,
 } from "@/lib/admin/types";
 import type { SubjectId } from "@/lib/content/types";
+import { HINT_AT_MISS, HINT_LEVEL_HINTED, HINT_LEVEL_REVEALED } from "@/lib/help/ladder";
 import type { AdminEventRow, AdminMasteryRow, PlaySession, ReviewRow } from "@/lib/engine/repo";
 import { isDue, isRusty } from "@/lib/engine/scheduler";
 
@@ -509,7 +511,81 @@ export function buildWrongAnswers(snap: DashboardSnapshot): WrongAnswerView {
       detail: key.startsWith("mis:") ? "misconception" : "strategy",
     }));
 
-  return { rows, patterns };
+  return { rows, patterns, needsReteach: buildNeedsReteach(forLearner(snap.events, snap.learnerId)) };
+}
+
+/**
+ * Items that reached the stuck-help ladder (HINT_AT_MISS wrong tries, Show me, or Skip), newest first.
+ * Chapter items come from answer events (hintLevel 3 = answered after Show me) and item_skipped;
+ * the Watch it check from hint_requested (source watch_check); games from game_event details.
+ */
+export function buildNeedsReteach(events: AdminEventRow[]): NeedsReteachRow[] {
+  const rows = new Map<string, NeedsReteachRow>();
+  const missesBySitting = new Map<string, number>();
+  const ensure = (key: string, init: () => Omit<NeedsReteachRow, "key" | "maxMisses" | "hints" | "reveals" | "skips" | "lastTs" | "cleared">) => {
+    let row = rows.get(key);
+    if (!row) {
+      row = { key, ...init(), maxMisses: 0, hints: 0, reveals: 0, skips: 0, lastTs: 0, cleared: false };
+      rows.set(key, row);
+    }
+    return row;
+  };
+  const chapterInit = (itemId: string, payload: Record<string, unknown>) => () => {
+    const located = locateAdminItem(itemId);
+    return {
+      source: "chapter" as const,
+      label: located?.item.stem ?? (typeof payload.item_stem === "string" ? payload.item_stem : itemId),
+      chapterId: located?.chapter.id ?? (typeof payload.chapter_id === "string" ? payload.chapter_id : null),
+      conceptId: located?.item.conceptId ?? (typeof payload.concept_id === "string" ? payload.concept_id : null),
+    };
+  };
+  const sorted = events.filter((e) => !e.isPreview).sort((a, b) => a.serverTs - b.serverTs);
+  for (const event of sorted) {
+    const payload = event.payload ?? {};
+    const detail = typeof payload.detail === "string" ? payload.detail : "";
+    const misses = typeof payload.misses === "number" ? payload.misses : 0;
+    if (event.type === "answer_submitted" && event.itemId) {
+      const stuckAnswer = (event.isCorrect === false && (event.attemptNo ?? 0) >= HINT_AT_MISS) || (event.hintLevel ?? 0) >= HINT_LEVEL_HINTED;
+      const existing = rows.get(`item:${event.itemId}`);
+      if (!stuckAnswer) {
+        if (existing && event.isCorrect && event.attemptNo === 1 && (event.hintLevel ?? 0) <= 1) existing.cleared = true;
+        continue;
+      }
+      const row = ensure(`item:${event.itemId}`, chapterInit(event.itemId, payload));
+      const sitting = `${event.sessionId}:${event.itemId}`;
+      const n = event.isCorrect === false ? (event.attemptNo ?? 0) : (missesBySitting.get(sitting) ?? 0);
+      missesBySitting.set(sitting, n);
+      row.maxMisses = Math.max(row.maxMisses, n);
+      if (event.isCorrect === false && event.attemptNo === HINT_AT_MISS) row.hints += 1;
+      if (event.hintLevel === HINT_LEVEL_REVEALED && event.isCorrect) row.reveals += 1;
+      row.lastTs = event.serverTs;
+      row.cleared = false;
+    } else if (event.type === "item_skipped" && event.itemId) {
+      const row = ensure(`item:${event.itemId}`, chapterInit(event.itemId, payload));
+      row.skips += 1;
+      row.maxMisses = Math.max(row.maxMisses, event.attemptNo ?? 0);
+      row.lastTs = event.serverTs;
+      row.cleared = false;
+    } else if (event.type === "hint_requested" && payload.source === "watch_check") {
+      const chapterId = event.activityId ?? "";
+      const row = ensure(`watch:${chapterId}`, () => ({ source: "watch_check", label: `Watch it quick check · ${chapterId}`, chapterId, conceptId: null }));
+      if (detail === "hint_shown") row.hints += 1;
+      if (detail === "revealed") row.reveals += 1;
+      if (detail === "skipped") row.skips += 1;
+      row.maxMisses = Math.max(row.maxMisses, misses);
+      row.lastTs = event.serverTs;
+    } else if (event.type === "game_event" && ["stuck", "revealed", "skipped"].includes(detail)) {
+      const game = typeof payload.game_id === "string" ? payload.game_id : "game";
+      const item = typeof payload.item === "string" ? payload.item : "";
+      const row = ensure(`game:${game}:${item}`, () => ({ source: "game", label: item ? `${game} · ${item}` : game, chapterId: null, conceptId: null }));
+      if (detail === "stuck") row.hints += 1;
+      if (detail === "revealed") row.reveals += 1;
+      if (detail === "skipped") row.skips += 1;
+      row.maxMisses = Math.max(row.maxMisses, misses);
+      row.lastTs = event.serverTs;
+    }
+  }
+  return [...rows.values()].sort((a, b) => b.lastTs - a.lastTs);
 }
 
 export function buildSessions(snap: DashboardSnapshot): SessionHistoryView {
@@ -551,6 +627,7 @@ export function buildSessions(snap: DashboardSnapshot): SessionHistoryView {
       pace: pace.pace,
       paceNote: pace.note,
       rollingSuccess: session.rollingSuccess,
+      neededHelp: buildNeedsReteach(events.filter((event) => event.sessionId === session.id)).length,
     };
   });
 
