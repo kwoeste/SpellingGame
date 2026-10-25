@@ -105,7 +105,7 @@ describe("re-teach next-session path", () => {
     const chapterPage = readFileSync("app/study/[chapterId]/page.tsx", "utf8");
     expect(chapterPage).toMatch(/reteachItemId=\{reteachItemId\}/);
     const player = readFileSync("components/ChapterPlayer.tsx", "utf8");
-    expect(player).toMatch(/reteachStart\(Boolean\(chapter\.recap\)\)/);
+    expect(player).toMatch(/reteachStart\(Boolean\(chapter\.recap\), reteachStartWith, reteachIndex\)/);
     expect(player).toMatch(/setView\(\{ kind: "step", index: reteachIndex \}\)/);
   });
 });

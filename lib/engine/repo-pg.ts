@@ -7,6 +7,8 @@ import type {
   GateAttempt,
   ItemRating,
   SessionPlanRecord,
+  ModalityEpisode,
+  Modality,
   LearnerGoalRecord,
   LearnerTx,
   LikeRow,
@@ -284,6 +286,36 @@ class PgLearnerTx implements LearnerTx {
     );
   }
 
+  async insertEpisode(e: ModalityEpisode) {
+    await this.db.query(
+      `INSERT INTO engine.modality_episode (id, learner_id, item_id, concept_id, subject, context, modality, chosen_by, samples, started_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10) ON CONFLICT (id) DO NOTHING`,
+      [e.id, this.learnerId, e.itemId, e.conceptId, e.subject, e.context, e.modality, e.chosenBy, JSON.stringify(e.samples), iso(e.startedAt)],
+    );
+  }
+
+  async openEpisode(itemId: string) {
+    const [row] = await this.rows(
+      "SELECT * FROM engine.modality_episode WHERE learner_id = $1 AND item_id = $2 AND resolved_at IS NULL ORDER BY started_at DESC LIMIT 1",
+      [this.learnerId, itemId],
+    );
+    return row ? toEpisode(row) : null;
+  }
+
+  async resolveEpisode(id: string, success: boolean, at: number) {
+    await this.db.query("UPDATE engine.modality_episode SET success = $3, resolved_at = $4 WHERE id = $1 AND learner_id = $2 AND resolved_at IS NULL", [
+      id,
+      this.learnerId,
+      success,
+      iso(at),
+    ]);
+  }
+
+  async listEpisodes() {
+    const rows = await this.rows("SELECT * FROM engine.modality_episode WHERE learner_id = $1 ORDER BY started_at", [this.learnerId]);
+    return rows.map(toEpisode);
+  }
+
   async aiPlanAttempts(day: string) {
     const [row] = await this.rows("SELECT count(*)::int AS n FROM engine.session_plan WHERE learner_id = $1 AND day = $2::date AND ai_attempted", [this.learnerId, day]);
     return Number(row?.n ?? 0);
@@ -540,6 +572,10 @@ export const pgAdminRepo: AdminRepo = {
     );
     return row ? toAssignment(row) : null;
   },
+  async modalityEpisodes() {
+    const rows = await adminRows("SELECT * FROM admin_api.modality_episodes ORDER BY started_at");
+    return rows.map((row) => ({ ...toEpisode(row), learnerId: String(row.learner_id) }));
+  },
   async sessionPlans(sinceDay: string) {
     const rows = await adminRows("SELECT * FROM admin_api.session_plans WHERE day >= $1::date ORDER BY created_at DESC", [sinceDay]);
     return rows.map((row) => ({ ...toSessionPlan(row), learnerId: String(row.learner_id) }));
@@ -593,6 +629,22 @@ function toGoal(row: Row): LearnerGoalRecord {
     dailyMinutesGoal: Number(row.daily_minutes_goal),
     updatedAt: ms(row.updated_at),
     updatedBy: String(row.updated_by),
+  };
+}
+
+function toEpisode(row: Row): ModalityEpisode {
+  return {
+    id: String(row.id),
+    itemId: String(row.item_id),
+    conceptId: String(row.concept_id),
+    subject: String(row.subject),
+    context: "reteach",
+    modality: String(row.modality) as Modality,
+    chosenBy: String(row.chosen_by) as ModalityEpisode["chosenBy"],
+    samples: (row.samples ?? {}) as Record<string, number>,
+    startedAt: ms(row.started_at),
+    resolvedAt: row.resolved_at ? ms(row.resolved_at) : null,
+    success: row.success === null || row.success === undefined ? null : Boolean(row.success),
   };
 }
 

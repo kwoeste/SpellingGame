@@ -4,6 +4,8 @@ import { ChapterPlayer } from "@/components/ChapterPlayer";
 import { ChapterHeader } from "@/components/ChapterHeader";
 import { NotAllowed } from "@/components/NotAllowed";
 import { requirePageUser } from "@/lib/auth/server";
+import { engineRepo } from "@/lib/engine/repos";
+import { chooseReteachModality } from "@/lib/engine/modality";
 import { getChapter, getNextChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo, toStudentChapter } from "@/lib/content/student";
 
@@ -33,6 +35,9 @@ export default async function ChapterPage({
   const nextChapterHref = nextChapter && chapterVisibleTo(nextChapter, user.role) ? `/study/${nextChapter.id}` : null;
   const studentChapter = toStudentChapter(chapter);
   const reteachItemId = reteachParam && chapter.items.some((item) => item.id === reteachParam) ? reteachParam : null;
+  const reteachStartWith = reteachItemId
+    ? await chooseReteachModality(engineRepo(), { role: user.role, learnerId: user.learnerId }, reteachItemId).catch(() => null)
+    : null;
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
@@ -42,7 +47,7 @@ export default async function ChapterPage({
       {isAdmin && chapter.pendingReligionReview ? (
         <p className="notice">Admin note: Religion chapters are hidden from Mae until approved.</p>
       ) : null}
-      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} />
+      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} reteachStartWith={reteachStartWith} />
     </div>
   );
 }
