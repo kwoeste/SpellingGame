@@ -12,7 +12,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
       <p className="pd-kicker">How she learns</p>
       <h1>How Mae learns best</h1>
       <p className="pd-lead">
-        When Mae gets stuck, the site re-teaches the idea a different way: a short video, a careful read, flashcards, or a
+        When Mae gets stuck, the site explains the idea again a different way: a short video, a careful read, flashcards, or a
         simple retry. It keeps track of which way helps her get the next one right and uses that way more often.
       </p>
       <details className="pd-group">
@@ -57,10 +57,10 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
           <EmptyState title="No analysis yet" body="Grok looks at the numbers (never her name or anything she typed) every Monday, or when you click below." />
         )}
         <InsightButton />
-        <p className="pd-note">Sent to Grok: only subject, way, question kind and numbers (accuracy after, later-review retention, time, rush rate, sample sizes).</p>
+        <p className="pd-note">Sent to Grok: only subject, way, question kind and numbers (how often she got it right afterward, whether she still knew it days later, time taken, how often she tapped too fast, and how many tries).</p>
       </section>
       {data.subjects.length === 0 ? (
-        <EmptyState title="Still exploring" body="No re-teaches yet. They start the first time she sees “Let’s try this again.”" />
+        <EmptyState title="Still exploring" body="Nothing re-explained yet. They start the first time she sees “Let’s try this again.”" />
       ) : (
         data.subjects.map((subject) => (
           <section className="pd-card" key={subject.subject} style={{ marginTop: 14 }}>
@@ -73,7 +73,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
                   <th>Finished tries</th>
                   <th>First-try success</th>
                   <th>Median time</th>
-                  <th>Rushed</th>
+                  <th>Tapped too fast</th>
                   <th>Expected success</th>
                   <th>Status</th>
                 </tr>

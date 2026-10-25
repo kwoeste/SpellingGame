@@ -21,6 +21,27 @@ function whereLabel(row: { source: string; chapterId: string | null }, chapterLa
   return chapterLabel(row.chapterId);
 }
 
+const PAGE = 20;
+
+type Row = WrongAnswerView["rows"][number];
+
+/** One group per question (newest miss first), so repeats show once with a count. */
+export function groupMisses(rows: Row[]): { latest: Row; earlier: Row[] }[] {
+  const groups = new Map<string, Row[]>();
+  for (const row of rows) {
+    const key = row.itemId ?? row.eventId;
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+  return [...groups.values()]
+    .map((list) => {
+      const sorted = [...list].sort((a, b) => b.ts - a.ts);
+      return { latest: sorted[0], earlier: sorted.slice(1) };
+    })
+    .sort((a, b) => b.latest.ts - a.latest.ts);
+}
+
 export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnswerView; chapterLabels?: Record<string, string> }) {
   const [subject, setSubject] = useState("all");
   const [strategy, setStrategy] = useState("all");
@@ -28,6 +49,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
   const [firstOnly, setFirstOnly] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [limit, setLimit] = useState(PAGE);
   const chapterLabel = (id: string | null) => (id ? chapterLabels[id] ?? tidyId(id) : "—");
 
   const strategies = useMemo(
@@ -46,6 +68,8 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
     }
     return true;
   });
+  const groups = groupMisses(rows);
+  const shown = groups.slice(0, limit);
   const openReteach = data.needsReteach.filter((row) => !row.cleared);
 
   async function relabel(eventId: string, next: string) {
@@ -102,6 +126,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
       {data.patterns.length > 0 ? (
         <section className="pd-card pd-section">
           <h2>Why she missed (patterns)</h2>
+          <p className="pd-note">Each number counts missed answers with that likely reason, so one question missed twice counts twice.</p>
           <div className="pd-legend">
             {data.patterns.map((pattern) => (
               <span key={pattern.key} className="pd-pill in_progress" title={pattern.detail}>
@@ -133,7 +158,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
           <input type="checkbox" checked={firstOnly} onChange={(event) => setFirstOnly(event.target.checked)} /> Only first tries
         </label>
         <span className="pd-note">
-          {rows.length} of {data.rows.length}
+          Showing {rows.length} of {data.rows.length} missed answers · {groups.length} different question{groups.length === 1 ? "" : "s"}
         </span>
       </div>
       {error ? <p className="pd-error" role="alert">{error}</p> : null}
@@ -144,7 +169,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
         />
       ) : (
         <div className="pd-card pd-table-wrap">
-          <table className="pd-table pd-answers">
+          <table className="pd-table pd-answers pd-answers-lg">
             <thead>
               <tr>
                 <th>When</th>
@@ -157,13 +182,25 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {shown.map(({ latest: row, earlier }) => (
                 <tr key={row.eventId}>
                   <td data-label="When">{formatEtDateTime(row.ts)}</td>
                   <td data-label="Question">
                     <span className="pd-badge bad">✗ Wrong</span>
                     <div className="pd-note">{row.chapterLabel ?? subjectLabel(row.subject)}</div>
                     <div>{row.itemText}</div>
+                    {earlier.length ? (
+                      <details className="pd-earlier">
+                        <summary>Missed {earlier.length + 1} times · show earlier</summary>
+                        <ul className="pd-list">
+                          {earlier.map((e) => (
+                            <li key={e.eventId}>
+                              <span className="pd-note">{formatEtDateTime(e.ts)}</span> · <AnswerList answer={e.herAnswer} showMarks />
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
                   </td>
                   <td data-label="Her answer">
                     <AnswerList answer={row.herAnswer} showMarks />
@@ -189,7 +226,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
                       disabled={busy === row.eventId}
                       onChange={(event) => relabel(row.eventId, event.target.value)}
                     >
-                      <option value="">Change reason…</option>
+                      <option value="">Change…</option>
                       {relabelChoicesFor(row.subject).map((choice) => (
                         <option key={choice.id} value={choice.id}>
                           {choice.label}
@@ -201,6 +238,13 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
               ))}
             </tbody>
           </table>
+          {groups.length > limit ? (
+            <p style={{ textAlign: "center" }}>
+              <button type="button" className="pd-btn" onClick={() => setLimit((n) => n + PAGE)}>
+                Show {Math.min(PAGE, groups.length - limit)} more questions
+              </button>
+            </p>
+          ) : null}
         </div>
       )}
     </div>

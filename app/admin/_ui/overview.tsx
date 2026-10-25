@@ -47,9 +47,9 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
           </span>
         </div>
         <div className="pd-metric">
-          <span className="pd-label">Questions finished</span>
+          <span className="pd-label">Different questions finished</span>
           <span className="pd-value">{data.itemsCompleted}</span>
-          <span className="pd-note">{data.itemsAttempted} attempted</span>
+          <span className="pd-note">of {data.itemsAttempted} tried · each question counts once, retries don&apos;t add (the Sessions page counts every answer)</span>
         </div>
         <div className={`pd-metric ${data.inTargetBand === false ? "out-band" : data.inTargetBand ? "in-band" : ""}`}>
           <span className="pd-label">Right on first try</span>
@@ -67,7 +67,7 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
       </div>
       <div className="pd-grid pd-split" style={{ marginTop: 14 }}>
         <section className="pd-card">
-          <h2>Goal rings</h2>
+          <h2>Today&apos;s goals</h2>
           <div className="pd-rings">
             {data.rings.map((ring) => (
               <GoalRing key={ring.id} {...ring} />
@@ -90,8 +90,8 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
           )}
         </section>
       </div>
-      <section className="pd-card" style={{ marginTop: 14 }} aria-label="Rush meter">
-        <h2>Rush meter</h2>
+      <section className="pd-card" style={{ marginTop: 14 }} aria-label="Slowing down to read">
+        <h2>Slowing down to read</h2>
         {data.rushMeter.level === "none" ? (
           <EmptyState title="No answers this week" body="Shows how often answers are fast wrong guesses (under 1.5 s)." />
         ) : (
@@ -119,7 +119,8 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
             <BarChart
               title="Engaged minutes by day"
               points={data.daily.map((day) => ({ x: day.day, y: day.minutes }))}
-              caption="Minutes she was actually working each day (ET)."
+              yLabel="minutes"
+              caption="Minutes she was actually working each day (ET). Left edge: minutes; bottom: first and last day shown."
             />
           )}
         </section>
@@ -135,6 +136,7 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
               yMin={0}
               yMax={1}
               band={{ low: ZONE_LOW, high: ZONE_HIGH }}
+              yFormat={(v) => `${Math.round(v * 100)}%`}
               caption="Shaded area is the healthy 70–95% range: hard enough to learn, easy enough to stay confident."
             />
           )}

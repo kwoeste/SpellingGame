@@ -123,12 +123,22 @@ export function ChapterPlayer({
   const [readReady, setReadReady] = useState(false);
   const lastActivity = useRef(Date.now());
 
+  const [slowLoad, setSlowLoad] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
-    postJson<{ session_id: string | null; preview: boolean; chapter: Progress | null }>("/api/engine/session/start", {
-      entry: "study",
-      chapterId: chapter.id,
-    })
+    // Only show a loading line if starting really takes a while, and never leave it up:
+    // after 10 s fall through to the same start as the offline fallback.
+    const slowTimer = setTimeout(() => setSlowLoad(true), 800);
+    const startTimeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 10_000));
+    Promise.race([
+      postJson<{ session_id: string | null; preview: boolean; chapter: Progress | null }>("/api/engine/session/start", {
+        entry: "study",
+        chapterId: chapter.id,
+      }),
+      startTimeout,
+    ])
+      .finally(() => clearTimeout(slowTimer))
       .then((json) => {
         if (cancelled) return;
         setSessionId(json.session_id);
@@ -274,7 +284,7 @@ export function ChapterPlayer({
         </p>
       ) : null}
 
-      {view.kind === "loading" ? <p>Loading…</p> : null}
+      {view.kind === "loading" && slowLoad ? <p className="kid-loading">Getting your place ready…</p> : null}
       {view.kind === "watch" && chapter.recap ? <WatchIt chapterId={chapter.id} recap={chapter.recap} onDone={finishWatch} /> : null}
       {view.kind === "media" && media ? (
         <MediaStart data={media} modality={view.modality} context={reteach.current ? "reteach" : "first_teach"} onDone={finishMedia} />

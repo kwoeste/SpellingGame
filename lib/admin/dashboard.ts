@@ -35,8 +35,17 @@ import {
 } from "@/lib/admin/types";
 import type { SubjectId } from "@/lib/content/types";
 import { HINT_AT_MISS, HINT_LEVEL_HINTED, HINT_LEVEL_REVEALED } from "@/lib/help/ladder";
-import type { AdminEventRow, AdminMasteryRow, PlaySession, ReviewRow } from "@/lib/engine/repo";
-import { isDue, isRusty } from "@/lib/engine/scheduler";
+import type { AdminEventRow, AdminMasteryRow, ChapterGateRecord, PlaySession, ReviewRow } from "@/lib/engine/repo";
+import { intervalDays, isDue, isRusty } from "@/lib/engine/scheduler";
+
+/**
+ * "Needs a refresh" means overdue by more than two review gaps. Box-0 items come back ~15 minutes
+ * after a miss on purpose, so a same-day re-ask is a normal review, never "rusty".
+ */
+export function overdueForRefresh(dueAt: number | string | Date, box: number, now: Date): boolean {
+  if (intervalDays(box) <= 0) return false;
+  return isRusty(new Date(dueAt), box, now);
+}
 
 export type XpRow = { learnerId: string; sessionId: string; minuteStart: number; xp: number };
 
@@ -64,6 +73,8 @@ export type DashboardSnapshot = {
   assignments: AssignmentRow[];
   goal: LearnerGoal | null;
   gatedChapterIds: string[];
+  /** Chapter star checks, oldest first. Optional so older fixtures still load. */
+  chapterGates?: ChapterGateRecord[];
 };
 
 const SUBJECTS: SubjectId[] = ["math", "science", "ela", "religion"];
@@ -141,7 +152,7 @@ export function buildKnowledgeNodes(snap: DashboardSnapshot): KnowledgeNode[] {
     const row = mastery.get(concept.id);
     const review = reviews.find((item) => item.targetType === "concept" && item.targetId === concept.id);
     const reviewDue = Boolean(review && isDue(new Date(review.dueAt), now));
-    const rusty = Boolean(review && isRusty(new Date(review.dueAt), review.box, now)) || row?.state === "rusty";
+    const rusty = Boolean(review && overdueForRefresh(review.dueAt, review.box, now)) || row?.state === "rusty";
     return {
       id: concept.id,
       subject: concept.subject,
@@ -225,13 +236,18 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
     }
     if (!isDue(new Date(review.dueAt), now)) continue;
     const concept = review.targetType === "concept" ? catalogConcept(review.targetId) : null;
-    const rusty = isRusty(new Date(review.dueAt), review.box, now);
+    const rusty = overdueForRefresh(review.dueAt, review.box, now);
+    const soon = intervalDays(review.box) <= 0;
     alerts.push({
       kind: rusty ? "rusty" : "review_due",
-      title: rusty ? `Needs a refresh: ${concept?.titleAdmin ?? targetName(review.targetId)}` : `Review due: ${concept?.titleAdmin ?? targetName(review.targetId)}`,
+      title: rusty
+        ? `Needs a refresh: ${concept?.titleAdmin ?? targetName(review.targetId)}`
+        : `${soon ? "Coming back for another try" : "Review due"}: ${concept?.titleAdmin ?? targetName(review.targetId)}`,
       detail: rusty
         ? `Not practiced in a while; a quick review was due ${formatEtDateTime(review.dueAt)}.`
-        : `Due ${formatEtDateTime(review.dueAt)}.`,
+        : soon
+          ? "Missed recently, so it comes back in her next session. This is normal."
+          : `Due ${formatEtDateTime(review.dueAt)}.`,
       targetType: review.targetType === "concept" ? "concept" : undefined,
       targetId: review.targetId,
       severity: rusty ? 3 : 2,
@@ -382,6 +398,54 @@ export function buildRushMeter(answers: AdminEventRow[], now: number): RushMeter
  * star rule (90% first-try right, hint level 1 or less), so a chapter can be 100% "answered right"
  * but still short of a star when some answers only came after retries or big hints.
  */
+export type StarInfo = {
+  /** How the star came: a passed check, a parent override, or a pass below today's 90% rule. */
+  how: "earned" | "parent" | "earlier_rule" | null;
+  earnedPct: number | null;
+  earnedAt: number | null;
+  /** First-try % using the gate's own rule: first answer per question in the current round. */
+  roundPct: number | null;
+  roundAnswered: number;
+  lastCheckPct: number | null;
+};
+
+/**
+ * Mirrors the engine's chapter gate (lib/engine/service runChapterGate): a round starts after the
+ * last star check, and each question's FIRST answer in that round counts (right, hint ≤ 1).
+ * The star itself comes from the first passed check and is never recomputed here.
+ */
+export function chapterStarInfo(
+  itemIds: string[],
+  events: Pick<AdminEventRow, "itemId" | "isCorrect" | "hintLevel" | "serverTs" | "type" | "isPreview">[],
+  gates: ChapterGateRecord[],
+  gateMin = 0.9,
+): StarInfo {
+  const sorted = [...gates].sort((a, b) => a.finishedAt - b.finishedAt);
+  const firstPass = sorted.find((g) => g.passed) ?? null;
+  const last = sorted.at(-1) ?? null;
+  const roundStart = last?.finishedAt ?? 0;
+  const ids = new Set(itemIds);
+  const first = new Map<string, { ts: number; ok: boolean }>();
+  for (const e of events) {
+    if (!e.itemId || !ids.has(e.itemId) || e.isPreview || (e.type && e.type !== "answer_submitted")) continue;
+    if (e.serverTs <= roundStart) continue;
+    const prev = first.get(e.itemId);
+    if (prev && prev.ts <= e.serverTs) continue;
+    first.set(e.itemId, { ts: e.serverTs, ok: e.isCorrect === true && (e.hintLevel ?? 0) <= 1 });
+  }
+  const ok = [...first.values()].filter((v) => v.ok).length;
+  let how: StarInfo["how"] = null;
+  if (firstPass) how = firstPass.override || firstPass.score === null ? "parent" : firstPass.score + 1e-6 < gateMin ? "earlier_rule" : "earned";
+  return {
+    how,
+    earnedPct: firstPass && firstPass.score !== null && !firstPass.override ? Math.round(firstPass.score * 100) : null,
+    earnedAt: firstPass?.finishedAt ?? null,
+    roundPct: first.size ? Math.round((ok / Math.max(1, itemIds.length)) * 100) : null,
+    roundAnswered: first.size,
+    lastCheckPct: last && last.score !== null && !last.override ? Math.round(last.score * 100) : null,
+  };
+}
+
 export function chapterFirstTryCorrect(events: Pick<AdminEventRow, "itemId" | "attemptNo" | "isCorrect" | "hintLevel" | "serverTs">[]): number {
   const latest = new Map<string, { ts: number; ok: boolean }>();
   for (const event of events) {
@@ -406,6 +470,8 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
       concepts: group.length,
       mastered,
       inProgress: group.filter((node) => node.state === "in_progress").length,
+      tried: group.filter((node) => node.attempts > 0).length,
+      notSolid: group.filter((node) => node.state === "missing").length,
       missing: group.filter((node) => node.state === "missing" || node.state === "not_started").length,
       reviewDue: group.filter((node) => node.state === "review_due").length,
       rusty: group.filter((node) => node.state === "rusty").length,
@@ -429,6 +495,11 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
     const attemptedIds = new Set(chapterEvents.map((event) => event.itemId));
     const last = chapterEvents.reduce<number | null>((max, event) => (max === null || event.serverTs > max ? event.serverTs : max), null);
     const firstTryCorrect = chapterFirstTryCorrect(chapterEvents);
+    const star = chapterStarInfo(
+      chapter.items.map((item) => item.id),
+      chapterEvents,
+      (snap.chapterGates ?? []).filter((g) => g.chapterId === chapter.id),
+    );
     return {
       chapterId: chapter.id,
       title: chapter.titleKid,
@@ -440,8 +511,9 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
       itemsAttempted: attemptedIds.size,
       masteryPct: pct(correctIds.size, chapter.items.length),
       firstTryCorrect,
-      firstTryPct: pct(firstTryCorrect, chapter.items.length),
+      firstTryPct: star.roundPct ?? pct(firstTryCorrect, chapter.items.length),
       gated: gated.has(chapter.id),
+      star,
       lastSeenAt: last,
     };
   });

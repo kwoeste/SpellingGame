@@ -78,6 +78,8 @@ export type GateAttempt = {
   overrideReason?: string | null;
 };
 
+export type ChapterGateRecord = { chapterId: string; score: number | null; passed: boolean; finishedAt: number; override: boolean };
+
 export type LikeRow = { interestTag: string; liked: boolean };
 
 export type StrategyRow = {
@@ -241,6 +243,8 @@ export interface AdminRepo {
   xpLedger(): Promise<Array<{ learnerId: string; sessionId: string; minuteStart: number; xp: number }>>;
   strategies(limit: number): Promise<Array<StrategyRow & { learnerId: string }>>;
   gatedChapterIds(learnerId: string): Promise<string[]>;
+  /** Read-only: every chapter star check (gate attempt) for the admin progress page. */
+  chapterGateAttempts(learnerId: string): Promise<ChapterGateRecord[]>;
   /** Parent override: record a passed chapter gate without a score. */
   overrideChapterGate(args: { learnerId: string; chapterId: string; by: string; reason: string | null; at: number }): Promise<void>;
   assignments(): Promise<AssignmentRecord[]>;

@@ -11,7 +11,7 @@ const LINKS = [
   { href: "/admin/sessions", label: "Study history" },
   { href: "/admin/learns-best", label: "How she learns" },
   { href: "/admin/assignments", label: "Assignments" },
-  { href: "/admin/inventory", label: "Shop supplies" },
+  { href: "/admin/inventory", label: "Shop inventory" },
   { href: "/admin/privacy", label: "Privacy" },
 ] as const;
 

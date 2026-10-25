@@ -82,6 +82,10 @@ export type SubjectProgress = {
   concepts: number;
   mastered: number;
   inProgress: number;
+  /** Skills she has answered at least once (same count the skills map shows as "tried"). */
+  tried?: number;
+  /** Tried but still often missed ("Not solid yet" on the skills map). */
+  notSolid?: number;
   missing: number;
   reviewDue: number;
   rusty: number;
@@ -108,6 +112,7 @@ export type ChapterProgressRow = {
   /** Items whose latest first try was right with no big hint: the same rule the chapter star uses. */
   firstTryCorrect: number;
   firstTryPct: number;
+  star?: import("@/lib/admin/dashboard").StarInfo;
   gated: boolean;
   lastSeenAt: number | null;
 };

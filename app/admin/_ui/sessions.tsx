@@ -17,17 +17,17 @@ export function SessionTimeline({ data }: { data: SessionHistoryView }) {
         <div className="pd-timeline">
           {data.sessions.map((session) => (
             <article className="pd-card pd-session" key={session.id}>
-              <time dateTime={new Date(session.startedAt).toISOString()}>{formatEtSpan(session.startedAt, session.endedAt ?? session.lastActivityAt)}</time>
+              <time className="pd-session-time" dateTime={new Date(session.startedAt).toISOString()}>{formatEtSpan(session.startedAt, session.endedAt ?? session.lastActivityAt)}</time>
               <div>
                 <strong>
                   {placeLabel(session.entryPoint)} · {session.engagedMinutes} min working
                 </strong>
                 <div className="pd-legend" style={{ marginTop: 6 }}>
-                  <span>{session.items} questions</span>
+                  <span>{session.items} answers</span>
                   <span>Right first try {formatPct(session.firstTryAccuracy)}</span>
                   <span>{session.xp} XP</span>
-                  {session.neededHelp ? <span className="pd-pill">Needed help on {session.neededHelp}</span> : null}
-                  <span className={`pd-pill ${session.pace}`}>{PACE_LABEL[session.pace] ?? session.pace}</span>
+                  {session.neededHelp ? <span className="pd-pill">Got stuck on {session.neededHelp} question{session.neededHelp === 1 ? "" : "s"}</span> : null}
+                  <span className={`pd-pill ${session.pace}`}>Pace: {PACE_LABEL[session.pace] ?? session.pace}</span>
                 </div>
                 <p className="pd-lead" style={{ margin: "8px 0 0" }}>
                   {sessionNote(session)}
