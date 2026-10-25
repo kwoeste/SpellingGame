@@ -27,6 +27,7 @@ export function SessionTimeline({ data }: { data: SessionHistoryView }) {
                   <span>{session.items} items</span>
                   <span>Accuracy {formatPct(session.firstTryAccuracy)}</span>
                   <span>{session.xp} XP</span>
+                  {session.neededHelp ? <span className="pd-pill rush">Needed help on {session.neededHelp}</span> : null}
                   <span className={`pd-pill ${session.pace}`}>{session.pace}</span>
                 </div>
                 <p className="pd-lead" style={{ margin: "8px 0 0" }}>

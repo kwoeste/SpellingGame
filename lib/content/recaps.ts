@@ -1,3 +1,4 @@
+import { eliminateChoices, helpStage, type StuckHelp } from "@/lib/help/ladder";
 /**
  * "Watch it" recaps: short narrated picture slides shown before Careful Read.
  * Original wording written for Mae (age 9); illustrations are original generated art in public/study/<chapterId>/.
@@ -189,10 +190,32 @@ export function toStudentRecap(recap: Recap | null): StudentRecap | null {
   return { slides: recap.slides, check: { prompt: recap.check.prompt, choices: recap.check.choices }, tryAtHome: recap.tryAtHome };
 }
 
-/** Server-side grading for the picture quick check; the answer never leaves the server. */
-export function gradeRecapCheck(chapterId: string, choiceId: string): { correct: boolean; feedback: string } | null {
+/** Server-side grading for the picture quick check; the answer never leaves the server until she is stuck. */
+export function gradeRecapCheck(
+  chapterId: string,
+  choiceId: string,
+  missesBefore = 0,
+): { correct: boolean; feedback: string; help: StuckHelp | null } | null {
   const recap = getRecap(chapterId);
   if (!recap || !recap.check.choices.some((c) => c.id === choiceId)) return null;
   const correct = recap.check.answer === choiceId;
-  return { correct, feedback: correct ? recap.check.feedbackCorrect : recap.check.feedbackWrong };
+  const misses = correct ? 0 : Math.max(0, Math.min(99, Math.floor(missesBefore) || 0)) + 1;
+  return { correct, feedback: correct ? recap.check.feedbackCorrect : recap.check.feedbackWrong, help: recapCheckHelp(recap, misses) };
+}
+
+/** Ladder help for the picture check: miss 4 removes wrong pictures, miss 5 shows the right one and why. */
+export function recapCheckHelp(recap: Recap, misses: number): StuckHelp | null {
+  const stage = helpStage(misses);
+  if (stage === "none") return null;
+  const ids = recap.check.choices.map((c) => c.id);
+  const removeChoices = eliminateChoices(ids, recap.check.answer, 1, recap.chapterId);
+  const hint = `${recap.check.feedbackWrong.replace(/^Not yet\.\s*/i, "")} Now pick from the two pictures left.`;
+  if (stage === "hint") return { stage, hint, removeChoices };
+  const right = recap.check.choices.find((c) => c.id === recap.check.answer);
+  return {
+    stage,
+    hint,
+    removeChoices: ids.filter((id) => id !== recap.check.answer),
+    reveal: { answer: `It's this picture: ${right?.alt ?? ""}`.trim(), why: recap.check.feedbackCorrect, response: recap.check.answer },
+  };
 }

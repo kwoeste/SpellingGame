@@ -8,6 +8,9 @@ import { chapterGatePassed, conceptGatePassed, masteryState } from "@/lib/engine
 import type { EngineRepo, LearnerTx, LikeRow, MasteryRow, PlaySession, ResumeState } from "@/lib/engine/repo";
 import { dueAt, etDateKey, nextBoxOnPass, onFail } from "@/lib/engine/scheduler";
 import { scoreItem } from "@/lib/engine/scoring";
+import { chapterItemHelp } from "@/lib/engine/help";
+import { getRecap } from "@/lib/content/recaps";
+import { HINT_AT_MISS, SHOW_ME_AT_MISS, type StuckHelp } from "@/lib/help/ladder";
 import { classifyGuess } from "@/lib/engine/strategy";
 import { ringPercent, truncateMinute, xpForMinute } from "@/lib/engine/xp";
 import { ewma, targetSuccess, zoneAction } from "@/lib/engine/zone";
@@ -58,6 +61,8 @@ export type AnswerFeedback = {
   preview: boolean;
   chapter: ChapterProgress | null;
   gate: GateOutcome | null;
+  /** Stuck-help ladder: present only on a wrong answer at miss HINT_AT_MISS or later. */
+  help?: StuckHelp | null;
 };
 
 type Located = { chapter: ChapterPack; item: ChapterItem };
@@ -134,7 +139,11 @@ async function chapterState(tx: LearnerTx, chapter: ChapterPack): Promise<Chapte
     attemptSince,
   );
   const readDone = (await tx.lastEventOfType("read_done", chapter.id, attemptSince)) !== null;
-  const firstOpen = chapter.items.findIndex((item) => !correct.has(item.id));
+  const skipped = new Set<string>();
+  for (const item of chapter.items) {
+    if (!correct.has(item.id) && (await tx.lastEventOfType("item_skipped", item.id, attemptSince)) !== null) skipped.add(item.id);
+  }
+  const firstOpen = chapter.items.findIndex((item) => !correct.has(item.id) && !skipped.has(item.id));
   const starEarned = last?.passed || (await tx.passedGateScopeIds("chapter")).includes(chapter.id);
   return {
     chapterId: chapter.id,
@@ -314,7 +323,17 @@ export async function startSession(
 export async function submitAnswer(
   repo: EngineRepo,
   actor: EngineActor,
-  input: { sessionId?: string | null; itemId: string; response: unknown; hintLevel?: unknown; latencyMs?: unknown; eventId?: string | null; now?: number },
+  input: {
+    sessionId?: string | null;
+    itemId: string;
+    response: unknown;
+    hintLevel?: unknown;
+    latencyMs?: unknown;
+    eventId?: string | null;
+    now?: number;
+    /** Wrong tries before this one, as the browser counted them. Used only for preview (no saved history). */
+    misses?: unknown;
+  },
 ): Promise<AnswerFeedback> {
   const now = input.now ?? Date.now();
   const located = locateItem(input.itemId);
@@ -329,7 +348,10 @@ export async function submitAnswer(
     proving_sentence_id: scored.proving?.id,
     read_aloud_text: scored.explanation,
   };
-  if (!actor.learnerId) return { ...base, session_id: null, preview: true, chapter: null, gate: null };
+  if (!actor.learnerId) {
+    const previewMisses = scored.correct ? 0 : clampInt(input.misses, 0, 99, 0) + 1;
+    return { ...base, session_id: null, preview: true, chapter: null, gate: null, help: chapterItemHelp(chapter, item, previewMisses) };
+  }
 
   const hintLevel = clampInt(input.hintLevel, 0, MAX_HINT_LEVEL, 0);
   const latencyMs = typeof input.latencyMs === "number" ? clampInt(input.latencyMs, 0, 3_600_000, 0) : null;
@@ -368,6 +390,9 @@ export async function submitAnswer(
 
     const rapidGuess = latencyMs !== null && latencyMs < RAPID_GUESS_MS && !scored.correct;
     await applyAnswer(tx, session, item, { correct: scored.correct, hintLevel, firstAttempt: attemptNo === 1, rapidGuess, now });
+    // Every earlier answer this session was wrong (a right one ends the step), so attemptNo is the miss count.
+    const misses = scored.correct ? 0 : attemptNo;
+    if (misses === HINT_AT_MISS) await queueReteach(tx, session, chapter, item, "stuck_after_misses", now);
     const guessed = latencyMs !== null && classifyGuess(latencyMs, 8000, scored.correct, 0);
     await tx.insertStrategy({
       eventId,
@@ -394,7 +419,89 @@ export async function submitAnswer(
       itemId: chapter.items[state.nextStep]?.id ?? null,
     };
     await tx.updateSession(session);
-    return { ...base, session_id: session.id, preview: false, chapter: publicProgress(state), gate };
+    return { ...base, session_id: session.id, preview: false, chapter: publicProgress(state), gate, help: chapterItemHelp(chapter, item, misses) };
+  });
+}
+
+/** Mastery is capped here when she needs the strong hint: the concept is "not learned yet". */
+export const RETEACH_P_MASTERY_CAP = 0.3;
+
+/**
+ * Stuck at HINT_AT_MISS (or skipped): mark the concept not mastered, put the item on the review queue
+ * for next session, and log a reteach decision naming what to re-teach (recap or careful read).
+ */
+async function queueReteach(tx: LearnerTx, session: PlaySession, chapter: ChapterPack, item: ChapterItem, reason: string, now: number) {
+  const row = (await tx.getMastery(item.conceptId)) ?? defaultMastery(item.conceptId);
+  row.pMastery = Math.min(row.pMastery, RETEACH_P_MASTERY_CAP);
+  row.gatePassedAt = null;
+  row.state = "missing";
+  await tx.upsertMastery(row);
+  const review = await tx.getReview("item", item.id);
+  await tx.upsertReview({
+    targetType: "item",
+    targetId: item.id,
+    box: 0,
+    dueAt: dueAt(new Date(now), 1).getTime(),
+    lastResult: "fail",
+    lapses: (review?.lapses ?? 0) + 1,
+  });
+  await tx.insertDecision(session.id, "reteach_queued", reason, {
+    item_id: item.id,
+    chapter_id: chapter.id,
+    concept_id: item.conceptId,
+    reteach_with: getRecap(chapter.id) ? "watch_recap" : "careful_read",
+    sentence_id: item.evidenceSentenceId ?? null,
+  });
+}
+
+/**
+ * "Skip for now" (offered only next to Show me): the step counts as done for moving on, never as correct,
+ * so the chapter star still needs it. The item is re-queued for a re-teach.
+ */
+export async function skipItem(
+  repo: EngineRepo,
+  actor: EngineActor,
+  input: { sessionId?: string | null; itemId: string; now?: number },
+): Promise<{ session_id: string | null; preview: boolean; chapter: ChapterProgress | null; gate: GateOutcome | null }> {
+  const now = input.now ?? Date.now();
+  const located = locateItem(input.itemId);
+  if (!located) throw new EngineError(404, "item_not_found");
+  const { chapter, item } = located;
+  if (!chapterVisibleTo(chapter, actor.role)) throw new EngineError(403, "chapter_not_available");
+  if (!actor.learnerId) return { session_id: null, preview: true, chapter: null, gate: null };
+  return repo.withLearner(actor.learnerId, async (tx) => {
+    const session = await currentSession(tx, input.sessionId ?? null, "study", now);
+    const misses = await tx.countAnswers(session.id, item.id);
+    if (misses < SHOW_ME_AT_MISS) throw new EngineError(400, "skip_not_offered_yet");
+    await tx.insertEvent({
+      id: crypto.randomUUID(),
+      sessionId: session.id,
+      learnerId: tx.learnerId,
+      seq: Math.min(2 ** 31 - 1, Math.max(0, now - session.startedAt)),
+      clientTs: null,
+      serverTs: now,
+      type: "item_skipped",
+      itemId: item.id,
+      activityId: item.id,
+      attemptNo: misses,
+      response: null,
+      isCorrect: null,
+      latencyMs: null,
+      hintLevel: null,
+      payload: { chapter_id: chapter.id, item_stem: item.stem, concept_id: item.conceptId, subject: chapter.subject, misses },
+      isPreview: false,
+    });
+    await queueReteach(tx, session, chapter, item, "skipped", now);
+    let state = await chapterState(tx, chapter);
+    let gate: GateOutcome | null = null;
+    if (state.nextStep >= chapter.items.length) {
+      gate = await runChapterGate(tx, chapter, state.attemptSince, now);
+      state = await chapterState(tx, chapter);
+    }
+    session.lastEventAt = now;
+    session.resumeState = { ...session.resumeState, chapterId: chapter.id, activityId: item.activityId, itemId: chapter.items[state.nextStep]?.id ?? null };
+    await tx.updateSession(session);
+    return { session_id: session.id, preview: false, chapter: publicProgress(state), gate };
   });
 }
 

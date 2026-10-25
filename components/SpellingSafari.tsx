@@ -8,6 +8,9 @@ import { useKidPrefs } from "@/components/ui/KidPrefs";
 import { playSound } from "@/lib/ui/sounds";
 import { spellingAudioFile, type SpellingList } from "@/lib/games/spelling-lists";
 import { loadProgress, saveProgress, clearProgress } from "@/lib/games/spelling-progress";
+import { StuckHelpPanel } from "@/components/ui/StuckHelpPanel";
+import { spellingHelp } from "@/lib/help/games";
+import { letterHint } from "@/lib/help/ladder";
 
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -16,6 +19,11 @@ function shuffle<T>(items: T[]): T[] {
     [next[i], next[j]] = [next[j], next[i]];
   }
   return next;
+}
+
+/** The hint shows the first half of the word (or what she has already spelled, if that is more). */
+function letterHintFor(word: string, spelled: number): string {
+  return letterHint(word, Math.max(Math.ceil(word.length / 2), spelled));
 }
 
 export function SpellingSafari({ list }: { list: SpellingList }) {
@@ -32,8 +40,14 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
   const [restored, setRestored] = useState(false);
   const token = useRef(0);
   const clip = useRef<HTMLAudioElement | null>(null);
+  // This round's words; a skipped word is added to the end so it comes back later.
+  const queue = useRef<string[]>(list.words);
+  // Stuck-help ladder for the current word.
+  const [misses, setMisses] = useState(0);
+  const [help, setHelp] = useState<ReturnType<typeof spellingHelp>>(null);
+  const [revealed, setRevealed] = useState(false);
 
-  const word = list.words[index] ?? "";
+  const word = queue.current[index] ?? "";
   const totalRounds = 2;
 
   function buildLetters(current: string, currentRound: number) {
@@ -74,7 +88,10 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
   }
 
   function show(nextIndex = index, nextRound = round) {
-    const current = list.words[nextIndex];
+    const current = queue.current[nextIndex];
+    setMisses(0);
+    setHelp(null);
+    setRevealed(false);
     if (!current) {
       setDone(true);
       setCelebrate(true);
@@ -112,6 +129,14 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
   function guess(letter: string, buttonIndex: number) {
     if (!word || letter !== word[letterIndex]) {
       setMessage("Try again! That is not the next letter.");
+      const nextMisses = misses + 1;
+      setMisses(nextMisses);
+      const nextHelp = spellingHelp(word, nextMisses);
+      if (nextHelp && nextHelp.stage !== help?.stage) {
+        setHelp(nextHelp);
+        prefs.speak(nextHelp.speak);
+        logGame(nextHelp.stage === "hint" ? "stuck" : "show_me_offered", nextMisses);
+      }
       setFlash((prev) => ({ ...prev, [buttonIndex]: "incorrect" }));
       playSound("wrong", prefs.soundOn);
       window.setTimeout(() => setFlash((prev) => ({ ...prev, [buttonIndex]: undefined as unknown as "incorrect" })), 700);
@@ -128,22 +153,50 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
     if (joined === word) {
       setMessage("Yes!");
       playSound("correct", prefs.soundOn);
-      window.setTimeout(() => {
-        let nextIndex = index;
-        let nextRound = round;
-        if (index + 1 >= list.words.length && round < totalRounds) {
-          nextRound = round + 1;
-          nextIndex = 0;
-          setRound(nextRound);
-          setIndex(nextIndex);
-        } else {
-          nextIndex = index + 1;
-          setIndex(nextIndex);
-        }
-        saveProgress(list.id, nextIndex, nextRound);
-        show(nextIndex, nextRound);
-      }, 900);
+      if (misses) logGame(revealed ? "revealed_then_spelled" : "spelled_after_help", misses);
+      window.setTimeout(advance, 900);
     }
+  }
+
+  function advance() {
+    let nextIndex = index;
+    let nextRound = round;
+    if (index + 1 >= queue.current.length && round < totalRounds) {
+      nextRound = round + 1;
+      nextIndex = 0;
+      queue.current = list.words;
+      setRound(nextRound);
+      setIndex(nextIndex);
+    } else {
+      nextIndex = index + 1;
+      setIndex(nextIndex);
+    }
+    saveProgress(list.id, nextIndex, nextRound);
+    show(nextIndex, nextRound);
+  }
+
+  function logGame(detail: string, missCount: number) {
+    void fetch("/api/engine/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        entry: "games",
+        events: [{ id: crypto.randomUUID(), type: "game_event", payload: { game_id: "spelling", list_id: list.id, item: word, detail, misses: missCount } }],
+      }),
+    }).catch(() => undefined);
+  }
+
+  function showMe() {
+    if (!help?.reveal) return;
+    setRevealed(true);
+    prefs.speak(help.speak);
+    logGame("revealed", misses);
+  }
+
+  function skipWord() {
+    logGame("skipped", misses);
+    if (queue.current.filter((w) => w === word).length < 2) queue.current = [...queue.current, word];
+    advance();
   }
 
   if (done) {
@@ -166,17 +219,22 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
       {restored && index > 0 ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
       <p>{list.tagline}</p>
       <p id="word-counter">
-        Round {round} of {totalRounds}, Word {index + 1} of {list.words.length}
+        Round {round} of {totalRounds}, Word {index + 1} of {queue.current.length}
       </p>
       <p aria-live="polite" style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem" }}>
         Spell the word: {guessed.split("").join(" ")}
       </p>
+      {help && !revealed ? (
+        <p className="spell-hint" aria-label="Letter clue">
+          {letterHintFor(word, letterIndex)}
+        </p>
+      ) : null}
       <div className="letter-pad" role="group" aria-label="Letter choices">
         {letters.map((letter, idx) => (
           <button
             key={`${letter}-${idx}`}
             type="button"
-            className={flash[idx] ?? ""}
+            className={`${flash[idx] ?? ""}${revealed && letter === word[letterIndex] && flash[idx] !== "correct" ? " tile next-letter" : ""}`}
             disabled={round < 2 && flash[idx] === "correct"}
             onClick={() => guess(letter, idx)}
           >
@@ -187,6 +245,7 @@ export function SpellingSafari({ list }: { list: SpellingList }) {
       <p role="status" aria-live="assertive">
         {message}
       </p>
+      <StuckHelpPanel help={help} revealed={revealed} onShowMe={showMe} onSkip={skipWord} />
       <button className="btn secondary" onClick={() => speakWord(word)} style={{ marginTop: 12 }}>
         Replay word
       </button>

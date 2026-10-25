@@ -149,9 +149,27 @@ export type StrategyPattern = {
   detail: string;
 };
 
+/** One item she got stuck on (reached the stuck-help ladder's strong hint, Show me, or skipped). */
+export type NeedsReteachRow = {
+  key: string;
+  source: "chapter" | "watch_check" | "game";
+  label: string;
+  chapterId: string | null;
+  conceptId: string | null;
+  /** Most wrong tries in one sitting. */
+  maxMisses: number;
+  hints: number;
+  reveals: number;
+  skips: number;
+  lastTs: number;
+  /** Later got it right on the first try with no help. */
+  cleared: boolean;
+};
+
 export type WrongAnswerView = {
   rows: WrongAnswerRow[];
   patterns: StrategyPattern[];
+  needsReteach: NeedsReteachRow[];
 };
 
 export type PaceFlag = "ok" | "skim" | "skip" | "rush";
@@ -169,6 +187,8 @@ export type SessionHistoryRow = {
   pace: PaceFlag;
   paceNote: string;
   rollingSuccess: number;
+  /** Items she needed the stuck-help ladder on in this session. */
+  neededHelp: number;
 };
 
 export type SessionHistoryView = {

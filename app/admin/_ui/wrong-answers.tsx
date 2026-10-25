@@ -52,6 +52,45 @@ export function WrongAnswerTable({ data }: { data: WrongAnswerView }) {
         The item as she saw it, her answer, the correct answer, hints, latency, and the inferred or
         labeled strategy. First-attempt only is on by default.
       </p>
+      {data.needsReteach.length > 0 ? (
+        <section className="pd-card" style={{ marginBottom: 14 }} data-testid="needs-reteach">
+          <h2>Needs re-teach</h2>
+          <p className="pd-lead">
+            Items where she reached the strong hint (4 misses), used Show me, or skipped. Chapter items are re-queued
+            for next session automatically.
+          </p>
+          <table className="pd-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Where</th>
+                <th>Most misses</th>
+                <th>Hints</th>
+                <th>Show me</th>
+                <th>Skips</th>
+                <th>Last</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.needsReteach.map((row) => (
+                <tr key={row.key}>
+                  <td>{row.label}</td>
+                  <td>{row.source === "chapter" ? row.chapterId : row.source === "watch_check" ? "Watch it" : "Game"}</td>
+                  <td>{row.maxMisses}</td>
+                  <td>{row.hints}</td>
+                  <td>{row.reveals}</td>
+                  <td>{row.skips}</td>
+                  <td>{formatEtDateTime(row.lastTs)}</td>
+                  <td>
+                    <span className={`pd-pill ${row.cleared ? "mastered" : "missing"}`}>{row.cleared ? "cleared" : "needs re-teach"}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ) : null}
       {data.patterns.length > 0 ? (
         <section className="pd-card" style={{ marginBottom: 14 }}>
           <h2>Patterns</h2>
