@@ -140,11 +140,11 @@ const col: CompactChapter[] = [
     bigQuestion: "How do we choose what is right?",
     paragraphs: [
       "Conscience is the quiet inner voice that helps us know right from wrong. We form it by learning God's way.",
-      "A venial sin wounds love. A mortal sin is a serious free choice that turns us away from God. God is always ready to forgive a sorry heart.",
+      "A venial sin wounds love. A mortal sin is a very serious wrong that a person knows is wrong and freely chooses anyway. It turns us away from God. God is always ready to forgive a sorry heart.",
     ],
     vocab: [
       { word: "conscience", definition: "the inner voice that helps us know right from wrong" },
-      { word: "mortal sin", definition: "a serious free choice that turns us from God" },
+      { word: "mortal sin", definition: "a very serious sin, chosen freely and knowingly, that turns us from God" },
       { word: "venial sin", definition: "a less serious sin that wounds love" },
     ],
     sequence: ["We face a choice", "We listen to conscience", "We choose", "We ask forgiveness if we fail"],
@@ -191,7 +191,7 @@ const col: CompactChapter[] = [
     bigQuestion: "How does God guide our choices?",
     paragraphs: [
       "God made a covenant, a holy promise, with his people. The Ten Commandments show us how to love God and love our neighbor.",
-      "The first three commandments honor God. The other seven teach us to honor family, life, truth, and what belongs to others.",
+      "The first three commandments honor God. The other seven teach us to honor family, life, marriage, truth, and what belongs to others.",
     ],
     vocab: [
       { word: "covenant", definition: "a holy promise between God and people" },
@@ -265,11 +265,11 @@ const col: CompactChapter[] = [
     unit: "Unit 3",
     bigQuestion: "Why do we honor God's name?",
     paragraphs: [
-      "God told Moses the holy name “I AM.” The name of Jesus is holy too.",
-      "Blasphemy is using God's name in a hateful or empty way. We honor God's name when we speak it with love and keep our promises.",
+      "God told Moses his holy name: I AM. The name of Jesus is holy too.",
+      "Blasphemy is speaking about God or holy things with hate or scorn. We honor God's name when we speak it with love and keep our promises.",
     ],
     vocab: [
-      { word: "blasphemy", definition: "using God's name in a hateful or empty way" },
+      { word: "blasphemy", definition: "speaking about God or holy things with hate or scorn" },
     ],
     sequence: ["Moses meets God", "God shares the holy name", "We learn Jesus' name", "We speak it with love"],
     proofs: [
@@ -277,7 +277,7 @@ const col: CompactChapter[] = [
         stem: "How should we use God's name?",
         options: ["As a joke only", "With love and care", "Never at all in prayer", "To scare people"],
         answer: 1,
-        evidence: 2,
+        evidence: 3,
         why: "Not yet. Find the sentence about speaking the name with love.",
       },
     ],
@@ -458,17 +458,17 @@ const col: CompactChapter[] = [
     unit: "Unit 4",
     bigQuestion: "Why does truth matter?",
     paragraphs: [
-      "Jesus suffered for the truth. A martyr is someone who stays faithful to God even when it costs everything.",
+      "Jesus suffered for the truth. A martyr is someone who gives up their life rather than turn away from God.",
       "We practice truth in small ways: honest words, keeping secrets that should be kept, and speaking up kindly.",
     ],
     vocab: [
-      { word: "martyr", definition: "someone who stays faithful to God even at great cost" },
+      { word: "martyr", definition: "someone who gives up their life rather than turn away from God" },
     ],
     sequence: ["A hard choice appears", "We tell the truth", "It may cost us", "God is still with us"],
     proofs: [
       {
         stem: "What is a martyr?",
-        options: ["A market seller", "Someone faithful to God at great cost", "A kind of feast only", "A Roman road"],
+        options: ["A market seller", "Someone who gives their life for God", "A kind of feast only", "A Roman road"],
         answer: 1,
         evidence: 1,
         why: "Not yet. Find the sentence that names a martyr.",
@@ -495,7 +495,7 @@ const col: CompactChapter[] = [
         options: ["Only maps of Europe", "Living love in daily choices", "Building circuits", "Counting dice"],
         answer: 1,
         evidence: 2,
-        why: "Not yet. Look at the first paragraph.",
+        why: "Not yet. Find the sentence about practicing love.",
       },
     ],
   }),
@@ -506,7 +506,7 @@ const col: CompactChapter[] = [
     unit: "Unit 5",
     bigQuestion: "What kind of happiness does Jesus bless?",
     paragraphs: [
-      "On a mountain, Jesus taught the Beatitudes. He said people who are poor in spirit, merciful, and peacemaking are blessed.",
+      "On a mountain, Jesus taught the Beatitudes. He said the poor in spirit, the merciful, and the peacemakers are blessed.",
       "The Sermon on the Mount shows a way of living that looks like God's heart. Happiness here is deeper than getting every toy.",
     ],
     vocab: [
