@@ -110,4 +110,26 @@ describe("GitHub Pages publish list", () => {
     );
     expect(leaks).toEqual([]);
   });
+  it("never ships the xAI key, key name, or xAI endpoint in any client chunk", () => {
+    const dir = path.join(process.cwd(), ".next/static");
+    expect(existsSync(dir)).toBe(true);
+    const files: string[] = [];
+    const walk = (d: string) => {
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith(".js")) files.push(full);
+      }
+    };
+    walk(dir);
+    expect(files.length).toBeGreaterThan(0);
+    const secret = process.env.XAI_API_KEY;
+    for (const file of files) {
+      const js = readFileSync(file, "utf8");
+      expect(js, file).not.toContain("XAI_API_KEY");
+      expect(js, file).not.toContain("api.x.ai");
+      expect(js, file).not.toContain("tts_cache");
+      if (secret) expect(js, file).not.toContain(secret);
+    }
+  });
 });

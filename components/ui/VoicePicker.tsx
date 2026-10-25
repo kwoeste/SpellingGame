@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { VOICE_RATES, rankVoices } from "@/lib/ui/voice";
+import { GROK_PREFIX, GROK_VOICES } from "@/lib/tts/core";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
 
 export function VoicePicker({ compact = false }: { compact?: boolean }) {
@@ -32,25 +33,43 @@ export function VoicePicker({ compact = false }: { compact?: boolean }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!prefs.voiceName && voices[0]) prefs.setVoiceName(voices[0].name);
-  }, [prefs, voices]);
+  // Show the voice that will really be used. With no Grok key, Grok voices are hidden entirely.
+  const selected = prefs.activeVoiceName || voices[0]?.name || "";
 
   return (
     <div className="voice-panel" role="group" aria-label="Voice options">
       <label>
         Voice
         <select
-          value={prefs.voiceName}
+          value={selected}
           onChange={(e) => prefs.setVoiceName(e.target.value)}
           aria-label="Choose a reading voice"
         >
+          {prefs.grokEnabled ? (
+            <optgroup label="Grok voices">
+              {GROK_VOICES.map((voice) => (
+                <option key={voice.id} value={`${GROK_PREFIX}${voice.id}`}>
+                  {voice.kidName}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
           {voices.length === 0 ? <option value="">Browser voice</option> : null}
-          {voices.map((voice) => (
-            <option key={voice.name} value={voice.name}>
-              {voice.name}
-            </option>
-          ))}
+          {prefs.grokEnabled && voices.length > 0 ? (
+            <optgroup label="Device voices">
+              {voices.map((voice) => (
+                <option key={voice.name} value={voice.name}>
+                  {voice.name}
+                </option>
+              ))}
+            </optgroup>
+          ) : (
+            voices.map((voice) => (
+              <option key={voice.name} value={voice.name}>
+                {voice.name}
+              </option>
+            ))
+          )}
         </select>
       </label>
       <label>

@@ -30,7 +30,7 @@ export function isGatedStudentPath(pathname: string): boolean {
   const first = segs[0];
   if (!first) return false;
   if (["study", "games", "spelling-game", "number-match", "my-progress"].includes(first)) return true;
-  if (first === "api" && segs[1] === "engine") return true;
+  if (first === "api" && (segs[1] === "engine" || segs[1] === "tts")) return true;
   return false;
 }
 

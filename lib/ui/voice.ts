@@ -1,6 +1,10 @@
+import { DEFAULT_GROK_VOICE_NAME, GROK_PREFIX, grokVoiceFromName } from "@/lib/tts/core";
+
 export const VOICE_NAME_KEY = "mae-voice-name";
 export const VOICE_RATE_KEY = "mae-voice-rate";
 export const SOUND_KEY = "mae-sound";
+/** Set once the kid (or a parent) picks a voice by hand; until then Grok's default voice wins when available. */
+export const VOICE_CHOSEN_KEY = "mae-voice-chosen";
 
 export const VOICE_RATES = [
   { value: 0.7, label: "Slow" },
@@ -12,12 +16,14 @@ export type VoicePrefs = {
   voiceName: string;
   rate: number;
   soundOn: boolean;
+  voiceChosen: boolean;
 };
 
 export const DEFAULT_VOICE_PREFS: VoicePrefs = {
   voiceName: "",
   rate: 0.85,
   soundOn: true,
+  voiceChosen: false,
 };
 
 /** Higher score = nicer sounding. Names vary by browser and device. */
@@ -70,6 +76,7 @@ export function readVoicePrefs(): VoicePrefs {
     voiceName: storageGet(VOICE_NAME_KEY) ?? "",
     rate,
     soundOn: sound !== "off",
+    voiceChosen: storageGet(VOICE_CHOSEN_KEY) === "1",
   };
 }
 
@@ -79,7 +86,22 @@ export function writeVoicePrefs(prefs: Partial<VoicePrefs>): VoicePrefs {
   storageSet(VOICE_NAME_KEY, next.voiceName);
   storageSet(VOICE_RATE_KEY, String(next.rate));
   storageSet(SOUND_KEY, next.soundOn ? "on" : "off");
+  storageSet(VOICE_CHOSEN_KEY, next.voiceChosen ? "1" : "0");
   return next;
+}
+
+/**
+ * Which voice actually reads aloud. Grok voices ("grok:luna") are used only when the server says
+ * Grok TTS is enabled; otherwise everything behaves exactly like the browser-voice setup.
+ */
+export function effectiveVoiceName(prefs: Pick<VoicePrefs, "voiceName" | "voiceChosen">, grokEnabled: boolean): string {
+  const grok = grokVoiceFromName(prefs.voiceName);
+  if (grokEnabled) {
+    if (grok) return prefs.voiceName;
+    if (!prefs.voiceChosen || !prefs.voiceName) return DEFAULT_GROK_VOICE_NAME;
+    return prefs.voiceName;
+  }
+  return prefs.voiceName.startsWith(GROK_PREFIX) ? "" : prefs.voiceName;
 }
 
 export function applyVoice(utterance: SpeechSynthesisUtterance, prefs: VoicePrefs, voices: SpeechSynthesisVoice[]): void {
