@@ -157,7 +157,28 @@ export interface LearnerTx {
   saveSessionPlan(row: SessionPlanRecord): Promise<void>;
   /** Sign-ins on this ET day that called the AI planner (for the per-day safety cap). */
   aiPlanAttempts(day: string): Promise<number>;
+  insertEpisode(row: ModalityEpisode): Promise<void>;
+  /** Latest unresolved episode for this item, if any. */
+  openEpisode(itemId: string): Promise<ModalityEpisode | null>;
+  resolveEpisode(id: string, success: boolean, at: number): Promise<void>;
+  /** Every episode for this learner (small: one per re-teach). */
+  listEpisodes(): Promise<ModalityEpisode[]>;
 }
+
+export type Modality = "watch" | "read" | "retry";
+export type ModalityEpisode = {
+  id: string;
+  itemId: string;
+  conceptId: string;
+  subject: string;
+  context: "reteach";
+  modality: Modality;
+  chosenBy: "thompson" | "explore" | "only_option";
+  samples: Record<string, number>;
+  startedAt: number;
+  resolvedAt: number | null;
+  success: boolean | null;
+};
 
 export type SessionPlanRecord = {
   loginId: string;
@@ -195,6 +216,7 @@ export interface AdminRepo {
   updateAssignment(id: string, patch: Partial<Pick<AssignmentRecord, "status" | "completedAt">>): Promise<AssignmentRecord | null>;
   goals(): Promise<LearnerGoalRecord[]>;
   sessionPlans(sinceDay: string): Promise<Array<SessionPlanRecord & { learnerId: string }>>;
+  modalityEpisodes(): Promise<Array<ModalityEpisode & { learnerId: string }>>;
   upsertGoal(goal: LearnerGoalRecord): Promise<void>;
   relabelStrategy(eventId: string, learnerId: string, strategy: string, createdBy: string): Promise<void>;
 }

@@ -6,6 +6,7 @@ import type {
   GateAttempt,
   ItemRating,
   SessionPlanRecord,
+  ModalityEpisode,
   LearnerGoalRecord,
   LearnerTx,
   LikeRow,
@@ -32,6 +33,7 @@ type MemoryState = {
   assignments: AssignmentRecord[];
   goals: Map<string, LearnerGoalRecord>;
   plans: Map<string, SessionPlanRecord & { learnerId: string }>;
+  episodes: (ModalityEpisode & { learnerId: string })[];
 };
 
 function emptyState(): MemoryState {
@@ -51,6 +53,7 @@ function emptyState(): MemoryState {
     assignments: [],
     goals: new Map(),
     plans: new Map(),
+    episodes: [],
   };
 }
 
@@ -200,6 +203,24 @@ class MemoryLearnerTx implements LearnerTx {
     if (!state.plans.has(key)) state.plans.set(key, clone({ ...row, learnerId: this.learnerId }));
   }
 
+  async insertEpisode(row: ModalityEpisode) {
+    state.episodes.push(clone({ ...row, learnerId: this.learnerId }));
+  }
+  async openEpisode(itemId: string) {
+    const open = state.episodes.filter((e) => e.learnerId === this.learnerId && e.itemId === itemId && e.resolvedAt === null);
+    const last = open.sort((a, b) => b.startedAt - a.startedAt)[0];
+    if (!last) return null;
+    const { learnerId: _l, ...rest } = last;
+    void _l;
+    return clone(rest);
+  }
+  async resolveEpisode(id: string, success: boolean, at: number) {
+    const row = state.episodes.find((e) => e.id === id && e.learnerId === this.learnerId);
+    if (row && row.resolvedAt === null) Object.assign(row, { success, resolvedAt: at });
+  }
+  async listEpisodes() {
+    return clone(state.episodes.filter((e) => e.learnerId === this.learnerId).map(({ learnerId: _l, ...rest }) => (void _l, rest)));
+  }
   async aiPlanAttempts(day: string) {
     return [...state.plans.values()].filter((row) => row.learnerId === this.learnerId && row.day === day && row.aiAttempted).length;
   }
@@ -359,6 +380,9 @@ export const memoryAdminRepo: AdminRepo = {
     if (!found) return null;
     Object.assign(found, patch);
     return clone(found);
+  },
+  async modalityEpisodes() {
+    return clone(state.episodes);
   },
   async sessionPlans(sinceDay: string) {
     return clone([...state.plans.values()].filter((row) => row.day >= sinceDay).sort((a, b) => b.createdAt - a.createdAt));

@@ -53,8 +53,13 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Re-teach starts with the chapter's Watch it recap when there is one, else the Careful Read. */
-export function reteachStart(hasRecap: boolean): View {
+/**
+ * Re-teach starts with the modality the server's chooser picked (watch recap, careful read, or a
+ * straight retry); without a pick, the Watch it recap when there is one, else the Careful Read.
+ */
+export function reteachStart(hasRecap: boolean, startWith?: "watch" | "read" | "retry" | null, index = 0): View {
+  if (startWith === "retry") return { kind: "step", index };
+  if (startWith === "read" || (startWith === "watch" && !hasRecap)) return { kind: "read" };
   return hasRecap ? { kind: "watch" } : { kind: "read" };
 }
 
@@ -69,12 +74,14 @@ export function ChapterPlayer({
   isAdmin,
   nextChapterHref,
   reteachItemId = null,
+  reteachStartWith = null,
 }: {
   chapter: StudentChapter;
   isAdmin: boolean;
   nextChapterHref: string | null;
   /** "Let's try this again": recap (or Careful Read) first, then straight to this step. */
   reteachItemId?: string | null;
+  reteachStartWith?: "watch" | "read" | "retry" | null;
 }) {
   const reteachIndex = reteachItemId ? chapter.steps.findIndex((step) => step.itemId === reteachItemId) : -1;
   const reteach = useRef(reteachIndex >= 0);
@@ -99,7 +106,9 @@ export function ChapterPlayer({
         setPreview(json.preview);
         setProgress(json.chapter);
         if (reteach.current) {
-          setView(reteachStart(Boolean(chapter.recap)));
+          const start = reteachStart(Boolean(chapter.recap), reteachStartWith, reteachIndex);
+          if (start.kind === "step") reteach.current = false;
+          setView(start);
           return;
         }
         setWelcomeBack(Boolean(json.chapter && (json.chapter.readDone || json.chapter.nextStep > 0)));
@@ -108,7 +117,7 @@ export function ChapterPlayer({
       .catch(() => {
         if (cancelled) return;
         setError("We couldn't load your place. Check the internet and refresh.");
-        setView(reteach.current ? reteachStart(Boolean(chapter.recap)) : chapter.recap ? { kind: "watch" } : { kind: "read" });
+        setView(reteach.current ? reteachStart(Boolean(chapter.recap), reteachStartWith, reteachIndex) : chapter.recap ? { kind: "watch" } : { kind: "read" });
       });
     return () => {
       cancelled = true;
@@ -208,7 +217,10 @@ export function ChapterPlayer({
       {preview ? <p className="notice">Preview: answers are checked but not saved.</p> : null}
       {progress?.starEarned ? <p aria-label="Star earned">⭐ You earned the star for this chapter.</p> : null}
       {reteachIndex >= 0 && view.kind !== "done" ? (
-        <p className="notice try-again-note">Let&apos;s try this again! {chapter.recap ? "Watch the recap" : "Read it once more"}, then try question {reteachIndex + 1}.</p>
+        <p className="notice try-again-note">Let&apos;s try this again!{" "}
+          {reteachStartWith === "retry"
+            ? `Give question ${reteachIndex + 1} a fresh try.`
+            : `${reteachStartWith !== "read" && chapter.recap ? "Watch the recap" : "Read it once more"}, then try question ${reteachIndex + 1}.`}</p>
       ) : welcomeBack && view.kind !== "done" ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
       <p className="kid-kicker">{view.kind === "keywords" ? "Words you'll see" : chapter.bigQuestion}</p>
       {error ? (
