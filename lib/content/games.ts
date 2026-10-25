@@ -85,7 +85,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     ],
   },
   "ten-commandments": {
-    pendingReligionReview: true,
+    pendingReligionReview: false, // approved by Kevin 2026-10-25
     prompt: "Love God (1–3) or love neighbor (4–10)?",
     bins: ["Love God", "Love Neighbor"],
     items: [
@@ -96,7 +96,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     ],
   },
   beatitudes: {
-    pendingReligionReview: true,
+    pendingReligionReview: false, // approved by Kevin 2026-10-25
     prompt: "Match the blessing to the promise.",
     bins: ["merciful", "peacemakers", "poor in spirit", "those who mourn"],
     items: [
@@ -107,7 +107,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     ],
   },
   "church-year": {
-    pendingReligionReview: true,
+    pendingReligionReview: false, // approved by Kevin 2026-10-25
     prompt: "Place the day on the Church-year wheel.",
     bins: ["Advent", "Christmas", "Lent", "Easter"],
     items: [
@@ -118,7 +118,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     ],
   },
   "prayer-builder": {
-    pendingReligionReview: true,
+    pendingReligionReview: false, // approved by Kevin 2026-10-25
     prompt: "Build the Lord's Prayer in order.",
     bins: ["1", "2", "3", "4"],
     items: [
@@ -129,7 +129,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     ],
   },
   "saint-cards": {
-    pendingReligionReview: true,
+    pendingReligionReview: false, // approved by Kevin 2026-10-25
     prompt: "Who am I? Sort the saint to the clue.",
     bins: ["Joan of Arc", "John Bosco", "Francis", "Martha"],
     items: [
@@ -169,7 +169,12 @@ export function gameSpec(id: GameId): GameSpec {
   return GAME_DATA[id];
 }
 
+/** Games flagged pendingReligionReview stay admin-only until approved. */
+export function specVisibleTo(spec: Pick<GameSpec, "pendingReligionReview">, role: AppRole): boolean {
+  return role === "admin" || !spec.pendingReligionReview;
+}
+
 export function gameVisibleTo(id: string, role: AppRole): boolean {
   if (!isGameId(id)) return false;
-  return role === "admin" || !GAME_DATA[id].pendingReligionReview;
+  return specVisibleTo(GAME_DATA[id], role);
 }

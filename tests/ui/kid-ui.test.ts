@@ -65,7 +65,7 @@ describe("arcade and header chrome", () => {
       expect(tiles.some((tile) => tile.title === expectedTitle)).toBe(true);
     }
     expect(tiles.some((tile) => tile.href === "/number-match")).toBe(true);
-    expect(tiles.every((tile) => tile.group !== "religion")).toBe(true);
+    expect(tiles.filter((tile) => tile.group === "religion")).toHaveLength(5);
     expect(featuredTile(tiles).badge === "recommended" || featuredTile(tiles).id.startsWith("spelling")).toBe(true);
   });
 

@@ -21,7 +21,15 @@ describe("chapter packs", () => {
       expect(chapter.items.some((item) => item.type === "mc")).toBe(true);
     }
     expect(NAMED_GAMES).toHaveLength(13);
-    expect(listChapters().filter((c) => c.pendingReligionReview)).toHaveLength(25);
+    // Kevin approved all religion content on 2026-10-25.
+    const religion = listChapters().filter((c) => c.subject === "religion");
+    expect(religion).toHaveLength(25);
+    for (const c of religion) {
+      expect(c.pendingReligionReview).toBe(false);
+      expect(c.reviewStatus).toBe("kevin_approved");
+      expect(c.bibleTranslation).toBeTruthy();
+    }
+    expect(listChapters().filter((c) => c.pendingReligionReview)).toHaveLength(0);
   });
 });
 

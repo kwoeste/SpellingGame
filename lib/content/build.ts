@@ -83,7 +83,9 @@ export function buildChapter(compact: CompactChapter): ChapterPack {
       feedbackWrong: proof.why,
     });
   });
-  const reviewStatus: ReviewStatus = compact.religion ? "pending_religion_review" : "draft";
+  // Kevin approved all religion content on 2026-10-25 ("Approve religion."). New religion content that
+  // needs review can set pendingReligionReview again; the gating in chapterVisibleTo still applies.
+  const reviewStatus: ReviewStatus = compact.religion ? "kevin_approved" : "draft";
   return {
     id: compact.id,
     book: compact.book,
@@ -94,7 +96,7 @@ export function buildChapter(compact: CompactChapter): ChapterPack {
     bigQuestion: compact.bigQuestion,
     storyHook: compact.storyHook,
     reviewStatus,
-    pendingReligionReview: compact.religion,
+    pendingReligionReview: false,
     bibleTranslation: compact.religion ? bibleTranslation() : undefined,
     provenance: {
       author: "Mae Site original summaries",

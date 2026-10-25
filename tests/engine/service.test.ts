@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { getChapter, listChapters } from "@/lib/content/catalog";
-import { toStudentChapter } from "@/lib/content/student";
+import { chapterVisibleTo, toStudentChapter } from "@/lib/content/student";
 import type { ChapterItem, ChapterPack } from "@/lib/content/types";
 import { memoryAdminRepo, memoryEngineRepo, resetMemoryRepo } from "@/lib/engine/repo-memory";
 import {
@@ -125,16 +125,26 @@ describe("engine service", () => {
     expect((await progressSummary(repo, mae, T0 + 80_000)).xp_today).toBe(10);
   });
 
-  it("keeps religion chapters from the student until approved; admin previews without saving", async () => {
-    const religion = listChapters().find((row) => row.pendingReligionReview);
-    if (!religion) throw new Error("expected a pending religion chapter");
-    await expect(startSession(repo, mae, { entryPoint: "study", chapterId: religion.id })).rejects.toMatchObject({ status: 403 });
-    await expect(submitAnswer(repo, mae, { itemId: religion.items[0].id, response: "x" })).rejects.toBeInstanceOf(EngineError);
+  it("lets the student study approved religion chapters; admin still previews without saving", async () => {
+    const religion = listChapters().find((row) => row.subject === "religion");
+    if (!religion) throw new Error("expected a religion chapter");
+    expect(religion.pendingReligionReview).toBe(false);
     const preview = await submitAnswer(repo, admin, { itemId: religion.items[0].id, response: rightAnswer(religion.items[0]) });
     expect(preview).toMatchObject({ preview: true, correct: true });
     expect(await memoryAdminRepo.counts()).toEqual({ events: 0, mastery: 0, reviews: 0 });
-    const summary = await progressSummary(repo, mae);
-    expect(summary.rings.some((ring) => ring.id === religion.id)).toBe(false);
+    const { sessionId } = await startSession(repo, mae, { entryPoint: "study", chapterId: religion.id, now: T0 });
+    const answer = await submitAnswer(repo, mae, { sessionId, itemId: religion.items[0].id, response: rightAnswer(religion.items[0]), latencyMs: 9000, now: T0 + 1000 });
+    expect(answer).toMatchObject({ correct: true });
+    const summary = await progressSummary(repo, mae, T0 + 2000);
+    expect(summary.rings.some((ring) => ring.id === religion.id)).toBe(true);
+  });
+
+  it("still hides a chapter flagged pendingReligionReview from the student", () => {
+    const religion = listChapters().find((row) => row.subject === "religion")!;
+    const pending = { ...religion, pendingReligionReview: true };
+    expect(chapterVisibleTo(pending, "student")).toBe(false);
+    expect(chapterVisibleTo(pending, "admin")).toBe(true);
+    expect(chapterVisibleTo(religion, "student")).toBe(true);
   });
 
   it("starts a new session after 30 idle minutes and keeps the resume point", async () => {

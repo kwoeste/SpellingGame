@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { decideRequest } from "@/lib/auth/decide";
 import { listChapters } from "@/lib/content/catalog";
-import { gameSpec, gameVisibleTo, isGameId } from "@/lib/content/games";
+import { gameSpec, gameVisibleTo, isGameId, specVisibleTo } from "@/lib/content/games";
 import { SPELLING_LISTS } from "@/lib/games/spelling-lists";
 
 describe("gated games", () => {
@@ -14,9 +14,13 @@ describe("gated games", () => {
     }
   });
 
-  it("hides religion games from the student until approved", () => {
-    expect(gameVisibleTo("beatitudes", "student")).toBe(false);
-    expect(gameVisibleTo("beatitudes", "admin")).toBe(true);
+  it("shows the approved religion games to the student; pending games stay admin-only", () => {
+    for (const id of ["ten-commandments", "beatitudes", "church-year", "prayer-builder", "saint-cards"]) {
+      expect(gameVisibleTo(id, "student")).toBe(true);
+      expect(gameVisibleTo(id, "admin")).toBe(true);
+    }
+    expect(specVisibleTo({ pendingReligionReview: true }, "student")).toBe(false);
+    expect(specVisibleTo({ pendingReligionReview: true }, "admin")).toBe(true);
     expect(gameVisibleTo("circuit-builder", "student")).toBe(true);
     expect(gameVisibleTo("not-a-game", "admin")).toBe(false);
   });
