@@ -12,5 +12,55 @@
       "size": 2715987,
       "sha256": "e5d2453bc784cd1eb63de100f5a4878160b4838e71999260a27633deca42d573"
     }
+  },
+  "savvas.ch2": {
+    "audio": {
+      "pathname": "nlm/savvas.ch2/audio-a202a42abfba.m4a",
+      "contentType": "audio/mp4",
+      "size": 2741386,
+      "sha256": "a202a42abfba670b04af42b5e40641e0ba1d65540a8b210c276f0cfb32f83bfd"
+    },
+    "video": {
+      "pathname": "nlm/savvas.ch2/video-db88fa793283.mp4",
+      "contentType": "video/mp4",
+      "size": 29244981,
+      "sha256": "db88fa793283b1b05ffd66f676b756e61ed42b1a2e6fe41a9bafab4a09564932"
+    }
+  },
+  "savvas.ch3": {
+    "audio": {
+      "pathname": "nlm/savvas.ch3/audio-53ba4fdf5134.m4a",
+      "contentType": "audio/mp4",
+      "size": 2530605,
+      "sha256": "53ba4fdf5134149153449dbe2b7a75374d5318eb74f3a34f13c131385304e648"
+    }
+  },
+  "savvas.ch4": {
+    "audio": {
+      "pathname": "nlm/savvas.ch4/audio-d225b4e49ba9.m4a",
+      "contentType": "audio/mp4",
+      "size": 3004460,
+      "sha256": "d225b4e49ba91b21b31610e9738ed91cc8ba724c7e75f36596d9b2a4ecc0a5ca"
+    },
+    "video": {
+      "pathname": "nlm/savvas.ch4/video-d871dd1ad3ab.mp4",
+      "contentType": "video/mp4",
+      "size": 32265434,
+      "sha256": "d871dd1ad3ab586c418c14f6f6545f709fc0363081a01b824b3f81679423e688"
+    }
+  },
+  "savvas.ch5": {
+    "audio": {
+      "pathname": "nlm/savvas.ch5/audio-8488f80e7320.m4a",
+      "contentType": "audio/mp4",
+      "size": 3050776,
+      "sha256": "8488f80e7320f30310c72390400c08dab9dde1bdb3b2b8c07542d3f6c3ef4964"
+    },
+    "video": {
+      "pathname": "nlm/savvas.ch5/video-d4cbfb86afad.mp4",
+      "contentType": "video/mp4",
+      "size": 34437179,
+      "sha256": "d4cbfb86afad21f580e3b253f78419eebfadff2af95a1ff0279f4a022998a451"
+    }
   }
 }

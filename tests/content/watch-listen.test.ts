@@ -65,3 +65,23 @@ describe("Watch & listen (NotebookLM media)", () => {
     expect(nlm).toEqual([]);
   });
 });
+
+describe("Watch & listen without video", () => {
+  it("still shows the step for audio + flashcards only", () => {
+    for (const [id, entry] of Object.entries(manifest as Record<string, { video?: unknown; audio?: unknown }>)) {
+      if (entry.video) continue;
+      const data = watchListenFor(id);
+      expect(data).not.toBeNull();
+      expect(data?.video).toBeNull();
+    }
+    const flashOnly = Object.keys(FLASHCARDS).find((id) => !(manifest as Record<string, unknown>)[id]);
+    if (flashOnly) expect(watchListenFor(flashOnly)?.flashcards.length).toBeGreaterThan(0);
+  });
+
+  it("curated decks are 18-25 cards", () => {
+    for (const [id, cards] of Object.entries(FLASHCARDS)) {
+      expect(cards.length, id).toBeGreaterThanOrEqual(18);
+      expect(cards.length, id).toBeLessThanOrEqual(25);
+    }
+  });
+});
