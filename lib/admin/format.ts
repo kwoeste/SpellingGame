@@ -122,6 +122,11 @@ export function formatEtTime(ts: number): string {
 }
 
 /** "Oct 25, 8:54 – 9:55 AM ET" (same day) for a session span. */
+/** "Sun, Oct 25" in ET. */
+export function formatEtDay(ts: number): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: ET, weekday: "short", month: "short", day: "numeric" }).format(new Date(ts));
+}
+
 export function formatEtSpan(start: number, end: number | null): string {
   const day = new Intl.DateTimeFormat("en-US", { timeZone: ET, month: "short", day: "numeric" }).format(new Date(start));
   if (end === null || end <= start) return `${day}, ${formatEtTime(start)} ET`;

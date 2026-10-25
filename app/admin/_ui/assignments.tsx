@@ -6,7 +6,12 @@ import { formatEtDateTime } from "@/lib/admin/format";
 import { groupBySubject } from "@/lib/admin/group";
 import type { AssignTargetOption, AssignmentsView } from "@/lib/admin/types";
 
-/** Dropdown options grouped by subject, each label prefixed with the subject so look-alikes are clear. */
+/** Short option label: the optgroup already names the subject, so drop program prefixes ("CKLA "). */
+export function shortOptionLabel(title: string): string {
+  return title.replace(/^CKLA\s+/, "").replace(/:\s+/, " – ");
+}
+
+/** Dropdown options grouped by subject (optgroup), with short labels so they fit. */
 function GroupedOptions({ options }: { options: AssignTargetOption[] }) {
   return (
     <>
@@ -14,7 +19,7 @@ function GroupedOptions({ options }: { options: AssignTargetOption[] }) {
         <optgroup key={group.subject} label={group.label}>
           {group.rows.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.title.startsWith(group.label) ? o.title : `${group.label} · ${o.title}`}
+              {shortOptionLabel(o.title)}
             </option>
           ))}
         </optgroup>
@@ -92,6 +97,7 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
               <label>
                 Chapter
                 <select
+                  className="pd-chapter-select pd-full"
                   value={gateChapter}
                   onChange={(event) => {
                     setGateChapter(event.target.value);

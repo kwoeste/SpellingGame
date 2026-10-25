@@ -78,7 +78,7 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
       <div className="pd-legend">
         {STATES.map((state) => (
           <span key={state}>
-            <i className="pd-dot" data-state={state} style={{ background: "currentColor" }} />
+            <i className="pd-dot" data-state={state} />
             <span className={`pd-pill ${state}`}>{stateLabel(state)}</span>
           </span>
         ))}

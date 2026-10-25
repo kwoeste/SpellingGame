@@ -17,8 +17,8 @@
   --pd-warn-wash: #fff4d8;
   --pd-rust: #b45309;
   --pd-rust-wash: #ffedd5;
-  --pd-miss: #64748b;
-  --pd-miss-wash: #eef2f6;
+  --pd-miss: #9f1239;
+  --pd-miss-wash: #fde2e4;
   --pd-alert: #9b2c2c;
   --pd-alert-wash: #fdecec;
   --pd-band: #c5d4c0;
@@ -358,7 +358,7 @@
 
 .pd-node[data-state="mastered"] { background: var(--pd-ok-wash); border-color: #86c8a4; }
 .pd-node[data-state="in_progress"] { background: var(--pd-info-wash); border-color: #93c5fd; }
-.pd-node[data-state="missing"] { background: var(--pd-miss-wash); }
+.pd-node[data-state="missing"] { background: var(--pd-miss-wash); border: 2px solid #e8798a; color: var(--pd-miss); }
 .pd-node[data-state="not_started"] { background: #f4f5f7; color: #5b6470; }
 .pd-node[data-state="review_due"] { background: var(--pd-warn-wash); border-color: #f3d58a; }
 .pd-node[data-state="rusty"] { background: var(--pd-rust-wash); border-color: #fdba74; }
@@ -624,7 +624,16 @@
 .pd-node-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 
 /* Round 3 QA */
-.pd-session time, .pd-session-time { white-space: nowrap; }
+.pd-session time, .pd-session-time { display: flex; flex-direction: column; font-size: 0.95rem; line-height: 1.3; white-space: nowrap; }
+.pd-session-day { font-weight: 600; color: var(--pd-ink); }
+.pd-full { width: 100%; min-width: 0; }
+.pd-pill.missing { border: 1px solid #e8798a; }
+.pd-dot[data-state="mastered"] { background: var(--pd-good, #2bb673); }
+.pd-dot[data-state="in_progress"] { background: #6aa7e8; }
+.pd-dot[data-state="missing"] { background: #e8798a; }
+.pd-dot[data-state="not_started"] { background: #d5d9df; }
+.pd-dot[data-state="review_due"] { background: #f0c040; }
+.pd-dot[data-state="rusty"] { background: #f97316; }
 .pd-answers-lg { font-size: 0.98rem; }
 .pd-answers-lg .pd-note { font-size: 0.85rem; }
 .pd-relabel { display: block; width: auto; max-width: 9rem; padding: 2px 4px; font-size: 0.8rem; }
