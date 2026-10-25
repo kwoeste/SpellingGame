@@ -7,6 +7,30 @@
       "sha256": "dac53265a8e128327604ead8fa8853467c252af56e376f944bd37e3fd1a03de0"
     }
   },
+  "ckla.u2.ch2": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch2/audio-b23c5aac5d58.m4a",
+      "contentType": "audio/mp4",
+      "size": 3038823,
+      "sha256": "b23c5aac5d589e7f81c48d2d444df07e27eecf31e7c3bc26c0a7f2da3fd2f277"
+    }
+  },
+  "ckla.u2.ch3": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch3/audio-3db1c803e33b.m4a",
+      "contentType": "audio/mp4",
+      "size": 3266039,
+      "sha256": "3db1c803e33b76d46745bc3fb53cb8181e0a93afe2313e4d60e4d5a20c4b0463"
+    }
+  },
+  "ckla.u2.ch4": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch4/audio-0a61d46e1d96.m4a",
+      "contentType": "audio/mp4",
+      "size": 2915534,
+      "sha256": "0a61d46e1d968008eaf7796de508ce7649f73b3c19d7dc366760f62b29888dfd"
+    }
+  },
   "savvas.ch1": {
     "video": {
       "pathname": "nlm/savvas.ch1/video-cbb6a7944c65.mp4",
