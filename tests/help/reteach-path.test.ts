@@ -87,8 +87,9 @@ describe("re-teach next-session path", () => {
   });
 
   it("chapters without a recap start with the Careful Read", async () => {
-    const ch = listChapters().find((c) => !getRecap(c.id) && chapterVisibleTo(c, "student") && c.items.length > 0)!;
-    expect(ch).toBeTruthy();
+    const ch = listChapters().find((c) => !getRecap(c.id) && chapterVisibleTo(c, "student") && c.items.length > 0);
+    expect(reteachStart(false)).toEqual({ kind: "read" });
+    if (!ch) return; // every chapter now has a Watch it recap
     const item = ch.items[0];
     await getStuck(ch, item);
     const [row] = await reteachQueue(memoryEngineRepo, mae, T0 + DAY + 3600_000);
