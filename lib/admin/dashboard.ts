@@ -1,6 +1,6 @@
 import { answerToPlain, resolveAnswer, resolveCorrect } from "@/lib/admin/answer-text";
 import { assignmentTitle, chapterDisplayName, catalogChapters, catalogConcept, catalogConcepts, hardPrereqs, locateAdminItem } from "@/lib/admin/catalog";
-import { formatAnswer, formatEtDateTime, pct, ringPct, streakDays } from "@/lib/admin/format";
+import { formatEtDateTime, pct, ringPct, streakDays } from "@/lib/admin/format";
 import { detectHoles } from "@/lib/admin/holes";
 import { isUnknownStrategy, strategyDetail, strategyLabel } from "@/lib/admin/strategy-labels";
 import { inferPace, inferStrategy, isRapidGuess } from "@/lib/admin/infer";
