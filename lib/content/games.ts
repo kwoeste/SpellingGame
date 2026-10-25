@@ -45,7 +45,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     ],
   },
   "market-day": {
-    prompt: "Help the merchant before curfew. Sort the jobs.",
+    prompt: "Help the merchant before curfew. Match each clue to its word.",
     bins: ["merchant", "apprentice", "curfew", "market"],
     items: [
       { label: "Buys and sells goods", bin: "merchant" },
@@ -79,7 +79,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     bins: ["un-", "non-", "en-"],
     items: [
       { label: "happy → not happy", bin: "un-" },
-      { label: "sense → not sense", bin: "non-" },
+      { label: "sense → makes no sense", bin: "non-" },
       { label: "able → make able", bin: "en-" },
       { label: "danger → put in danger", bin: "en-" },
     ],

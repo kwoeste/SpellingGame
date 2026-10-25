@@ -10,12 +10,12 @@ const savvas: CompactChapter[] = [
     bigQuestion: "How do scientists learn about the world?",
     storyHook: "Imagine you're a detective with a magnifying glass. Scientists are like detectives who ask questions about everything they see!",
     paragraphs: [
-      "Scientists start by looking closely. An observation is something you notice with your senses, like “the ice feels cold.” An inference is a guess based on what you saw, like “the ice will melt in the sun.”",
+      "Scientists start by looking closely. An observation is something you notice with your senses, like feeling that the ice is cold. An inference is an idea you figure out from what you noticed, like deciding the ice just came out of the freezer.",
       "A fair test changes only one variable at a time. Tools such as a ruler, thermometer, or balance help you collect data you can share.",
     ],
     vocab: [
       { word: "observation", definition: "something you notice with your senses" },
-      { word: "inference", definition: "a guess based on what you noticed" },
+      { word: "inference", definition: "an idea you figure out from what you noticed" },
       { word: "variable", definition: "the one thing you change in a test" },
       { word: "data", definition: "facts you collect and write down" },
     ],
@@ -32,7 +32,7 @@ const savvas: CompactChapter[] = [
         stem: "Why change only one variable?",
         options: ["So the test is fair", "So you can skip tools", "So data is a secret", "So inferences become facts"],
         answer: 0,
-        evidence: 2,
+        evidence: 3,
         why: "Not yet. Find the sentence about a fair test.",
       },
     ],
@@ -47,7 +47,7 @@ const savvas: CompactChapter[] = [
     storyHook: "Every time you use a pencil or drink from a water bottle, you're using technology someone designed. How do inventors turn ideas into real things?",
     paragraphs: [
       "Technology is any tool people make to solve a problem. A pencil, a bridge, and a water bottle are all technology.",
-      "Designers follow a process. They name the problem, list limits, sketch ideas, build a prototype, test it, and improve it.",
+      "Designers follow a process. They name the problem, list limits, and sketch ideas. Then they build a prototype, a first model they can test and improve.",
     ],
     vocab: [
       { word: "technology", definition: "a tool made to solve a problem" },
@@ -61,7 +61,7 @@ const savvas: CompactChapter[] = [
         stem: "What is a prototype?",
         options: ["The final factory product", "A first model you can test", "A list of guesses", "A finished grade"],
         answer: 1,
-        evidence: 3,
+        evidence: 4,
         why: "Not yet. Find the sentence about a first model.",
       },
     ],
@@ -176,7 +176,7 @@ const savvas: CompactChapter[] = [
     proofs: [
       {
         stem: "What stays the same when ice melts?",
-        options: ["The shape only", "The amount of matter", "The color of the sun", "The volume of the room"],
+        options: ["The shape only", "The amount of matter", "The color of the sun", "How cold it is"],
         answer: 1,
         evidence: 2,
         why: "Not yet. Look at the sentence about the amount of matter.",
@@ -201,7 +201,7 @@ const savvas: CompactChapter[] = [
       { word: "conductor", definition: "a material that lets heat or electricity move easily" },
       { word: "insulator", definition: "a material that slows heat or electricity" },
     ],
-    sequence: ["Sun warms a pan", "Heat moves into the metal", "The food warms", "A wooden handle stays cooler"],
+    sequence: ["A stove heats a pan", "Heat moves into the metal", "The food warms", "A wooden handle stays cooler"],
     proofs: [
       {
         stem: "Which way does heat move?",

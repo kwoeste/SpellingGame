@@ -10,7 +10,7 @@ const ckla: CompactChapter[] = [
     unit: "Empires in the Middle Ages",
     bigQuestion: "What was medieval Europe like after Rome?",
     paragraphs: [
-      "Medieval means “from the Middle Ages,” the long stretch of time after the western Roman Empire faded. Lands that had been part of that empire later became places we now call Spain, France, England, Germany, and Italy.",
+      "Medieval means “from the Middle Ages,” the long stretch of time after the western Roman Empire faded. Lands that had been part of that empire later became places we now call Spain, France, England, and Italy.",
       "Powerful families and church leaders shaped daily life. A nobleman held land. Raiders might seize towns and loot what they could carry.",
     ],
     vocab: [
@@ -154,7 +154,7 @@ const ckla: CompactChapter[] = [
     bigQuestion: "Why do people still talk about 1066?",
     paragraphs: [
       "In 1066 two leaders claimed the English crown. Their armies met near Hastings. Determination and tactics decided the day.",
-      "One famous move was a feigned retreat: soldiers pretended to run, then turned to fight. After the battle, a new ruler commissioned records and art that told his story.",
+      "One famous move was a feigned retreat: soldiers pretended to run, then turned to fight. After the battle, the new ruler's side made records and art that told his story.",
     ],
     vocab: [
       { word: "tactic", definition: "a planned move in a battle or game" },
@@ -211,7 +211,7 @@ const ckla: CompactChapter[] = [
     bigQuestion: "Why did Magna Carta matter?",
     paragraphs: [
       "King John faced angry nobles who said he seized too much and asked too often. They wanted him to consult them, not rule by surprise.",
-      "At a meadow later called Runnymede, they pressed him to accept a written agreement. Magna Carta said even a king had limits. That idea later inspired many people who wanted fairer rules.",
+      "At a meadow called Runnymede, they pressed him to accept a written agreement. Magna Carta said even a king had limits. That idea later inspired many people who wanted fairer rules.",
     ],
     vocab: [
       { word: "consult", definition: "to ask others before deciding" },
