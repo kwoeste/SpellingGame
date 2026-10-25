@@ -24,7 +24,7 @@ const MAX_EVENTS_PER_BATCH = 50;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Client-reported event types. Answers only arrive through `submitAnswer`, which scores them. */
-export const CLIENT_EVENT_TYPES = ["read_done", "watch_done", "hint_requested", "item_shown", "heartbeat", "game_event"] as const;
+export const CLIENT_EVENT_TYPES = ["read_done", "watch_done", "hint_requested", "item_shown", "heartbeat", "game_event", "media_event"] as const;
 type ClientEventType = (typeof CLIENT_EVENT_TYPES)[number];
 
 export class EngineError extends Error {
@@ -662,7 +662,7 @@ export async function recordEvents(
       });
       if (!inserted) continue;
       accepted += 1;
-      const engaged = type === "read_done" || type === "watch_done" || type === "game_event" || (type === "heartbeat" && payload?.visible === true);
+      const engaged = type === "read_done" || type === "watch_done" || type === "game_event" || type === "media_event" || (type === "heartbeat" && payload?.visible === true);
       if (engaged) await awardMinute(tx, session.id, now, false);
     }
     session.lastEventAt = now;

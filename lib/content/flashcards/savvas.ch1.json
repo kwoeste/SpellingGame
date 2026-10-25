@@ -1,0 +1,86 @@
+[
+  {
+    "front": "observation",
+    "back": "Something you notice using your five senses."
+  },
+  {
+    "front": "inference",
+    "back": "An idea you figure out based on what you noticed."
+  },
+  {
+    "front": "variable",
+    "back": "The one thing you change in a scientific test."
+  },
+  {
+    "front": "data",
+    "back": "Facts you collect and write down during an experiment."
+  },
+  {
+    "front": "prediction",
+    "back": "A guess about what will happen in an experiment."
+  },
+  {
+    "front": "fair test",
+    "back": "An experiment where you change only one variable at a time."
+  },
+  {
+    "front": "What tool helps a scientist measure temperature?",
+    "back": "A thermometer"
+  },
+  {
+    "front": "What tool helps a scientist measure length?",
+    "back": "A ruler"
+  },
+  {
+    "front": "What tool helps a scientist measure weight or mass?",
+    "back": "A balance"
+  },
+  {
+    "front": "What is the first step scientists follow in an investigation?",
+    "back": "Ask a question"
+  },
+  {
+    "front": "What is the second step scientists follow in an investigation?",
+    "back": "Make a plan"
+  },
+  {
+    "front": "What is the third step scientists follow in an investigation?",
+    "back": "Collect data"
+  },
+  {
+    "front": "What is the fourth and final step scientists follow in an investigation?",
+    "back": "Share a conclusion"
+  },
+  {
+    "front": "Feeling that an ice cube is cold is an example of an _____.",
+    "back": "observation"
+  },
+  {
+    "front": "Deciding that an ice cube just came out of the freezer is an example of an _____.",
+    "back": "inference"
+  },
+  {
+    "front": "Why do scientists share their data with others?",
+    "back": "So that other people can learn from what they found."
+  },
+  {
+    "front": "How many variables should you change at one time in a fair test?",
+    "back": "Only one variable"
+  },
+  {
+    "front": "If you put one plant in the sun and one identical plant in the shade, what is the single variable being tested?",
+    "back": "The amount of sunlight"
+  },
+  {
+    "front": "What job are scientists compared to because they ask questions and look for clues?",
+    "back": "Detectives"
+  },
+  {
+    "front": "In the Ice Cube Race experiment, how often should you check on the melting ice cubes?",
+    "back": "Every 5 minutes"
+  },
+  {
+    "front": "Who should help you when doing the Ice Cube Race experiment at home?",
+    "back": "A grown-up."
+  }
+]

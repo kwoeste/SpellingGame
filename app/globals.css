@@ -1442,3 +1442,11 @@ button, input, textarea, select { font: inherit; }
 /* "Let's try this again" re-teach cards */
 .try-again { display: grid; gap: 8px; margin: 12px 0; }
 .try-again-card { border: 2px solid #f5b942; background: #fff8e6; }
+
+/* Watch & listen flashcards */
+.flashcard { display: flex; flex-direction: column; gap: 8px; width: 100%; min-height: 160px; padding: 20px; border-radius: 16px; border: 2px solid currentColor; background: var(--card, #fff); color: inherit; text-align: center; justify-content: center; cursor: pointer; font: inherit; }
+.flashcard[data-flipped="true"] { background: #eef7ee; }
+.flashcard:disabled { cursor: wait; opacity: 0.85; }
+.flashcard-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+.flashcard-text { font-size: 1.35rem; font-weight: 600; }
+.flashcard-hint { font-size: 0.85rem; opacity: 0.7; }
