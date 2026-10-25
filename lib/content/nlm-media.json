@@ -5,6 +5,12 @@
       "contentType": "audio/mp4",
       "size": 3020147,
       "sha256": "dac53265a8e128327604ead8fa8853467c252af56e376f944bd37e3fd1a03de0"
+    },
+    "video": {
+      "pathname": "nlm/ckla.u2.ch1/video-b32d3d52626d.mp4",
+      "contentType": "video/mp4",
+      "size": 30522448,
+      "sha256": "b32d3d52626dc17afe1acd8d448e3d83bf666e76f82cb16b32b5b23b23cee608"
     }
   },
   "ckla.u2.ch2": {
