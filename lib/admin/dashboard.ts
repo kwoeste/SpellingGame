@@ -1,6 +1,8 @@
-import { assignmentTitle, catalogChapters, catalogConcept, catalogConcepts, hardPrereqs, locateAdminItem } from "@/lib/admin/catalog";
-import { formatAnswer, formatEtDateTime, pct, ringPct, streakDays } from "@/lib/admin/format";
+import { answerToPlain, resolveAnswer, resolveCorrect } from "@/lib/admin/answer-text";
+import { assignmentTitle, chapterDisplayName, catalogChapters, catalogConcept, catalogConcepts, hardPrereqs, locateAdminItem } from "@/lib/admin/catalog";
+import { formatEtDateTime, pct, ringPct, streakDays } from "@/lib/admin/format";
 import { detectHoles } from "@/lib/admin/holes";
+import { isUnknownStrategy, strategyDetail, strategyLabel } from "@/lib/admin/strategy-labels";
 import { inferPace, inferStrategy, isRapidGuess } from "@/lib/admin/infer";
 import {
   DEFAULT_DAILY_MINUTES_GOAL,
@@ -501,13 +503,17 @@ export function buildWrongAnswers(snap: DashboardSnapshot): WrongAnswerView {
         latencyMs: event.latencyMs,
         correct: event.isCorrect,
         hintLevel: event.hintLevel,
+        response: event.response,
       });
+      // The live engine writes a placeholder "unknown" guess on every answer; only trust a stored
+      // label when it says something (a parent label, her own report, or a real inference).
+      const trusted = stored && !(stored.source === "inferred_rules" && isUnknownStrategy(stored.strategy)) ? stored : null;
       const payload = event.payload ?? {};
       const itemText =
         (typeof payload.item_stem === "string" && payload.item_stem) || located?.item.stem || event.itemId || "Unknown item";
-      const correctAnswer =
-        (typeof payload.correct_answer === "string" && payload.correct_answer) ||
-        (located ? formatAnswer(located.item.answer) : "—");
+      const correctResolved = resolveCorrect(payload.correct_answer, located);
+      const herResolved = resolveAnswer(event.response, located, located ? located.item.answer : payload.correct_answer);
+      const correctAnswer = answerToPlain(correctResolved);
       const conceptId =
         stored?.conceptId ||
         (typeof payload.concept_id === "string" ? payload.concept_id : null) ||
@@ -523,14 +529,17 @@ export function buildWrongAnswers(snap: DashboardSnapshot): WrongAnswerView {
         itemId: event.itemId ?? "",
         itemText,
         response: event.response,
-        responseText: formatAnswer(event.response),
+        responseText: answerToPlain(herResolved),
+        herAnswer: herResolved,
+        correct: correctResolved,
         correctAnswer,
+        chapterLabel: located ? chapterDisplayName(located.chapter) : null,
         attemptNo: event.attemptNo,
         hintLevel: event.hintLevel,
         latencyMs: event.latencyMs,
-        strategy: stored?.strategy ?? inferred.strategy,
-        strategySource: stored?.source ?? inferred.source,
-        strategyConfidence: stored?.confidence ?? inferred.confidence,
+        strategy: trusted?.strategy ?? inferred.strategy,
+        strategySource: trusted?.source ?? inferred.source,
+        strategyConfidence: trusted?.confidence ?? inferred.confidence,
         misconception: stored?.misconception ?? inferred.misconception,
         firstAttempt: event.attemptNo === 1,
       };
@@ -546,9 +555,9 @@ export function buildWrongAnswers(snap: DashboardSnapshot): WrongAnswerView {
     .slice(0, 8)
     .map(([key, count]) => ({
       key,
-      label: key.startsWith("mis:") ? key.slice(4) : key.slice(4),
+      label: key.startsWith("mis:") ? key.slice(4) : strategyLabel(key.slice(4)),
       count,
-      detail: key.startsWith("mis:") ? "misconception" : "strategy",
+      detail: key.startsWith("mis:") ? "Mix-up" : strategyDetail(key.slice(4)),
     }));
 
   return { rows, patterns, needsReteach: buildNeedsReteach(forLearner(snap.events, snap.learnerId)) };
