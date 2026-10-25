@@ -105,7 +105,7 @@ export function OverviewView({ data }: { data: Overview }) {
             <BarChart
               title="Engaged minutes by day"
               points={data.daily.map((day) => ({ x: day.day, y: day.minutes }))}
-              caption="Source: XP ledger · America/New_York days · 10 XP per engaged minute"
+              caption="Source: XP ledger · America/New_York days · 10 XP per engaged minute, 5–15 on answering minutes by recent accuracy"
             />
           )}
         </section>
