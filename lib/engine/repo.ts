@@ -74,6 +74,8 @@ export type GateAttempt = {
   passed: boolean;
   startedAt: number;
   finishedAt: number;
+  overrideBy?: string | null;
+  overrideReason?: string | null;
 };
 
 export type LikeRow = { interestTag: string; liked: boolean };
@@ -211,6 +213,8 @@ export interface AdminRepo {
   xpLedger(): Promise<Array<{ learnerId: string; sessionId: string; minuteStart: number; xp: number }>>;
   strategies(limit: number): Promise<Array<StrategyRow & { learnerId: string }>>;
   gatedChapterIds(learnerId: string): Promise<string[]>;
+  /** Parent override: record a passed chapter gate without a score. */
+  overrideChapterGate(args: { learnerId: string; chapterId: string; by: string; reason: string | null; at: number }): Promise<void>;
   assignments(): Promise<AssignmentRecord[]>;
   createAssignment(row: Omit<AssignmentRecord, "id" | "createdAt" | "completedAt">): Promise<AssignmentRecord>;
   updateAssignment(id: string, patch: Partial<Pick<AssignmentRecord, "status" | "completedAt">>): Promise<AssignmentRecord | null>;

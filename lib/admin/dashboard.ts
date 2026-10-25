@@ -699,6 +699,7 @@ export function buildAssignments(snap: DashboardSnapshot): AssignmentsView {
     chapters: catalogChapters()
       .map((chapter) => ({ id: chapter.id, title: chapter.titleKid }))
       .sort((a, b) => a.title.localeCompare(b.title)),
+    gatedChapterIds: [...snap.gatedChapterIds].sort(),
   };
 }
 

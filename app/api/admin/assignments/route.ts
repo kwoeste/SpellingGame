@@ -20,6 +20,11 @@ const CreateBody = z.discriminatedUnion("action", [
     status: z.enum(["open", "paused", "done", "cancelled"]),
   }),
   z.object({
+    action: z.literal("gate_override"),
+    chapterId: z.string().min(1).max(80),
+    reason: z.string().max(200).optional(),
+  }),
+  z.object({
     action: z.literal("goal"),
     weeklyXpGoal: z.number().int().min(60).max(3000),
     dailyMinutesGoal: z.number().int().min(5).max(180),
@@ -43,6 +48,19 @@ export async function POST(req: Request) {
     const repo = adminRepo();
     const body = parsed.data;
     switch (body.action) {
+      case "gate_override": {
+        if (!catalogChapters().some((chapter) => chapter.id === body.chapterId)) {
+          return { status: 400, body: { error: "unknown_target" } };
+        }
+        await repo.overrideChapterGate({
+          learnerId: SEEDED_LEARNER_ID,
+          chapterId: body.chapterId,
+          by: actor.email,
+          reason: body.reason?.trim() || null,
+          at: Date.now(),
+        });
+        return { body: { ok: true, assignments: await loadAssignments() } };
+      }
       case "auto_holes": {
         const snap = await loadSnapshot();
         const created = [];

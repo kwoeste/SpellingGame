@@ -13,6 +13,10 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
   const [reason, setReason] = useState("");
   const [weekly, setWeekly] = useState(String(data.goal.weeklyXpGoal));
   const [daily, setDaily] = useState(String(data.goal.dailyMinutesGoal));
+  const gated = new Set(data.gatedChapterIds);
+  const ungated = chapters.filter((chapter) => !gated.has(chapter.id));
+  const [gateChapter, setGateChapter] = useState(ungated[0]?.id ?? "");
+  const [gateReason, setGateReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +48,44 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
         first. You can also assign a chapter or concept by hand.
       </p>
       <div className="pd-grid pd-two">
+        <section className="pd-card">
+          <h2>Chapter star override</h2>
+          <p className="pd-lead" style={{ marginTop: 0 }}>
+            A chapter star normally needs 90% first-try right (no big hints) and every concept at 80%. Use this when you
+            know she has it anyway. It is logged with your email and the reason. {gated.size} of {chapters.length} chapters have a star.
+          </p>
+          {ungated.length === 0 ? (
+            <p className="pd-lead">Every chapter already has its star.</p>
+          ) : (
+            <form
+              className="pd-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!gateChapter) return;
+                if (!window.confirm("Give this chapter's star without the 90% check?")) return;
+                void post({ action: "gate_override", chapterId: gateChapter, reason: gateReason || undefined });
+              }}
+            >
+              <label>
+                Chapter
+                <select value={gateChapter} onChange={(event) => setGateChapter(event.target.value)}>
+                  {ungated.map((chapter) => (
+                    <option key={chapter.id} value={chapter.id}>
+                      {chapter.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Reason (optional)
+                <input value={gateReason} maxLength={200} onChange={(event) => setGateReason(event.target.value)} />
+              </label>
+              <button className="pd-btn" type="submit" disabled={busy}>
+                Give the star
+              </button>
+            </form>
+          )}
+        </section>
         <section className="pd-card">
           <h2>Weekly goals</h2>
           <form

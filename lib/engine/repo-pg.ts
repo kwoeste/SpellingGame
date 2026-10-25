@@ -94,6 +94,7 @@ function toGate(row: Row): GateAttempt {
     passed: Boolean(row.passed),
     startedAt: ms(row.started_at),
     finishedAt: ms(row.finished_at),
+    overrideBy: row.override_by ? String(row.override_by) : null,
   };
 }
 
@@ -548,6 +549,15 @@ export const pgAdminRepo: AdminRepo = {
       [learnerId],
     );
     return rows.map((r) => String(r.scope_id));
+  },
+  async overrideChapterGate({ learnerId, chapterId, by, reason, at }) {
+    await withTransaction("admin", null, async (db) => {
+      await db.query(
+        `INSERT INTO engine.gate_attempt (learner_id, scope, scope_id, item_ids, score, passed, started_at, finished_at, override_by, override_reason)
+         VALUES ($1, 'chapter', $2, '{}', NULL, true, $3, $3, $4, $5)`,
+        [learnerId, chapterId, iso(at), by, reason],
+      );
+    });
   },
   async assignments() {
     const rows = await adminRows("SELECT * FROM admin_api.assignments ORDER BY created_at DESC");
