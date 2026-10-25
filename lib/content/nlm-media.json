@@ -37,6 +37,38 @@
       "sha256": "0a61d46e1d968008eaf7796de508ce7649f73b3c19d7dc366760f62b29888dfd"
     }
   },
+  "col.ch1": {
+    "audio": {
+      "pathname": "nlm/col.ch1/audio-74a63a3b160f.m4a",
+      "contentType": "audio/mp4",
+      "size": 2783967,
+      "sha256": "74a63a3b160f2e091291877daf534e32a8938feb63b8f65767cea91abf79f99f"
+    }
+  },
+  "col.ch2": {
+    "audio": {
+      "pathname": "nlm/col.ch2/audio-9c5641f1817e.m4a",
+      "contentType": "audio/mp4",
+      "size": 2907976,
+      "sha256": "9c5641f1817e5c281fcf793895be50c102ae4b1ff38d1b2ffec33c3bb190320f"
+    }
+  },
+  "col.ch3": {
+    "audio": {
+      "pathname": "nlm/col.ch3/audio-e6de36e4d35b.m4a",
+      "contentType": "audio/mp4",
+      "size": 3335514,
+      "sha256": "e6de36e4d35b97868001911c4c3ce13be7716f13962ee112a246f42afdca0975"
+    }
+  },
+  "col.ch4": {
+    "audio": {
+      "pathname": "nlm/col.ch4/audio-21f8d275d87f.m4a",
+      "contentType": "audio/mp4",
+      "size": 3161338,
+      "sha256": "21f8d275d87f33873278a6f293f70bedfa8054ae374f88ea728ffcceaeabdca2"
+    }
+  },
   "savvas.ch1": {
     "video": {
       "pathname": "nlm/savvas.ch1/video-cbb6a7944c65.mp4",
