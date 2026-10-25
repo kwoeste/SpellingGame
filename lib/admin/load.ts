@@ -1,6 +1,6 @@
 import { buildAssignments, buildKnowledgeMap, buildOverview, buildProgress, buildSessions, buildWrongAnswers, type DashboardSnapshot } from "@/lib/admin/dashboard";
 import { buildLearnsBest } from "@/lib/admin/learns-best";
-import type { AssignmentRow, LearnerGoal } from "@/lib/admin/types";
+import { subjectLabel, type AssignmentRow, type LearnerGoal } from "@/lib/admin/types";
 import { SEEDED_LEARNER_ID } from "@/lib/auth/users";
 import { adminRepo } from "@/lib/engine/repos";
 
@@ -78,4 +78,66 @@ export async function loadLearnsBest(now = Date.now()) {
     repo.insights(DEFAULT_LEARNER.id, 6).catch(() => []),
   ]);
   return buildLearnsBest(episodes, plans, DEFAULT_LEARNER.id, insights);
+}
+
+export type HomeSummary = {
+  plan: { title: string; minutes: number; done: boolean; href: string }[] | null;
+  planGoalMinutes: number | null;
+  planNote: string | null;
+  recentMisses: { id: string; question: string; chapter: string | null; at: number }[];
+  needsReteach: { key: string; label: string }[];
+  learnsBest: { subject: string; summary: string }[];
+  lowStock: string[];
+  inventoryError: boolean;
+};
+
+/** Everything the admin home "Quick look" needs. Reads stored data only; never calls an AI. */
+export async function loadHome(now = Date.now()): Promise<HomeSummary> {
+  const repo = adminRepo();
+  const today = new Date(now).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  const snapshot = await loadSnapshot(now);
+  const wrong = buildWrongAnswers(snapshot);
+  const [plans, learns, inventory] = await Promise.all([
+    repo.sessionPlans(today).catch(() => []),
+    loadLearnsBest(now).catch(() => null),
+    (async () => {
+      try {
+        const inv = await import("@/lib/admin/inventory-repo");
+        const [spools, items] = await Promise.all([inv.listFilamentSpools(), inv.listStoreItems()]);
+        return {
+          low: [
+            ...spools.filter((s) => s.lowStock).map((s) => `${s.color} ${s.material} filament`),
+            ...items.filter((i) => i.lowStock).map((i) => i.name),
+          ],
+          error: false,
+        };
+      } catch {
+        return { low: [] as string[], error: true };
+      }
+    })(),
+  ]);
+  const mine = plans
+    .filter((p) => p.learnerId === DEFAULT_LEARNER.id && p.day === today)
+    .sort((a, b) => b.createdAt - a.createdAt)[0];
+  const raw = mine?.plan as { blocks?: unknown; goalMinutes?: unknown; adminNote?: unknown } | undefined;
+  const blocks = Array.isArray(raw?.blocks) ? (raw!.blocks as Record<string, unknown>[]) : null;
+  return {
+    plan: blocks
+      ? blocks.map((b) => ({
+          title: String(b.title ?? "Activity"),
+          minutes: Number(b.minutes) || 0,
+          done: Boolean(b.done),
+          href: typeof b.href === "string" && b.href.startsWith("/") ? b.href : "/study",
+        }))
+      : null,
+    planGoalMinutes: typeof raw?.goalMinutes === "number" ? raw.goalMinutes : null,
+    planNote: typeof raw?.adminNote === "string" && raw.adminNote ? raw.adminNote : null,
+    recentMisses: [...wrong.rows].sort((a, b) => b.ts - a.ts).slice(0, 5).map((r) => ({ id: r.eventId, question: r.itemText, chapter: r.chapterLabel ?? null, at: r.ts })),
+    needsReteach: wrong.needsReteach.filter((r) => !r.cleared).slice(0, 5).map((r) => ({ key: r.key, label: r.label })),
+    learnsBest: learns?.insight?.summary
+      ? [{ subject: "all", summary: learns.insight.summary }]
+      : (learns?.subjects ?? []).filter((s) => s.best).map((s) => ({ subject: s.subject, summary: `${subjectLabel(s.subject)}: ${s.summary}` })),
+    lowStock: inventory.low,
+    inventoryError: inventory.error,
+  };
 }

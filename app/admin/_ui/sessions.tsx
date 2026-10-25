@@ -5,12 +5,11 @@ import type { SessionHistoryView } from "@/lib/admin/types";
 export function SessionTimeline({ data }: { data: SessionHistoryView }) {
   return (
     <div className="pd-wrap">
-      <p className="pd-kicker">Sessions</p>
-      <h1>History</h1>
+      <p className="pd-kicker">Study history</p>
+      <h1>Each time she sat down</h1>
       <p className="pd-lead">
-        Each sitting, with engaged minutes, first-try accuracy, and a reading-pace / skipping
-        indicator. Skim means reading items came in faster than about 240 words per minute. Rush
-        means several sub-1.5s wrong answers.
+        How long she really worked, how many she got right on the first try, and whether she was
+        reading too fast (faster than about 240 words a minute) or rushing (quick wrong taps under 1.5 seconds).
       </p>
       {data.sessions.length === 0 ? (
         <EmptyState title="No sessions yet" body="When Mae opens Study or a game, a timeline row will appear here." />
@@ -21,18 +20,18 @@ export function SessionTimeline({ data }: { data: SessionHistoryView }) {
               <time dateTime={new Date(session.startedAt).toISOString()}>{formatEtDateTime(session.startedAt)}</time>
               <div>
                 <strong>
-                  {session.entryPoint || "study"} · {session.engagedMinutes} engaged min
+                  {placeLabel(session.entryPoint)} · {session.engagedMinutes} min working
                 </strong>
                 <div className="pd-legend" style={{ marginTop: 6 }}>
-                  <span>{session.items} items</span>
-                  <span>Accuracy {formatPct(session.firstTryAccuracy)}</span>
+                  <span>{session.items} questions</span>
+                  <span>Right first try {formatPct(session.firstTryAccuracy)}</span>
                   <span>{session.xp} XP</span>
                   {session.neededHelp ? <span className="pd-pill rush">Needed help on {session.neededHelp}</span> : null}
-                  <span className={`pd-pill ${session.pace}`}>{session.pace}</span>
+                  <span className={`pd-pill ${session.pace}`}>{PACE_LABEL[session.pace] ?? session.pace}</span>
                 </div>
                 <p className="pd-lead" style={{ margin: "8px 0 0" }}>
                   {session.paceNote}
-                  {session.endedAt ? ` Ended ${formatEtDateTime(session.endedAt)}.` : " Still open or idle-closed later."}
+                  {session.endedAt ? ` Ended ${formatEtDateTime(session.endedAt)}.` : " Still open, or closed later after she went idle."}
                 </p>
               </div>
             </article>
@@ -41,4 +40,13 @@ export function SessionTimeline({ data }: { data: SessionHistoryView }) {
       )}
     </div>
   );
+}
+
+const PACE_LABEL: Record<string, string> = { ok: "Good pace", skim: "Read too fast", skip: "Skipped ahead", rush: "Rushing" };
+
+function placeLabel(entry: string | null | undefined): string {
+  if (!entry || entry === "study") return "Study";
+  if (entry.startsWith("game") || entry.includes("game")) return "Game";
+  if (entry.includes("watch")) return "Watch it";
+  return entry.replace(/[_-]+/g, " ").replace(/^./, (c) => c.toUpperCase());
 }

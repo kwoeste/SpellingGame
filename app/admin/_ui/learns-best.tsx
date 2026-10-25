@@ -11,7 +11,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
       <p className="pd-lead">
         Each new chapter starts one of several ways (Watch it recap, careful read, or the chapter&apos;s NotebookLM video, podcast or
         flashcards when it has them), and when Mae gets stuck, &quot;Let&apos;s try this again&quot; re-teaches it one of those ways or with a
-        straight retry. A Thompson-sampling chooser favors what has worked in each subject, uses Grok&apos;s suggested weights only as a weak
+        straight retry. The site keeps track of which way has worked in each subject and picks it more often, uses Grok&apos;s suggested weights only as a weak
         head start, and still explores at random {Math.round(data.exploreRate * 100)}% of the time. Success means her next answer on that
         question was right on the first try without a hint. A way shows &quot;Still exploring&quot; until it has {data.minAttempts} finished tries.
       </p>
@@ -52,7 +52,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
         <p className="pd-note">Sent to Grok: only subject, way, question kind and numbers (accuracy after, later-review retention, time, rush rate, sample sizes).</p>
       </section>
       {data.subjects.length === 0 ? (
-        <EmptyState title="Still exploring" body="No re-teach episodes yet. They start the first time she sees “Let’s try this again.”" />
+        <EmptyState title="Still exploring" body="No re-teaches yet. They start the first time she sees “Let’s try this again.”" />
       ) : (
         data.subjects.map((subject) => (
           <section className="pd-card" key={subject.subject} style={{ marginTop: 14 }}>

@@ -76,10 +76,9 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
   return (
     <div className="pd-wrap">
       <p className="pd-kicker">Knowledge map</p>
-      <h1>Concepts</h1>
+      <h1>Skills map</h1>
       <p className="pd-lead">
-        Nodes color by state. Size is not used; attempt count is in the drill-down with P(L), Elo,
-        and last seen. Click a node.
+        Each dot is one skill, colored by how well she knows it. Tap a dot to see details.
       </p>
       <div className="pd-legend">
         {STATES.map((state) => (
@@ -178,9 +177,9 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
             </div>
           </div>
           <aside className="pd-card">
-            <h2>Drill-down</h2>
+            <h2>Skill details</h2>
             {!selected ? (
-              <EmptyState title="Pick a node" body="P(L), Elo, attempts, and last seen stay here so the map stays readable." />
+              <EmptyState title="Pick a skill" body="Tap a dot on the map to see how well she knows it, how many tries, and when she last practiced it." />
             ) : (
               <dl className="pd-detail">
                 <dt>Concept</dt>
@@ -191,9 +190,9 @@ export function KnowledgeMapView(props: { data: KnowledgeMapView }) {
                 <dd>
                   <span className={`pd-pill ${selected.state}`}>{stateLabel(selected.state)}</span>
                 </dd>
-                <dt>P(L)</dt>
+                <dt>Chance she knows it</dt>
                 <dd>{formatPct(selected.pMastery, 0)}</dd>
-                <dt>Elo θ</dt>
+                <dt>Skill score</dt>
                 <dd>{selected.theta.toFixed(2)}</dd>
                 <dt>Attempts</dt>
                 <dd>

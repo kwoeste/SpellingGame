@@ -42,10 +42,10 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
   return (
     <div className="pd-wrap">
       <p className="pd-kicker">Assignments</p>
-      <h1>Goals and hole-filling</h1>
+      <h1>Goals and assignments</h1>
       <p className="pd-lead">
-        Auto hole-fill walks hard prerequisites of weak concepts and assigns the deepest blockers
-        first. You can also assign a chapter or concept by hand.
+        Set weekly goals, give a chapter star by hand, or assign a chapter or skill. The site also suggests
+        gaps: earlier skills she needs before the ones she&apos;s stuck on.
       </p>
       <div className="pd-grid pd-two">
         <section className="pd-card">
@@ -113,7 +113,7 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
           </form>
         </section>
         <section className="pd-card">
-          <h2>Manual assign</h2>
+          <h2>Assign something</h2>
           <form
             className="pd-form"
             onSubmit={(event) => {
@@ -162,9 +162,9 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
         </section>
       </div>
       <section className="pd-card" style={{ marginTop: 14 }}>
-        <h2>Suggested holes</h2>
+        <h2>Suggested gaps to fill</h2>
         {data.suggestedHoles.length === 0 ? (
-          <EmptyState title="No holes detected" body="When a prerequisite is missing or rusty under an in-progress skill, it shows up here." />
+          <EmptyState title="No gaps found" body="When a prerequisite is missing or rusty under an in-progress skill, it shows up here." />
         ) : (
           <div className="pd-alert">
             {data.suggestedHoles.map((alert) => (
@@ -189,7 +189,7 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
         <h2>Open and recent</h2>
         {error ? <p className="notice">{error}</p> : null}
         {data.assignments.length === 0 ? (
-          <EmptyState title="Nothing assigned" body="Manual assigns and auto hole-fills will list here." />
+          <EmptyState title="Nothing assigned" body="Things you assign, and suggested gaps, will list here." />
         ) : (
           <div className="pd-table-wrap">
             <table className="pd-table">

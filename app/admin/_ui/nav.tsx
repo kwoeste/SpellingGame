@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/admin", label: "Today" },
   { href: "/admin/progress", label: "Progress" },
-  { href: "/admin/knowledge-map", label: "Knowledge map" },
-  { href: "/admin/wrong-answers", label: "Wrong answers" },
-  { href: "/admin/sessions", label: "Sessions" },
-  { href: "/admin/learns-best", label: "Learns best" },
+  { href: "/admin/knowledge-map", label: "Skills map" },
+  { href: "/admin/wrong-answers", label: "Missed questions" },
+  { href: "/admin/sessions", label: "Study history" },
+  { href: "/admin/learns-best", label: "How she learns" },
   { href: "/admin/assignments", label: "Assignments" },
-  { href: "/admin/inventory", label: "Inventory" },
+  { href: "/admin/inventory", label: "Shop supplies" },
   { href: "/admin/privacy", label: "Privacy" },
 ] as const;
 
