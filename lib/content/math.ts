@@ -1,4 +1,5 @@
 import { seededShuffle } from "@/lib/content/shuffle";
+import { vocabSentenceId } from "@/lib/content/build";
 import type { ChapterItem, ChapterPack } from "@/lib/content/types";
 
 function multiplicationItem(
@@ -380,7 +381,7 @@ const mathChaptersData: ChapterPack[] = [
     titleKid: "Times 9: The finger trick",
     subject: "math",
     bigQuestion: "What cool patterns do the 9s facts have?",
-    storyHook: "Hold up 10 fingers. Put down one and count what is left. Magic!",
+    storyHook: "Finger trick for 9 × 4: hold up all 10 fingers and, counting from your left pinky, fold down finger number 4. Count the fingers to the left of it: 3 tens. Count the fingers to the right: 6 ones. 9 × 4 = 36!",
     reviewStatus: "draft",
     provenance: {
       author: "Mae Site original math content",
@@ -397,7 +398,7 @@ const mathChaptersData: ChapterPack[] = [
     sentences: [
       { id: "math.mult.9s.s1", text: "9 × a number is 10 times the number, minus the number." },
       { id: "math.mult.9s.s2", text: "9 × 7: 10 × 7 is 70, minus 7 is 63." },
-      { id: "math.mult.9s.s3", text: "The digits of 9s facts always add up to 9: 1+8=9, 2+7=9, 3+6=9..." },
+      { id: "math.mult.9s.s3", text: "From 9 × 1 to 9 × 10, the digits of the answer add up to 9: 18 is 1+8, 27 is 2+7, 36 is 3+6." },
     ],
     vocab: [
       { word: "digit sum", definition: "the total when you add all digits in a number", sentenceId: "math.mult.9s.s3" },
@@ -417,4 +418,7 @@ const mathChaptersData: ChapterPack[] = [
   },
 ];
 
-export const mathChapters: ChapterPack[] = mathChaptersData;
+export const mathChapters: ChapterPack[] = mathChaptersData.map((chapter) => ({
+  ...chapter,
+  vocab: chapter.vocab.map((card) => ({ ...card, sentenceId: vocabSentenceId(card, chapter.sentences) })),
+}));

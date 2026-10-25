@@ -28,7 +28,7 @@ const GAME_DATA: Record<GameId, GameSpec> = {
     prompt: "Build the feudal pyramid. Who stands where?",
     bins: ["King", "Nobles", "Knights", "Serfs"],
     items: [
-      { label: "Gives land and expects loyalty", bin: "King" },
+      { label: "Owns all the land and gives it to nobles", bin: "King" },
       { label: "Hold land from the king", bin: "Nobles" },
       { label: "Fight and protect the manor", bin: "Knights" },
       { label: "Farm the land and share crops", bin: "Serfs" },

@@ -63,3 +63,32 @@ describe("answer keys", () => {
     }
   });
 });
+
+describe("vocab links", () => {
+  const stem = (w: string) => (w.length > 5 ? w.slice(0, -2) : w);
+  it("each vocab word links to a sentence that uses it whenever the word appears in the chapter", () => {
+    let linked = 0;
+    for (const ch of listChapters()) {
+      for (const card of ch.vocab) {
+        const parts = card.word.toLowerCase().match(/[a-z]+/g)!.filter((w) => w.length > 1 && w !== "s");
+        const uses = (text: string) => {
+          const toks = text.toLowerCase().match(/[a-z]+/g) ?? [];
+          return parts.every((p) => toks.some((t) => t === p || (stem(p).length >= 4 && t.startsWith(stem(p)))));
+        };
+        const linkedSentence = ch.sentences.find((s) => s.id === card.sentenceId);
+        expect(linkedSentence, `${ch.id}: ${card.word}`).toBeTruthy();
+        if (ch.sentences.some((s) => uses(s.text))) {
+          expect(uses(linkedSentence!.text), `${ch.id}: ${card.word} -> ${linkedSentence!.text}`).toBe(true);
+          linked++;
+        }
+      }
+    }
+    expect(linked).toBeGreaterThan(100);
+  });
+
+  it("links regression: savvas ch1 'data' no longer points at the first sentence by position", () => {
+    const ch = listChapters().find((c) => c.id === "savvas.ch1")!;
+    const card = ch.vocab.find((v) => v.word === "data")!;
+    expect(ch.sentences.find((s) => s.id === card.sentenceId)!.text).toMatch(/data/);
+  });
+});
