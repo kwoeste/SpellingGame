@@ -1,6 +1,7 @@
 import type { AppRole } from "@/lib/auth/allowlist";
 import { seededShuffle } from "@/lib/content/shuffle";
 import type { ChapterPack, Sentence } from "@/lib/content/types";
+import { getRecap, toStudentRecap, type StudentRecap } from "@/lib/content/recaps";
 
 export type StudentStep =
   | { kind: "vocab"; itemId: string; prompt: string; words: string[]; definitions: string[] }
@@ -21,6 +22,8 @@ export type StudentChapter = {
   bibleTranslation: string | null;
   sentences: Sentence[];
   steps: StudentStep[];
+  /** "Watch it" narrated picture recap shown before Careful Read, when the chapter has one. */
+  recap: StudentRecap | null;
 };
 
 /** Religion content stays admin-only until Kevin (or the school) signs off on it. */
@@ -82,5 +85,6 @@ export function toStudentChapter(chapter: ChapterPack): StudentChapter {
     bibleTranslation: chapter.bibleTranslation ?? null,
     sentences: chapter.sentences,
     steps,
+    recap: toStudentRecap(getRecap(chapter.id)),
   };
 }

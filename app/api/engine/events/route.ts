@@ -1,5 +1,6 @@
 import { engineActor, engineFailure, engineJson, readJson } from "@/lib/engine/http";
 import { engineRepo } from "@/lib/engine/repos";
+import { gradeRecapCheck } from "@/lib/content/recaps";
 import { recordEvents, submitAnswer, type ClientEvent } from "@/lib/engine/service";
 
 /**
@@ -24,6 +25,13 @@ export async function POST(req: Request) {
         eventId: typeof submit.eventId === "string" ? submit.eventId : null,
       });
       return engineJson({ feedback });
+    }
+    const watchCheck = body.watchCheck as Record<string, unknown> | undefined;
+    if (watchCheck && typeof watchCheck === "object") {
+      if (typeof watchCheck.chapterId !== "string" || typeof watchCheck.choiceId !== "string") return engineJson({ error: "bad_request" }, 400);
+      const graded = gradeRecapCheck(watchCheck.chapterId, watchCheck.choiceId);
+      if (!graded) return engineJson({ error: "not_found" }, 404);
+      return engineJson(graded);
     }
     const events = Array.isArray(body.events) ? (body.events as ClientEvent[]) : [];
     const result = await recordEvents(engineRepo(), gate.actor, {

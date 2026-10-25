@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CarefulRead } from "@/components/CarefulRead";
+import { WatchIt, type WatchResult } from "@/components/WatchIt";
 import { VoicePicker } from "@/components/ui/VoicePicker";
 import { ConfettiLayer } from "@/components/ui/ConfettiBurst";
 import { Mascot } from "@/components/ui/Mascot";
@@ -32,6 +33,7 @@ type Feedback = {
 
 type View =
   | { kind: "loading" }
+  | { kind: "watch" }
   | { kind: "read" }
   | { kind: "keywords" }
   | { kind: "step"; index: number }
@@ -46,8 +48,8 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-function viewFor(progress: Progress | null, steps: number, hasKeywords: boolean): View {
-  if (!progress || !progress.readDone) return { kind: "read" };
+function viewFor(progress: Progress | null, steps: number, hasKeywords: boolean, hasRecap = false): View {
+  if (!progress || !progress.readDone) return hasRecap ? { kind: "watch" } : { kind: "read" };
   if (progress.nextStep === 0 && hasKeywords) return { kind: "keywords" };
   return progress.nextStep >= steps ? { kind: "read" } : { kind: "step", index: progress.nextStep };
 }
@@ -82,12 +84,12 @@ export function ChapterPlayer({
         setPreview(json.preview);
         setProgress(json.chapter);
         setWelcomeBack(Boolean(json.chapter && (json.chapter.readDone || json.chapter.nextStep > 0)));
-        setView(viewFor(json.chapter, chapter.steps.length, chapter.keywords.length > 0));
+        setView(viewFor(json.chapter, chapter.steps.length, chapter.keywords.length > 0, Boolean(chapter.recap)));
       })
       .catch(() => {
         if (cancelled) return;
         setError("We couldn't load your place. Check the internet and refresh.");
-        setView({ kind: "read" });
+        setView(chapter.recap ? { kind: "watch" } : { kind: "read" });
       });
     return () => {
       cancelled = true;
@@ -114,6 +116,22 @@ export function ChapterPlayer({
       window.clearInterval(timer);
     };
   }, [sessionId, preview]);
+
+  async function finishWatch(result: WatchResult) {
+    setError("");
+    if (!preview) {
+      try {
+        const json = await postJson<{ session_id: string | null }>("/api/engine/events", {
+          sessionId,
+          events: [{ id: crypto.randomUUID(), type: "watch_done", activityId: chapter.id, clientTs: Date.now(), payload: result }],
+        });
+        if (json.session_id) setSessionId(json.session_id);
+      } catch {
+        // Watching is a warm-up; don't block reading if saving fails.
+      }
+    }
+    setView({ kind: "read" });
+  }
 
   async function finishReading() {
     setError("");
@@ -169,6 +187,7 @@ export function ChapterPlayer({
       ) : null}
 
       {view.kind === "loading" ? <p>Loading…</p> : null}
+      {view.kind === "watch" && chapter.recap ? <WatchIt chapterId={chapter.id} recap={chapter.recap} onDone={finishWatch} /> : null}
       {view.kind === "read" ? (
         <>
           <CarefulRead sentences={chapter.sentences} onReady={setReadReady} />
@@ -198,7 +217,7 @@ export function ChapterPlayer({
           onAgain={() => {
             setWelcomeBack(false);
             setReadReady(false);
-            setView({ kind: "read" });
+            setView(chapter.recap ? { kind: "watch" } : { kind: "read" });
           }}
           nextChapterHref={nextChapterHref}
         />
