@@ -243,6 +243,8 @@ export type AssignmentsView = {
   goal: LearnerGoal;
   concepts: AssignTargetOption[];
   chapters: AssignTargetOption[];
+  /** Chapters whose star is already earned (gate passed or overridden). */
+  gatedChapterIds: string[];
 };
 
 export function isMasteryState(value: string): value is MasteryState {
