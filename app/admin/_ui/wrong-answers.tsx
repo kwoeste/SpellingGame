@@ -5,7 +5,8 @@ import { AnswerList } from "@/app/admin/_ui/answer-list";
 import { EmptyState } from "@/app/admin/_ui/empty";
 import { PageHeader } from "@/app/admin/_ui/page-header";
 import { formatEtDateTime } from "@/lib/admin/format";
-import { RELABEL_CHOICES, strategyDetail, strategyLabel, strategySourceLabel, isUnknownStrategy } from "@/lib/admin/strategy-labels";
+import { relabelChoicesFor, strategyDetail, strategyLabel, strategySourceLabel, isUnknownStrategy } from "@/lib/admin/strategy-labels";
+import { tidyId } from "@/lib/admin/subject-names";
 import { subjectLabel, type WrongAnswerView } from "@/lib/admin/types";
 
 function seconds(ms: number | null): string {
@@ -15,7 +16,7 @@ function seconds(ms: number | null): string {
 }
 
 function whereLabel(row: { source: string; chapterId: string | null }, chapterLabel: (id: string | null) => string): string {
-  if (row.source === "watch_check") return "Watch it check";
+  if (row.source === "watch_check") return chapterLabel(row.chapterId);
   if (row.source === "game") return "Game";
   return chapterLabel(row.chapterId);
 }
@@ -27,7 +28,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
   const [firstOnly, setFirstOnly] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const chapterLabel = (id: string | null) => (id ? chapterLabels[id] ?? id : "—");
+  const chapterLabel = (id: string | null) => (id ? chapterLabels[id] ?? tidyId(id) : "—");
 
   const strategies = useMemo(
     () => [...new Set(data.rows.map((row) => row.strategy).filter((value): value is string => Boolean(value)))].sort(),
@@ -77,20 +78,22 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
         <section className="pd-card pd-section" data-testid="needs-reteach">
           <h2>Needs re-teaching</h2>
           <p className="pd-note">
-            Questions where she missed 4 times, used &ldquo;Show me&rdquo;, or skipped. These come back automatically in her next session until she gets them right on the first try.
+            Questions where she missed 4 or more times in a row, used &ldquo;Show me&rdquo;, or skipped. Each one comes back in her next session until she gets it right on the first try. Rows marked &ldquo;Got it now&rdquo; are done.
           </p>
           <ul className="pd-list">
             {data.needsReteach.map((row) => (
               <li key={row.key} className="pd-list-row">
                 <div>
-                  <strong>{row.label}</strong>
+                  <strong>
+                    {whereLabel(row, chapterLabel)} – {row.label}
+                  </strong>
                   <div className="pd-note">
-                    {whereLabel(row, chapterLabel)} · up to {row.maxMisses} misses
+                    {row.maxMisses > 0 ? `missed ${row.maxMisses} time${row.maxMisses === 1 ? "" : "s"} in a row` : "no wrong tries"}
                     {row.reveals ? ` · used Show me ${row.reveals}×` : ""}
                     {row.skips ? ` · skipped ${row.skips}×` : ""} · last {formatEtDateTime(row.lastTs)}
                   </div>
                 </div>
-                <span className={`pd-badge ${row.cleared ? "ok" : "bad"}`}>{row.cleared ? "Got it now" : "Needs re-teaching"}</span>
+                {row.cleared ? <span className="pd-badge ok">Got it now</span> : null}
               </li>
             ))}
           </ul>
@@ -187,7 +190,7 @@ export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnsw
                       onChange={(event) => relabel(row.eventId, event.target.value)}
                     >
                       <option value="">Change reason…</option>
-                      {RELABEL_CHOICES.map((choice) => (
+                      {relabelChoicesFor(row.subject).map((choice) => (
                         <option key={choice.id} value={choice.id}>
                           {choice.label}
                         </option>

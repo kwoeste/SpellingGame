@@ -1,20 +1,28 @@
 import { EmptyState } from "@/app/admin/_ui/empty";
 import { formatEtDateTime, formatPct } from "@/lib/admin/format";
 import type { LearnsBestView } from "@/lib/admin/learns-best";
+import { subjectLabel } from "@/lib/admin/types";
 import { InsightButton } from "@/app/admin/_ui/insight-button";
 
 export function LearnsBest({ data }: { data: LearnsBestView }) {
+  // Parent previews and the planner's engine notes stay off the page; only what Mae actually saw is shown.
+  const mine = data.notes.filter((note) => !note.preview && note.whyKid);
   return (
     <div className="pd-wrap">
-      <p className="pd-kicker">Learning</p>
+      <p className="pd-kicker">How she learns</p>
       <h1>How Mae learns best</h1>
       <p className="pd-lead">
-        Each new chapter starts one of several ways (Watch it recap, careful read, or the chapter&apos;s NotebookLM video, podcast or
-        flashcards when it has them), and when Mae gets stuck, &quot;Let&apos;s try this again&quot; re-teaches it one of those ways or with a
-        straight retry. The site keeps track of which way has worked in each subject and picks it more often, uses Grok&apos;s suggested weights only as a weak
-        head start, and still explores at random {Math.round(data.exploreRate * 100)}% of the time. Success means her next answer on that
-        question was right on the first try without a hint. A way shows &quot;Still exploring&quot; until it has {data.minAttempts} finished tries.
+        When Mae gets stuck, the site re-teaches the idea a different way: a short video, a careful read, flashcards, or a
+        simple retry. It keeps track of which way helps her get the next one right and uses that way more often.
       </p>
+      <details className="pd-group">
+        <summary>How this works</summary>
+        <p className="pd-note">
+          Success means her next answer on that question was right on the first try without a hint. A way says &ldquo;Still
+          exploring&rdquo; until it has {data.minAttempts} finished tries. The site still tries a random way about{" "}
+          {Math.round(data.exploreRate * 100)}% of the time so it keeps learning.
+        </p>
+      </details>
       <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>How Mae learns best right now</h2>
         {data.insight ? (
@@ -30,13 +38,13 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
                   <tr>
                     <th>Subject</th>
                     <th>Way</th>
-                    <th>Suggested weight (chooser head start)</th>
+                    <th>How often to try it first</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.insight.weights.map((w) => (
                     <tr key={`${w.subject}:${w.modality}`}>
-                      <td style={{ textTransform: "capitalize" }}>{w.subject}</td>
+                      <td>{subjectLabel(w.subject)}</td>
                       <td>{w.label}</td>
                       <td>{Math.round(w.weight * 100)}%</td>
                     </tr>
@@ -56,7 +64,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
       ) : (
         data.subjects.map((subject) => (
           <section className="pd-card" key={subject.subject} style={{ marginTop: 14 }}>
-            <h2 style={{ textTransform: "capitalize" }}>{subject.subject}</h2>
+            <h2>{subjectLabel(subject.subject)}</h2>
             <p className="pd-lead" style={{ marginTop: 0 }}>{subject.summary}</p>
             <table className="pd-table">
               <thead>
@@ -66,7 +74,7 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
                   <th>First-try success</th>
                   <th>Median time</th>
                   <th>Rushed</th>
-                  <th>Estimate</th>
+                  <th>Expected success</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -92,15 +100,14 @@ export function LearnsBest({ data }: { data: LearnsBestView }) {
         ))
       )}
       <section className="pd-card" style={{ marginTop: 14 }}>
-        <h2>Planner notes (last 14 days)</h2>
-        {data.notes.length === 0 ? (
-          <EmptyState title="No plans yet" body="Each sign-in builds Today’s plan; Grok’s note for you shows here." />
+        <h2>What Mae was told about her plan</h2>
+        {mine.length === 0 ? (
+          <EmptyState title="No plans yet" body="Each time Mae opens Study, the site builds Today’s plan. The reason she was shown appears here." />
         ) : (
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {data.notes.map((note) => (
+            {mine.map((note) => (
               <li key={note.createdAt} style={{ marginBottom: 8 }}>
-                <strong>{formatEtDateTime(note.createdAt)}</strong> · {note.source === "ai" ? "Grok" : "Fallback"}{note.preview ? " (your preview)" : ""}: {note.adminNote || "—"}
-                {note.whyKid ? <span className="pd-note"> (Mae saw: “{note.whyKid}”)</span> : null}
+                <strong>{formatEtDateTime(note.createdAt)}</strong>: &ldquo;{note.whyKid}&rdquo;
               </li>
             ))}
           </ul>

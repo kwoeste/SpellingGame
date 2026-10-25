@@ -1,3 +1,4 @@
+import { targetName } from "@/lib/admin/names";
 import { catalogConcept, catalogConcepts, hardPrereqs } from "@/lib/admin/catalog";
 import type { Alert, KnowledgeNode, MasteryState } from "@/lib/admin/types";
 
@@ -27,8 +28,8 @@ export function detectHoles(nodes: KnowledgeNode[], now = Date.now()): Alert[] {
         seen.add(conceptId);
         holes.push({
           kind: "hole",
-          title: `Missing start: ${catalog.titleAdmin}`,
-          detail: `No practice yet, and it sits under ${catalogConcept(blocked)?.titleAdmin ?? blocked}.`,
+          title: `Not started yet: ${catalog.titleAdmin}`,
+          detail: `Not practiced yet, and it comes before ${catalogConcept(blocked)?.titleAdmin ?? targetName(blocked)}.`,
           targetType: "concept",
           targetId: conceptId,
           severity: 2,
@@ -41,8 +42,8 @@ export function detectHoles(nodes: KnowledgeNode[], now = Date.now()): Alert[] {
       const child = catalogConcept(blocked);
       holes.push({
         kind: "hole",
-        title: `Gap: ${node.titleAdmin}`,
-        detail: `Blocking ${child?.titleAdmin ?? blocked}. She knows it about ${(node.pMastery * 100).toFixed(0)}%.`,
+        title: `Gap to fill: ${node.titleAdmin}`,
+        detail: `Needed for ${child?.titleAdmin ?? targetName(blocked)}. She knows it about ${(node.pMastery * 100).toFixed(0)}%.`,
         targetType: "concept",
         targetId: conceptId,
         severity: node.state === "rusty" ? 3 : 2,
@@ -56,8 +57,8 @@ export function detectHoles(nodes: KnowledgeNode[], now = Date.now()): Alert[] {
         seen.add(conceptId);
         holes.push({
           kind: "hole",
-          title: `Weak prerequisite: ${node.titleAdmin}`,
-          detail: `She knows it about ${(node.pMastery * 100).toFixed(0)}% and has not practiced in 7 days. Check before ${catalogConcept(blocked)?.titleAdmin ?? blocked}.`,
+          title: `Earlier skill getting shaky: ${node.titleAdmin}`,
+          detail: `She knows it about ${(node.pMastery * 100).toFixed(0)}% and has not practiced in 7 days. Worth a quick check before ${catalogConcept(blocked)?.titleAdmin ?? targetName(blocked)}.`,
           targetType: "concept",
           targetId: conceptId,
           severity: 1,

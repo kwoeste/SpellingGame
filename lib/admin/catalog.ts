@@ -1,5 +1,6 @@
 import { listChapters, NAMED_GAMES } from "@/lib/content/catalog";
 import { HARD_PREREQS, MATH_CONCEPTS, type ConceptNode } from "@/lib/content/concepts";
+import { chapterName, partName, targetName } from "@/lib/admin/names";
 import type { ChapterItem, ChapterPack, SubjectId } from "@/lib/content/types";
 
 export type CatalogConcept = ConceptNode & { chapterId?: string };
@@ -19,35 +20,24 @@ function conceptKind(conceptId: string): ConceptNode["kind"] {
   return "knowledge";
 }
 
-const BOOK_NAMES: Record<string, string> = {
-  savvas: "Savvas Science",
-  ckla: "CKLA Reading",
-  col: "Christ Our Life",
-  math: "Math",
-};
-
 /** Plain chapter name for parents, e.g. "Christ Our Life Ch 4". */
-export function chapterDisplayName(chapter: Pick<ChapterPack, "book" | "number">): string {
-  return `${BOOK_NAMES[chapter.book] ?? chapter.book} Ch ${chapter.number}`;
-}
-
-function formatChapterName(chapter: ChapterPack): string {
-  return `${chapterDisplayName(chapter)}: ${chapter.titleKid}`;
+export function chapterDisplayName(chapter: Pick<ChapterPack, "book" | "number"> & { titleKid?: string }): string {
+  return chapterName(chapter);
 }
 
 /** Chapter name from an id like "col.ch4", falling back to the id. */
 export function chapterLabelById(chapterId: string | null | undefined): string {
   if (!chapterId) return "—";
   const chapter = listChapters().find((c) => c.id === chapterId);
-  return chapter ? chapterDisplayName(chapter) : chapterId;
+  return chapter ? chapterDisplayName(chapter) : targetName(chapterId);
 }
 
 function conceptTitle(conceptId: string, chapter: ChapterPack): { kid: string; admin: string } {
-  const chapterName = formatChapterName(chapter);
-  if (conceptId.endsWith(".vocab")) return { kid: `${chapter.titleKid} words`, admin: `${chapterName} — Vocabulary` };
-  if (conceptId.endsWith(".sequence")) return { kid: `${chapter.titleKid} order`, admin: `${chapterName} — Sequence` };
-  if (conceptId.endsWith(".knowledge")) return { kid: chapter.bigQuestion, admin: `${chapterName} — Knowledge` };
-  return { kid: conceptId, admin: conceptId };
+  const name = chapterName(chapter);
+  const suffix = conceptId.slice(conceptId.lastIndexOf(".") + 1);
+  const part = partName(suffix);
+  const kid = suffix === "vocab" ? `${chapter.titleKid} words` : suffix === "sequence" ? `${chapter.titleKid} order` : suffix === "knowledge" ? chapter.bigQuestion : conceptId;
+  return { kid, admin: part ? `${name} – ${part}` : targetName(conceptId) };
 }
 
 function buildIndexes(): void {
@@ -111,8 +101,9 @@ export function gameTitle(gameId: string): string {
 
 export function assignmentTitle(targetType: "concept" | "chapter" | "game", targetId: string): string {
   if (targetType === "chapter") {
-    return catalogChapters().find((chapter) => chapter.id === targetId)?.titleKid ?? targetId;
+    const chapter = catalogChapters().find((c) => c.id === targetId);
+    return chapter ? `${chapterName(chapter)}: ${chapter.titleKid}` : targetName(targetId);
   }
   if (targetType === "game") return gameTitle(targetId);
-  return catalogConcept(targetId)?.titleAdmin ?? targetId;
+  return catalogConcept(targetId)?.titleAdmin ?? targetName(targetId);
 }

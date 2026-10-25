@@ -30,7 +30,7 @@ describe("admin presentational views", () => {
     const snap = demoSnapshot();
     const overview = renderToStaticMarkup(createElement(OverviewView, { data: buildOverview(snap) }));
     expect(overview).toContain("Minutes today");
-    expect(overview).toContain("Gap:");
+    expect(overview).toContain("Gap to fill:");
     const progress = renderToStaticMarkup(createElement(ProgressViewPanel, { data: buildProgress(snap) }));
     expect(progress).toContain("Math");
     expect(progress).toContain("Science");

@@ -1,11 +1,16 @@
 import { HorizontalBars, LineChart } from "@/app/admin/_ui/charts";
 import { EmptyState } from "@/app/admin/_ui/empty";
-import { formatEtDate } from "@/lib/admin/format";
-import { subjectLabel, type ProgressView } from "@/lib/admin/types";
+import { formatEtWeekday } from "@/lib/admin/format";
+import { groupBySubject } from "@/lib/admin/group";
+import { chapterFullName } from "@/lib/admin/names";
+import { MASTERY_GATE, type ChapterProgressRow, type ProgressView } from "@/lib/admin/types";
 
-function friendlyChapterName(subject: string, number: number, title: string): string {
-  const subjectName = subjectLabel(subject as "math" | "science" | "ela" | "religion");
-  return `${subjectName} ${number} · ${title}`;
+/** Star column: earned, or how far from the 90% first-try rule. */
+export function starStatus(chapter: Pick<ChapterProgressRow, "gated" | "firstTryPct" | "itemsAttempted">): string {
+  if (chapter.gated) return "Star earned";
+  if (chapter.itemsAttempted === 0) return "Not started";
+  if (chapter.firstTryPct >= MASTERY_GATE * 100) return "Ready for the star check";
+  return "Not yet (needs 90% right on first try)";
 }
 
 export function ProgressViewPanel({ data }: { data: ProgressView }) {
@@ -15,8 +20,8 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
       <p className="pd-kicker">Progress</p>
       <h1>By subject and chapter</h1>
       <p className="pd-lead">
-        How close each subject is to the 90% mark that earns a chapter star, which grade level the skills sit at,
-        and how many skills she has mastered over time.
+        A chapter star means she got at least 90% right on the first try, without big hints. Skills count as
+        mastered once she gets them right reliably over several days.
       </p>
       {!anyMastery ? (
         <EmptyState
@@ -28,11 +33,11 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
         {data.subjects.map((subject) => (
           <section className="pd-card" key={subject.subject}>
             <h2>
-              {subject.label} · {subject.toward90}% toward 90%
+              {subject.label} · {subject.chaptersStarred} of {subject.chaptersTotal} chapter stars
             </h2>
             <p className="pd-lead" style={{ marginBottom: 10 }}>
-              {subject.mastered} mastered · {subject.inProgress} in progress · {subject.rusty} need a refresh
-              {subject.frontier !== null ? ` · working at grade ${subject.frontier.toFixed(1)}` : ""}
+              Skills: {subject.mastered} of {subject.concepts} mastered · {subject.inProgress} in progress · {subject.rusty} need a refresh
+              {subject.frontier !== null ? ` · working at about grade ${subject.frontier.toFixed(1)}` : ""}
             </p>
             <HorizontalBars
               rows={[
@@ -65,49 +70,63 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
         ))}
       </div>
       <section className="pd-card" style={{ marginTop: 14 }}>
-        <h2>Mastery and accuracy over time</h2>
+        <h2>Skills mastered over time</h2>
         {data.trend.length === 0 ? (
           <EmptyState title="No trend yet" body="A daily line will show mastered-skill count and first-try accuracy." />
         ) : (
           <LineChart
             title="Mastered concepts over time"
             points={data.trend.map((point) => ({ x: point.day, y: point.mastered }))}
-            caption="Running count of concepts marked mastered. Accuracy is on the progress API trend payload."
+            caption="How many skills she has mastered so far, by day (ET)."
           />
         )}
       </section>
       <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>Chapters</h2>
-        <div className="pd-table-wrap">
-          <table className="pd-table">
-            <thead>
-              <tr>
-                <th>Chapter</th>
-                <th>Subject</th>
-                <th>Items</th>
-                <th>Toward 90%</th>
-                <th>Gate</th>
-                <th>Last seen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.chapters.map((chapter) => (
-                <tr key={chapter.chapterId}>
-                  <td>
-                    {friendlyChapterName(chapter.subject, chapter.number, chapter.title)}
-                  </td>
-                  <td>{subjectLabel(chapter.subject)}</td>
-                  <td>
-                    {chapter.itemsCorrect}/{chapter.itemsTotal}
-                  </td>
-                  <td>{chapter.masteryPct}%</td>
-                  <td>{chapter.gated ? "Passed" : "Open"}</td>
-                  <td>{chapter.lastSeenAt ? formatEtDate(chapter.lastSeenAt) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="pd-note">
+          &ldquo;Answered right&rdquo; counts any correct answer, even after retries. The star needs 90% right on the
+          first try, so a chapter can be 100% answered right and still not have its star.
+        </p>
+        {groupBySubject(data.chapters, (c) => c.subject).map((group) => {
+          const started = group.rows.filter((c) => c.itemsAttempted > 0).length;
+          const stars = group.rows.filter((c) => c.gated).length;
+          return (
+            <details className="pd-group" key={group.subject} open={started > 0}>
+              <summary>
+                {group.label}
+                <span className="pd-note">
+                  {stars} of {group.rows.length} stars · {started} started
+                </span>
+              </summary>
+              <div className="pd-table-wrap">
+                <table className="pd-table">
+                  <thead>
+                    <tr>
+                      <th>Chapter</th>
+                      <th>Answered right</th>
+                      <th>Right on first try</th>
+                      <th>Star</th>
+                      <th>Last practiced</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.rows.map((chapter) => (
+                      <tr key={chapter.chapterId}>
+                        <td>{chapterFullName({ book: chapter.book, number: chapter.number, titleKid: chapter.title })}</td>
+                        <td>
+                          {chapter.itemsCorrect} of {chapter.itemsTotal}
+                        </td>
+                        <td>{chapter.itemsAttempted ? `${chapter.firstTryPct}%` : "—"}</td>
+                        <td>{starStatus(chapter)}</td>
+                        <td>{chapter.lastSeenAt ? formatEtWeekday(chapter.lastSeenAt) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          );
+        })}
       </section>
     </div>
   );

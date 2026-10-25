@@ -87,3 +87,43 @@ export function formatAnswer(value: unknown): string {
 export function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
+
+export type RingProgress = {
+  /** True percent, not capped (44 of 15 is 293). */
+  pct: number;
+  /** 0-100, how much of the circle to fill. */
+  arcPct: number;
+  met: boolean;
+  /** Text inside the ring: "73%", "Goal met", or "—" when there is no goal. */
+  label: string;
+};
+
+/** Ring math: exact rounding (no 5% steps), capped arc, and "Goal met" once done reaches the goal. */
+export function ringProgress(done: number, goal: number): RingProgress {
+  if (!Number.isFinite(goal) || goal <= 0) return { pct: 0, arcPct: 0, met: false, label: "—" };
+  const safeDone = Math.max(0, Number.isFinite(done) ? done : 0);
+  const exact = Math.round((safeDone / goal) * 100);
+  const met = safeDone >= goal;
+  return { pct: exact, arcPct: Math.min(100, exact), met, label: met ? "Goal met" : `${exact}%` };
+}
+
+/** Friendly ET day for a YYYY-MM-DD key: "Mon, Oct 19". */
+export function formatDayKey(dayKey: string): string {
+  const [y, m, d] = dayKey.split("-").map(Number);
+  if (!y || !m || !d) return dayKey;
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(
+    new Date(Date.UTC(y, m - 1, d, 12)),
+  );
+}
+
+/** Clock time in ET: "9:55 AM". */
+export function formatEtTime(ts: number): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" }).format(new Date(ts));
+}
+
+/** "Oct 25, 8:54 – 9:55 AM ET" (same day) for a session span. */
+export function formatEtSpan(start: number, end: number | null): string {
+  const day = new Intl.DateTimeFormat("en-US", { timeZone: ET, month: "short", day: "numeric" }).format(new Date(start));
+  if (end === null || end <= start) return `${day}, ${formatEtTime(start)} ET`;
+  return `${day}, ${formatEtTime(start)} – ${formatEtTime(end)} ET`;
+}

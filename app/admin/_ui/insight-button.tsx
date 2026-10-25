@@ -28,7 +28,7 @@ export function InsightButton() {
   }
   return (
     <p style={{ marginTop: 8 }}>
-      <button type="button" className="pd-btn" onClick={run} disabled={busy}>
+      <button type="button" className="pd-btn secondary" onClick={run} disabled={busy}>
         {busy ? "Analyzing…" : "Ask Grok now"}
       </button>{" "}
       {msg ? <span className="pd-note">{msg}</span> : null}

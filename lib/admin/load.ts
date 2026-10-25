@@ -80,12 +80,16 @@ export async function loadLearnsBest(now = Date.now()) {
   return buildLearnsBest(episodes, plans, DEFAULT_LEARNER.id, insights);
 }
 
+import { groupByKey } from "@/lib/admin/group";
+import { targetName } from "@/lib/admin/names";
+
 export type HomeSummary = {
   plan: { title: string; minutes: number; done: boolean; href: string }[] | null;
   planGoalMinutes: number | null;
   planNote: string | null;
-  recentMisses: { id: string; question: string; chapter: string | null; at: number }[];
-  needsReteach: { key: string; label: string }[];
+  /** One row per question (repeats collapsed), newest first. */
+  recentMisses: { id: string; question: string; chapter: string | null; at: number; count?: number }[];
+  needsReteach: { key: string; label: string; chapter?: string | null }[];
   learnsBest: { subject: string; summary: string }[];
   lowStock: string[];
   inventoryError: boolean;
@@ -131,9 +135,18 @@ export async function loadHome(now = Date.now()): Promise<HomeSummary> {
         }))
       : null,
     planGoalMinutes: typeof raw?.goalMinutes === "number" ? raw.goalMinutes : null,
-    planNote: typeof raw?.adminNote === "string" && raw.adminNote ? raw.adminNote : null,
-    recentMisses: [...wrong.rows].sort((a, b) => b.ts - a.ts).slice(0, 5).map((r) => ({ id: r.eventId, question: r.itemText, chapter: r.chapterLabel ?? null, at: r.ts })),
-    needsReteach: wrong.needsReteach.filter((r) => !r.cleared).slice(0, 5).map((r) => ({ key: r.key, label: r.label })),
+    // The planner's own note is written for the engine, not parents; keep it off the page.
+    planNote: null,
+    recentMisses: groupByKey(wrong.rows, (r) => r.itemId, (r) => r.ts)
+      .slice(0, 5)
+      .map((g) => ({ id: g.first.eventId, question: g.first.itemText, chapter: g.first.chapterLabel ?? null, at: g.latestAt, count: g.count })),
+    needsReteach: groupByKey(
+      wrong.needsReteach.filter((r) => !r.cleared),
+      (r) => `${r.chapterId ?? r.source}|${r.label}`,
+      (r) => r.lastTs,
+    )
+      .slice(0, 5)
+      .map((g) => ({ key: g.first.key, label: g.first.label, chapter: g.first.chapterId ? targetName(g.first.chapterId) : null })),
     learnsBest: learns?.insight?.summary
       ? [{ subject: "all", summary: learns.insight.summary }]
       : (learns?.subjects ?? []).filter((s) => s.best).map((s) => ({ subject: s.subject, summary: `${subjectLabel(s.subject)}: ${s.summary}` })),

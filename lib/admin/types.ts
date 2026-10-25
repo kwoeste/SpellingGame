@@ -1,3 +1,4 @@
+import { subjectName } from "@/lib/admin/subject-names";
 import type { ResolvedAnswer } from "@/lib/admin/answer-text";
 import type { SubjectId } from "@/lib/content/types";
 
@@ -26,7 +27,12 @@ export type GoalRing = {
   label: string;
   done: number;
   goal: number;
+  /** True percent (can pass 100), or -1 when there is nothing to show. */
   pct: number;
+  /** 0-100 for the drawn arc. */
+  arcPct: number;
+  /** Text inside the ring: "73%", "Goal met", or "—". */
+  text: string;
   unit: string;
 };
 
@@ -81,6 +87,8 @@ export type SubjectProgress = {
   rusty: number;
   masteryPct: number;
   toward90: number;
+  chaptersTotal: number;
+  chaptersStarred: number;
   avgMilestone: number | null;
   frontier: number | null;
   gradeSpread: { band: string; count: number; mastered: number }[];
@@ -95,7 +103,11 @@ export type ChapterProgressRow = {
   itemsTotal: number;
   itemsCorrect: number;
   itemsAttempted: number;
+  /** Share of items ever answered right (any try, any help). */
   masteryPct: number;
+  /** Items whose latest first try was right with no big hint: the same rule the chapter star uses. */
+  firstTryCorrect: number;
+  firstTryPct: number;
   gated: boolean;
   lastSeenAt: number | null;
 };
@@ -196,6 +208,10 @@ export type SessionHistoryRow = {
   id: string;
   startedAt: number;
   endedAt: number | null;
+  /** Last thing she did in the session (answer, hint, or heartbeat). */
+  lastActivityAt: number;
+  /** When she answered her first question, if any. */
+  firstQuestionAt: number | null;
   entryPoint: string;
   engagedMinutes: number;
   idleMinutes: number;
@@ -242,6 +258,8 @@ export type LearnerGoal = {
 export type AssignTargetOption = {
   id: string;
   title: string;
+  /** Subject id, used to group the dropdown ("ela", "math", ...). */
+  subject?: string;
 };
 
 export type AssignmentsView = {
@@ -265,9 +283,7 @@ export function isMasteryState(value: string): value is MasteryState {
   );
 }
 
-const SUBJECT_LABELS: Record<string, string> = { math: "Math", science: "Science", ela: "Reading", religion: "Religion" };
-
 /** Plain subject name. Never throws: unknown or missing subjects read "Other". */
 export function subjectLabel(subject: SubjectId | "unknown" | string | null | undefined): string {
-  return (subject && SUBJECT_LABELS[subject]) || "Other";
+  return subjectName(subject);
 }

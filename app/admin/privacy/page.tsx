@@ -14,7 +14,7 @@ export default function AdminPrivacyPage() {
           <li>Collected: Google email for sign-in, nickname, learning events, likes, coarse device type.</li>
           <li>Not collected: date of birth, address, school ID, photos, voice, location.</li>
           <li>Raw events are kept 24 months, then rolled up.</li>
-          <li>Mae never sees this page. Admin-only, same gate as the rest of /admin.</li>
+          <li>Only Mom and Dad can open this page (and the rest of the parent pages). Mae never sees it.</li>
         </ul>
       </div>
     </div>

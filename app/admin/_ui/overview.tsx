@@ -3,6 +3,7 @@ import { PageHeader } from "@/app/admin/_ui/page-header";
 import { BarChart, GoalRing, LineChart } from "@/app/admin/_ui/charts";
 import { EmptyState } from "@/app/admin/_ui/empty";
 import { formatPct } from "@/lib/admin/format";
+import { parentTakeaway } from "@/lib/admin/takeaway";
 import { ZONE_HIGH, ZONE_LOW, type Overview } from "@/lib/admin/types";
 
 export function OverviewView({ data, summary }: { data: Overview; summary?: ReactNode }) {
@@ -10,10 +11,20 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
   return (
     <div className="pd-wrap">
       <PageHeader
-        kicker="Parent dashboard"
+        kicker="Today"
         title={`${data.learnerNickname}’s day`}
         lead={`A quick look at today and this week. Mae never sees this page. Updated ${data.asOfEt}.`}
       />
+      {empty ? null : (
+        <p className="pd-takeaway" role="status">
+          <strong>In short:</strong>{" "}
+          {parentTakeaway({
+            firstTryAccuracy: data.firstTryAccuracy,
+            engagedMinutesToday: data.engagedMinutesToday,
+            dailyMinutesGoal: data.rings.find((r) => r.id === "minutes")?.goal ?? 0,
+          })}
+        </p>
+      )}
       {summary}
       <h2 className="pd-section">This week</h2>
       {empty ? (
@@ -120,6 +131,7 @@ export function OverviewView({ data, summary }: { data: Overview; summary?: Reac
             <LineChart
               title="Weekly first-try accuracy"
               points={data.weeklyAccuracy.map((week) => ({ x: week.week, y: week.accuracy }))}
+              xPrefix="Week of "
               yMin={0}
               yMax={1}
               band={{ low: ZONE_LOW, high: ZONE_HIGH }}
