@@ -2,7 +2,10 @@
  * Import NotebookLM media for any chapters present under NLM_MEDIA_DIR
  * (default /workspace/notebooklm/media/<chapterId>/{video.mp4,audio.m4a,flashcards.json}).
  *
- *   npx tsx --env-file=.env.local scripts/nlm-import.ts [chapterId ...]
+ *   npx tsx --env-file=.env.local scripts/nlm-import.ts [--skip-video] [--skip-audio] [--skip-flashcards] [chapterId ...]
+ *
+ * Use --skip-video while a chapter's video is still pending review (audio + flashcards still import).
+ * Flashcards must follow docs/flashcard-curation.md.
  *
  * - video/audio go to the PRIVATE Vercel Blob store (needs BLOB_READ_WRITE_TOKEN; `vercel env pull .env.local`).
  * - flashcards.json is validated and copied to lib/content/flashcards/<chapterId>.json.
@@ -46,7 +49,11 @@ function writeCardIndex() {
 }
 
 async function main() {
-  const only = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const skip = new Set(args.filter((a) => a.startsWith("--skip-")).map((a) => a.slice(7)));
+  const unknown = [...skip].filter((k) => !["video", "audio", "flashcards"].includes(k));
+  if (unknown.length) throw new Error(`unknown flag(s): ${unknown.map((k) => `--skip-${k}`).join(", ")}`);
+  const only = args.filter((a) => !a.startsWith("--"));
   const dirs = existsSync(MEDIA_DIR) ? readdirSync(MEDIA_DIR).filter((d) => statSync(path.join(MEDIA_DIR, d)).isDirectory()) : [];
   for (const id of dirs) {
     if (only.length && !only.includes(id)) continue;
@@ -57,6 +64,10 @@ async function main() {
     const dir = path.join(MEDIA_DIR, id);
     for (const [kind, spec] of Object.entries(FILES)) {
       const file = path.join(dir, spec.file);
+      if (skip.has(kind)) {
+        console.log(`skip ${id} ${kind} (--skip-${kind})`);
+        continue;
+      }
       if (!existsSync(file)) continue;
       const hash = sha256(file);
       if (manifest[id]?.[kind]?.sha256 === hash) {
@@ -71,7 +82,7 @@ async function main() {
       writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
     }
     const cardsFile = path.join(dir, "flashcards.json");
-    if (existsSync(cardsFile)) {
+    if (!skip.has("flashcards") && existsSync(cardsFile)) {
       const raw = JSON.parse(readFileSync(cardsFile, "utf8")) as { front: string; back: string }[];
       const cards = Array.isArray(raw) ? raw.map((c) => ({ front: String(c.front ?? "").trim(), back: String(c.back ?? "").trim() })) : [];
       if (!isFlashcardList(cards)) throw new Error(`${cardsFile}: expected [{front, back}]`);

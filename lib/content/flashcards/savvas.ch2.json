@@ -1,0 +1,86 @@
+[
+  {
+    "front": "What is technology?",
+    "back": "Any tool made by people to solve a problem."
+  },
+  {
+    "front": "Is a pencil technology?",
+    "back": "Yes. It is a tool people made to solve a problem (writing)."
+  },
+  {
+    "front": "How is a bridge an example of technology?",
+    "back": "People designed it to solve the problem of crossing water or land."
+  },
+  {
+    "front": "What is the very first step in the design process?",
+    "back": "Name the problem."
+  },
+  {
+    "front": "What do designers do right after naming the problem?",
+    "back": "List the limits and sketch ideas."
+  },
+  {
+    "front": "What step comes right after sketching ideas?",
+    "back": "Build a prototype."
+  },
+  {
+    "front": "What step comes after building a prototype?",
+    "back": "Test it and make it better."
+  },
+  {
+    "front": "What is a prototype?",
+    "back": "A first model you build so you can test it."
+  },
+  {
+    "front": "Why do engineers build prototypes?",
+    "back": "To test their ideas and see what works."
+  },
+  {
+    "front": "What do designers do after testing a prototype?",
+    "back": "They improve it and test again."
+  },
+  {
+    "front": "Do engineers usually get a design right on the first try?",
+    "back": "No. They test, fix, and try again."
+  },
+  {
+    "front": "Why is a failed test helpful?",
+    "back": "It gives useful data about what to fix next."
+  },
+  {
+    "front": "What are criteria?",
+    "back": "What a solution must do to solve the problem."
+  },
+  {
+    "front": "What are constraints?",
+    "back": "Limits on a design, like time, money, or materials."
+  },
+  {
+    "front": "A bike helmet must protect your head. Is that a criterion or a constraint?",
+    "back": "A criterion, because it is what the helmet must do."
+  },
+  {
+    "front": "You may build a boat using ONLY foil and tape. Criterion or constraint?",
+    "back": "A constraint, because it limits your materials."
+  },
+  {
+    "front": "A team has only 30 minutes to build a tower. What kind of limit is that?",
+    "back": "A time constraint."
+  },
+  {
+    "front": "A paper bridge MUST span a 6-inch gap. Criterion or constraint?",
+    "back": "A criterion, because it says what the bridge must do."
+  },
+  {
+    "front": "Which paper bridge holds more pennies: flat or folded like a fan?",
+    "back": "Folded like a fan (accordion). The folds make it stronger."
+  },
+  {
+    "front": "What invention was inspired by burrs sticking to a dog's fur?",
+    "back": "Velcro."
+  },
+  {
+    "front": "True or false: once a prototype is tested, the design is finished.",
+    "back": "False. Designers improve it and test again."
+  }
+]
