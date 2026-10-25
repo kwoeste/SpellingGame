@@ -1,4 +1,5 @@
 import { buildAssignments, buildKnowledgeMap, buildOverview, buildProgress, buildSessions, buildWrongAnswers, type DashboardSnapshot } from "@/lib/admin/dashboard";
+import { buildLearnsBest } from "@/lib/admin/learns-best";
 import type { AssignmentRow, LearnerGoal } from "@/lib/admin/types";
 import { SEEDED_LEARNER_ID } from "@/lib/auth/users";
 import { adminRepo } from "@/lib/engine/repos";
@@ -66,4 +67,11 @@ export async function loadSessions(now = Date.now()) {
 
 export async function loadAssignments(now = Date.now()) {
   return buildAssignments(await loadSnapshot(now));
+}
+
+export async function loadLearnsBest(now = Date.now()) {
+  const repo = adminRepo();
+  const since = new Date(now - 14 * 86_400_000).toISOString().slice(0, 10);
+  const [episodes, plans] = await Promise.all([repo.modalityEpisodes(), repo.sessionPlans(since)]);
+  return buildLearnsBest(episodes, plans, DEFAULT_LEARNER.id);
 }
