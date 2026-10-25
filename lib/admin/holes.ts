@@ -41,8 +41,8 @@ export function detectHoles(nodes: KnowledgeNode[], now = Date.now()): Alert[] {
       const child = catalogConcept(blocked);
       holes.push({
         kind: "hole",
-        title: `Hole: ${node.titleAdmin}`,
-        detail: `Blocking ${child?.titleAdmin ?? blocked}. P(L) ${(node.pMastery * 100).toFixed(0)}%, state ${node.state}.`,
+        title: `Gap: ${node.titleAdmin}`,
+        detail: `Blocking ${child?.titleAdmin ?? blocked}. She knows it about ${(node.pMastery * 100).toFixed(0)}%.`,
         targetType: "concept",
         targetId: conceptId,
         severity: node.state === "rusty" ? 3 : 2,
@@ -57,7 +57,7 @@ export function detectHoles(nodes: KnowledgeNode[], now = Date.now()): Alert[] {
         holes.push({
           kind: "hole",
           title: `Weak prerequisite: ${node.titleAdmin}`,
-          detail: `P(L) ${(node.pMastery * 100).toFixed(0)}% and not practiced in 7 days. Check before ${catalogConcept(blocked)?.titleAdmin ?? blocked}.`,
+          detail: `She knows it about ${(node.pMastery * 100).toFixed(0)}% and has not practiced in 7 days. Check before ${catalogConcept(blocked)?.titleAdmin ?? blocked}.`,
           targetType: "concept",
           targetId: conceptId,
           severity: 1,

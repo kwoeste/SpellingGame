@@ -29,14 +29,14 @@ describe("admin presentational views", () => {
   it("renders demo overview, progress, and session timeline", () => {
     const snap = demoSnapshot();
     const overview = renderToStaticMarkup(createElement(OverviewView, { data: buildOverview(snap) }));
-    expect(overview).toContain("Time on task");
-    expect(overview).toContain("Hole:");
+    expect(overview).toContain("Minutes today");
+    expect(overview).toContain("Gap:");
     const progress = renderToStaticMarkup(createElement(ProgressViewPanel, { data: buildProgress(snap) }));
     expect(progress).toContain("Math");
     expect(progress).toContain("Science");
     const sessions = renderToStaticMarkup(createElement(SessionTimeline, { data: buildSessions(snap) }));
-    expect(sessions).toContain("engaged min");
-    expect(sessions).toMatch(/skim|skip|rush|ok/);
+    expect(sessions).toContain("min working");
+    expect(sessions).toMatch(/Good pace|Read too fast|Skipped ahead|Rushing/);
     const wrong = buildWrongAnswers(snap);
     expect(wrong.rows[0]?.itemText).toContain("observation");
     expect(wrong.rows[0]?.responseText).toContain("tool");

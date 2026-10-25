@@ -227,7 +227,7 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
     const rusty = isRusty(new Date(review.dueAt), review.box, now);
     alerts.push({
       kind: rusty ? "rusty" : "review_due",
-      title: rusty ? `Rusty: ${concept?.titleAdmin ?? review.targetId}` : `Review due: ${concept?.titleAdmin ?? review.targetId}`,
+      title: rusty ? `Needs a refresh: ${concept?.titleAdmin ?? review.targetId}` : `Review due: ${concept?.titleAdmin ?? review.targetId}`,
       detail: rusty
         ? `Overdue by more than twice the box interval (box ${review.box}).`
         : `Due ${formatEtDateTime(review.dueAt)}.`,
@@ -240,7 +240,7 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
     if (node.state === "rusty" && !alerts.some((alert) => alert.kind === "rusty" && alert.targetId === node.id)) {
       alerts.push({
         kind: "rusty",
-        title: `Rusty: ${node.titleAdmin}`,
+        title: `Needs a refresh: ${node.titleAdmin}`,
         detail: "Mastery slipped after a missed review.",
         targetType: "concept",
         targetId: node.id,

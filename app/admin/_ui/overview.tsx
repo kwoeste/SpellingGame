@@ -1,18 +1,21 @@
+import type { ReactNode } from "react";
+import { PageHeader } from "@/app/admin/_ui/page-header";
 import { BarChart, GoalRing, LineChart } from "@/app/admin/_ui/charts";
 import { EmptyState } from "@/app/admin/_ui/empty";
 import { formatPct } from "@/lib/admin/format";
 import { ZONE_HIGH, ZONE_LOW, type Overview } from "@/lib/admin/types";
 
-export function OverviewView({ data }: { data: Overview }) {
+export function OverviewView({ data, summary }: { data: Overview; summary?: ReactNode }) {
   const empty = data.itemsAttempted === 0 && data.xpTotal === 0;
   return (
     <div className="pd-wrap">
-      <p className="pd-kicker">Parent dashboard · admin only</p>
-      <h1>{data.learnerNickname}&rsquo;s week</h1>
-      <p className="pd-lead">
-        Time, XP, accuracy against the 70–95% target band, streak, and alerts. Mae never sees these
-        numbers. As of {data.asOfEt}.
-      </p>
+      <PageHeader
+        kicker="Parent dashboard"
+        title={`${data.learnerNickname}’s day`}
+        lead={`A quick look at today and this week. Mae never sees this page. Updated ${data.asOfEt}.`}
+      />
+      {summary}
+      <h2 className="pd-section">This week</h2>
       {empty ? (
         <EmptyState
           title="No sessions yet"
@@ -21,34 +24,34 @@ export function OverviewView({ data }: { data: Overview }) {
       ) : null}
       <div className="pd-grid pd-metrics">
         <div className="pd-metric">
-          <span className="pd-label">Time on task today</span>
+          <span className="pd-label">Minutes today</span>
           <span className="pd-value">{data.engagedMinutesToday}</span>
           <span className="pd-note">{data.engagedMinutesWeek} min this week</span>
         </div>
         <div className="pd-metric">
-          <span className="pd-label">XP</span>
+          <span className="pd-label">Points (XP) today</span>
           <span className="pd-value">{data.xpToday}</span>
           <span className="pd-note">
             {data.xpWeek} this week · {data.xpTotal} total
           </span>
         </div>
         <div className="pd-metric">
-          <span className="pd-label">Items completed</span>
+          <span className="pd-label">Questions finished</span>
           <span className="pd-value">{data.itemsCompleted}</span>
           <span className="pd-note">{data.itemsAttempted} attempted</span>
         </div>
         <div className={`pd-metric ${data.inTargetBand === false ? "out-band" : data.inTargetBand ? "in-band" : ""}`}>
-          <span className="pd-label">First-try accuracy</span>
+          <span className="pd-label">Right on first try</span>
           <span className="pd-value">{formatPct(data.firstTryAccuracy)}</span>
           <span className="pd-note">
-            Target band {Math.round(ZONE_LOW * 100)}–{Math.round(ZONE_HIGH * 100)}%
-            {data.inTargetBand === true ? " · in band" : data.inTargetBand === false ? " · outside band" : ""}
+            Healthy range {Math.round(ZONE_LOW * 100)}–{Math.round(ZONE_HIGH * 100)}%
+            {data.inTargetBand === true ? " · just right" : data.inTargetBand === false ? " · outside range" : ""}
           </span>
         </div>
         <div className="pd-metric">
           <span className="pd-label">Streak</span>
           <span className="pd-value">{data.streakDays}</span>
-          <span className="pd-note">days with engaged minutes</span>
+          <span className="pd-note">days in a row</span>
         </div>
       </div>
       <div className="pd-grid pd-split" style={{ marginTop: 14 }}>
@@ -98,19 +101,19 @@ export function OverviewView({ data }: { data: Overview }) {
       </section>
       <div className="pd-grid pd-two" style={{ marginTop: 14 }}>
         <section className="pd-card">
-          <h2>Engaged minutes</h2>
+          <h2>Minutes per day</h2>
           {data.daily.length === 0 ? (
             <EmptyState title="No time logged" body="XP minutes will plot here after the first engaged minute." />
           ) : (
             <BarChart
               title="Engaged minutes by day"
               points={data.daily.map((day) => ({ x: day.day, y: day.minutes }))}
-              caption="Source: XP ledger · America/New_York days · 10 XP per engaged minute, 5–15 on answering minutes by recent accuracy"
+              caption="Minutes she was actually working each day (ET)."
             />
           )}
         </section>
         <section className="pd-card">
-          <h2>Accuracy vs 70–95% band</h2>
+          <h2>Right on first try, by week</h2>
           {data.weeklyAccuracy.length === 0 ? (
             <EmptyState title="No scored items" body="Weekly first-try accuracy will appear after she answers questions." />
           ) : (
@@ -120,7 +123,7 @@ export function OverviewView({ data }: { data: Overview }) {
               yMin={0}
               yMax={1}
               band={{ low: ZONE_LOW, high: ZONE_HIGH }}
-              caption="Shaded band is the 70–95% target zone. Set point is about 82%."
+              caption="Shaded area is the healthy 70–95% range: hard enough to learn, easy enough to stay confident."
             />
           )}
         </section>

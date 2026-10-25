@@ -15,8 +15,8 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
       <p className="pd-kicker">Progress</p>
       <h1>By subject and chapter</h1>
       <p className="pd-lead">
-        Mastery toward the 90% gate, grade-level spread from concept milestones, and a trend of
-        mastered concepts over time.
+        How close each subject is to the 90% mark that earns a chapter star, which grade level the skills sit at,
+        and how many skills she has mastered over time.
       </p>
       {!anyMastery ? (
         <EmptyState
@@ -31,8 +31,8 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
               {subject.label} · {subject.toward90}% toward 90%
             </h2>
             <p className="pd-lead" style={{ marginBottom: 10 }}>
-              {subject.mastered} mastered · {subject.inProgress} in progress · {subject.rusty} rusty
-              {subject.frontier !== null ? ` · frontier ${subject.frontier.toFixed(1)}` : ""}
+              {subject.mastered} mastered · {subject.inProgress} in progress · {subject.rusty} need a refresh
+              {subject.frontier !== null ? ` · working at grade ${subject.frontier.toFixed(1)}` : ""}
             </p>
             <HorizontalBars
               rows={[
@@ -67,7 +67,7 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
       <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>Mastery and accuracy over time</h2>
         {data.trend.length === 0 ? (
-          <EmptyState title="No trend yet" body="A daily line will show mastered-concept count and first-try accuracy." />
+          <EmptyState title="No trend yet" body="A daily line will show mastered-skill count and first-try accuracy." />
         ) : (
           <LineChart
             title="Mastered concepts over time"
