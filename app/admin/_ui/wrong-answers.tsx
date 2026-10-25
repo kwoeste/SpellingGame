@@ -1,44 +1,66 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AnswerList } from "@/app/admin/_ui/answer-list";
 import { EmptyState } from "@/app/admin/_ui/empty";
-import { formatEtDateTime, formatPct } from "@/lib/admin/format";
-import type { WrongAnswerView } from "@/lib/admin/types";
+import { PageHeader } from "@/app/admin/_ui/page-header";
+import { formatEtDateTime } from "@/lib/admin/format";
+import { RELABEL_CHOICES, strategyDetail, strategyLabel, strategySourceLabel, isUnknownStrategy } from "@/lib/admin/strategy-labels";
+import { subjectLabel, type WrongAnswerView } from "@/lib/admin/types";
 
-export function WrongAnswerTable({ data }: { data: WrongAnswerView }) {
+function seconds(ms: number | null): string {
+  if (ms === null) return "—";
+  const s = Math.round(ms / 1000);
+  return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`;
+}
+
+function whereLabel(row: { source: string; chapterId: string | null }, chapterLabel: (id: string | null) => string): string {
+  if (row.source === "watch_check") return "Watch it check";
+  if (row.source === "game") return "Game";
+  return chapterLabel(row.chapterId);
+}
+
+export function WrongAnswerTable({ data, chapterLabels = {} }: { data: WrongAnswerView; chapterLabels?: Record<string, string> }) {
   const [subject, setSubject] = useState("all");
   const [strategy, setStrategy] = useState("all");
   const [query, setQuery] = useState("");
-  const [firstOnly, setFirstOnly] = useState(true);
+  const [firstOnly, setFirstOnly] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const chapterLabel = (id: string | null) => (id ? chapterLabels[id] ?? id : "—");
 
   const strategies = useMemo(
     () => [...new Set(data.rows.map((row) => row.strategy).filter((value): value is string => Boolean(value)))].sort(),
     [data.rows],
   );
+  const subjects = useMemo(() => [...new Set(data.rows.map((row) => row.subject))].filter((s) => s !== "unknown"), [data.rows]);
 
   const rows = data.rows.filter((row) => {
     if (firstOnly && !row.firstAttempt) return false;
     if (subject !== "all" && row.subject !== subject) return false;
     if (strategy !== "all" && row.strategy !== strategy) return false;
     if (query) {
-      const hay = `${row.itemText} ${row.responseText} ${row.conceptTitle} ${row.correctAnswer}`.toLowerCase();
+      const hay = `${row.itemText} ${row.responseText} ${row.conceptTitle} ${row.correctAnswer} ${row.chapterLabel ?? ""}`.toLowerCase();
       if (!hay.includes(query.toLowerCase())) return false;
     }
     return true;
   });
+  const openReteach = data.needsReteach.filter((row) => !row.cleared);
 
-  async function relabel(eventId: string) {
-    const next = window.prompt("Strategy label (admin_label)");
+  async function relabel(eventId: string, next: string) {
     if (!next) return;
     setBusy(eventId);
+    setError(null);
     try {
-      await fetch("/api/admin/strategy/relabel", {
+      const res = await fetch("/api/admin/strategy/relabel", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ eventId, strategy: next.trim() }),
+        body: JSON.stringify({ eventId, strategy: next }),
       });
+      if (!res.ok) throw new Error(String(res.status));
       window.location.reload();
+    } catch {
+      setError("Couldn't save that label. Please try again.");
     } finally {
       setBusy(null);
     }
@@ -46,130 +68,131 @@ export function WrongAnswerTable({ data }: { data: WrongAnswerView }) {
 
   return (
     <div className="pd-wrap">
-      <p className="pd-kicker">Wrong answers</p>
-      <h1>Strategy log</h1>
-      <p className="pd-lead">
-        The item as she saw it, her answer, the correct answer, hints, latency, and the inferred or
-        labeled strategy. First-attempt only is on by default.
-      </p>
-      {data.needsReteach.length > 0 ? (
-        <section className="pd-card" style={{ marginBottom: 14 }} data-testid="needs-reteach">
-          <h2>Needs re-teach</h2>
-          <p className="pd-lead">
-            Items where she reached the strong hint (4 misses), used Show me, or skipped. Chapter items are re-queued
-            for next session automatically.
+      <PageHeader
+        kicker="Missed questions"
+        title="What she got wrong"
+        lead="Every missed answer: the question, what she answered, the right answer, and our best guess at why. Parts she got wrong are marked ✗."
+      />
+      {openReteach.length > 0 || data.needsReteach.length > 0 ? (
+        <section className="pd-card pd-section" data-testid="needs-reteach">
+          <h2>Needs re-teaching</h2>
+          <p className="pd-note">
+            Questions where she missed 4 times, used &ldquo;Show me&rdquo;, or skipped. These come back automatically in her next session until she gets them right on the first try.
           </p>
-          <table className="pd-table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Where</th>
-                <th>Most misses</th>
-                <th>Hints</th>
-                <th>Show me</th>
-                <th>Skips</th>
-                <th>Last</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.needsReteach.map((row) => (
-                <tr key={row.key}>
-                  <td>{row.label}</td>
-                  <td>{row.source === "chapter" ? row.chapterId : row.source === "watch_check" ? "Watch it" : "Game"}</td>
-                  <td>{row.maxMisses}</td>
-                  <td>{row.hints}</td>
-                  <td>{row.reveals}</td>
-                  <td>{row.skips}</td>
-                  <td>{formatEtDateTime(row.lastTs)}</td>
-                  <td>
-                    <span className={`pd-pill ${row.cleared ? "mastered" : "missing"}`}>{row.cleared ? "cleared" : "needs re-teach"}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ul className="pd-list">
+            {data.needsReteach.map((row) => (
+              <li key={row.key} className="pd-list-row">
+                <div>
+                  <strong>{row.label}</strong>
+                  <div className="pd-note">
+                    {whereLabel(row, chapterLabel)} · up to {row.maxMisses} misses
+                    {row.reveals ? ` · used Show me ${row.reveals}×` : ""}
+                    {row.skips ? ` · skipped ${row.skips}×` : ""} · last {formatEtDateTime(row.lastTs)}
+                  </div>
+                </div>
+                <span className={`pd-badge ${row.cleared ? "ok" : "bad"}`}>{row.cleared ? "Got it now" : "Needs re-teaching"}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
       {data.patterns.length > 0 ? (
-        <section className="pd-card" style={{ marginBottom: 14 }}>
-          <h2>Patterns</h2>
+        <section className="pd-card pd-section">
+          <h2>Why she missed (patterns)</h2>
           <div className="pd-legend">
             {data.patterns.map((pattern) => (
-              <span key={pattern.key} className="pd-pill in_progress">
-                {pattern.label} · {pattern.count} · {pattern.detail}
+              <span key={pattern.key} className="pd-pill in_progress" title={pattern.detail}>
+                {pattern.label} · {pattern.count}
               </span>
             ))}
           </div>
         </section>
       ) : null}
-      <div className="pd-filters">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search item or answer" />
-        <select value={subject} onChange={(event) => setSubject(event.target.value)}>
+      <div className="pd-filters" role="search">
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search questions or answers" aria-label="Search" />
+        <select value={subject} onChange={(event) => setSubject(event.target.value)} aria-label="Subject">
           <option value="all">All subjects</option>
-          <option value="math">Math</option>
-          <option value="science">Science</option>
-          <option value="ela">ELA</option>
-          <option value="religion">Religion</option>
+          {subjects.map((s) => (
+            <option key={s} value={s}>
+              {subjectLabel(s)}
+            </option>
+          ))}
         </select>
-        <select value={strategy} onChange={(event) => setStrategy(event.target.value)}>
-          <option value="all">All strategies</option>
+        <select value={strategy} onChange={(event) => setStrategy(event.target.value)} aria-label="Reason">
+          <option value="all">All reasons</option>
           {strategies.map((value) => (
             <option key={value} value={value}>
-              {value}
+              {strategyLabel(value)}
             </option>
           ))}
         </select>
         <label>
-          <input type="checkbox" checked={firstOnly} onChange={(event) => setFirstOnly(event.target.checked)} /> First
-          attempt only
+          <input type="checkbox" checked={firstOnly} onChange={(event) => setFirstOnly(event.target.checked)} /> Only first tries
         </label>
+        <span className="pd-note">
+          {rows.length} of {data.rows.length}
+        </span>
       </div>
+      {error ? <p className="pd-error" role="alert">{error}</p> : null}
       {rows.length === 0 ? (
         <EmptyState
-          title="No wrong answers in this filter"
-          body="Wrong first tries will land here with the stem, her response, and a strategy guess. You can relabel a row."
+          title={data.rows.length === 0 ? "No missed questions yet" : "Nothing matches these filters"}
+          body={data.rows.length === 0 ? "When Mae misses a question it shows up here with her answer and the right one." : "Try clearing the search or picking All subjects."}
         />
       ) : (
         <div className="pd-card pd-table-wrap">
-          <table className="pd-table">
+          <table className="pd-table pd-answers">
             <thead>
               <tr>
-                <th>When (ET)</th>
-                <th>Item</th>
+                <th>When</th>
+                <th>Question</th>
                 <th>Her answer</th>
-                <th>Correct</th>
+                <th>Right answer</th>
                 <th>Try</th>
-                <th>Hint</th>
-                <th>Latency</th>
-                <th>Strategy</th>
-                <th></th>
+                <th>Time</th>
+                <th>Likely reason</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.eventId}>
-                  <td>{formatEtDateTime(row.ts)}</td>
-                  <td>
-                    <strong>{row.conceptTitle}</strong>
+                  <td data-label="When">{formatEtDateTime(row.ts)}</td>
+                  <td data-label="Question">
+                    <span className="pd-badge bad">✗ Wrong</span>
+                    <div className="pd-note">{row.chapterLabel ?? subjectLabel(row.subject)}</div>
                     <div>{row.itemText}</div>
                   </td>
-                  <td>{row.responseText}</td>
-                  <td>{row.correctAnswer}</td>
-                  <td>{row.attemptNo ?? "—"}</td>
-                  <td>{row.hintLevel ?? 0}</td>
-                  <td>{row.latencyMs === null ? "—" : `${Math.round(row.latencyMs / 100) / 10}s`}</td>
-                  <td>
-                    {row.strategy ?? "—"}
-                    <div>
-                      {row.strategySource} {row.strategyConfidence !== null ? formatPct(row.strategyConfidence) : ""}
-                    </div>
-                    {row.misconception ? <span className="pd-pill rusty">{row.misconception}</span> : null}
+                  <td data-label="Her answer">
+                    <AnswerList answer={row.herAnswer} showMarks />
                   </td>
-                  <td>
-                    <button className="pd-btn secondary" type="button" disabled={busy === row.eventId} onClick={() => relabel(row.eventId)}>
-                      Relabel
-                    </button>
+                  <td data-label="Right answer">
+                    <AnswerList answer={row.correct} />
+                  </td>
+                  <td data-label="Try">
+                    {row.attemptNo ? `#${row.attemptNo}` : "—"}
+                    {(row.hintLevel ?? 0) > 0 ? <div className="pd-note">after a hint</div> : null}
+                  </td>
+                  <td data-label="Time">{seconds(row.latencyMs)}</td>
+                  <td data-label="Likely reason">
+                    <span title={strategyDetail(row.strategy)} className={isUnknownStrategy(row.strategy) ? "pd-note" : undefined}>
+                      {strategyLabel(row.strategy)}
+                    </span>
+                    {!isUnknownStrategy(row.strategy) ? <div className="pd-note">{strategySourceLabel(row.strategySource)}</div> : null}
+                    {row.misconception ? <span className="pd-pill rusty">{row.misconception}</span> : null}
+                    <select
+                      className="pd-relabel"
+                      aria-label="Change reason"
+                      value=""
+                      disabled={busy === row.eventId}
+                      onChange={(event) => relabel(row.eventId, event.target.value)}
+                    >
+                      <option value="">Change reason…</option>
+                      {RELABEL_CHOICES.map((choice) => (
+                        <option key={choice.id} value={choice.id}>
+                          {choice.label}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                 </tr>
               ))}

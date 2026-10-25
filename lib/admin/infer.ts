@@ -11,12 +11,23 @@ export function inferStrategy(args: {
   latencyMs: number | null;
   correct: boolean | null;
   hintLevel: number | null;
+  /** Her response, when known; lets wrong answers on sequence, match, and proof items get a real label. */
+  response?: unknown;
 }): { strategy: string; source: "inferred_rules"; confidence: number; misconception: string | null } {
   const latency = args.latencyMs ?? DEFAULT_MEDIAN_MS;
   const located = args.itemId ? locateAdminItem(args.itemId) : null;
   const reading = located?.item.type === "tap_evidence" || located?.chapter.subject === "ela" || located?.chapter.subject === "religion";
   if (args.latencyMs !== null && classifyGuess(latency, DEFAULT_MEDIAN_MS, Boolean(args.correct), 0)) {
     return { strategy: "guess", source: "inferred_rules", confidence: 0.7, misconception: null };
+  }
+  if (args.correct === false && located) {
+    const type = located.item.type;
+    if (type === "drag_order") return { strategy: "order_mixup", source: "inferred_rules", confidence: 0.6, misconception: null };
+    if (type === "drag_match") return { strategy: "meaning_mixup", source: "inferred_rules", confidence: 0.6, misconception: null };
+    const resp = args.response as Record<string, unknown> | null | undefined;
+    if (type === "tap_evidence" && resp && typeof resp === "object" && resp.choice === located.item.answer) {
+      return { strategy: "wrong_proof", source: "inferred_rules", confidence: 0.7, misconception: null };
+    }
   }
   if (reading && located) {
     const words = wordCount(located.item.stem);

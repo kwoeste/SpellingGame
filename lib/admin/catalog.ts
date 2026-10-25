@@ -19,9 +19,27 @@ function conceptKind(conceptId: string): ConceptNode["kind"] {
   return "knowledge";
 }
 
+const BOOK_NAMES: Record<string, string> = {
+  savvas: "Savvas Science",
+  ckla: "CKLA Reading",
+  col: "Christ Our Life",
+  math: "Math",
+};
+
+/** Plain chapter name for parents, e.g. "Christ Our Life Ch 4". */
+export function chapterDisplayName(chapter: Pick<ChapterPack, "book" | "number">): string {
+  return `${BOOK_NAMES[chapter.book] ?? chapter.book} Ch ${chapter.number}`;
+}
+
 function formatChapterName(chapter: ChapterPack): string {
-  const bookName = chapter.book === "savvas" ? "Savvas" : chapter.book === "ckla" ? "CKLA" : chapter.book === "col" ? "CoL" : chapter.book === "math" ? "Math" : chapter.book;
-  return `${bookName} Ch${chapter.number}: ${chapter.titleKid}`;
+  return `${chapterDisplayName(chapter)}: ${chapter.titleKid}`;
+}
+
+/** Chapter name from an id like "col.ch4", falling back to the id. */
+export function chapterLabelById(chapterId: string | null | undefined): string {
+  if (!chapterId) return "—";
+  const chapter = listChapters().find((c) => c.id === chapterId);
+  return chapter ? chapterDisplayName(chapter) : chapterId;
 }
 
 function conceptTitle(conceptId: string, chapter: ChapterPack): { kid: string; admin: string } {

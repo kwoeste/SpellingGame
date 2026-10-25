@@ -1,3 +1,4 @@
+import type { ResolvedAnswer } from "@/lib/admin/answer-text";
 import type { SubjectId } from "@/lib/content/types";
 
 export const ZONE_LOW = 0.7;
@@ -142,7 +143,13 @@ export type WrongAnswerRow = {
   itemText: string;
   response: unknown;
   responseText: string;
+  /** Her answer in words, with wrong parts marked. */
+  herAnswer: ResolvedAnswer;
+  /** The correct answer in words. */
+  correct: ResolvedAnswer;
   correctAnswer: string;
+  /** e.g. "Christ Our Life Ch 4". */
+  chapterLabel: string | null;
   attemptNo: number | null;
   hintLevel: number | null;
   latencyMs: number | null;
@@ -258,19 +265,9 @@ export function isMasteryState(value: string): value is MasteryState {
   );
 }
 
-export function subjectLabel(subject: SubjectId): string {
-  switch (subject) {
-    case "math":
-      return "Math";
-    case "science":
-      return "Science";
-    case "ela":
-      return "ELA";
-    case "religion":
-      return "Religion";
-    default: {
-      const unhandled: never = subject;
-      throw new Error(`Unhandled subject: ${String(unhandled)}`);
-    }
-  }
+const SUBJECT_LABELS: Record<string, string> = { math: "Math", science: "Science", ela: "Reading", religion: "Religion" };
+
+/** Plain subject name. Never throws: unknown or missing subjects read "Other". */
+export function subjectLabel(subject: SubjectId | "unknown" | string | null | undefined): string {
+  return (subject && SUBJECT_LABELS[subject]) || "Other";
 }
