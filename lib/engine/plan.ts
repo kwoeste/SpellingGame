@@ -279,6 +279,24 @@ export async function todayPlan(
   });
 }
 
+/** Sign-in ids for a parent previewing Mae's plan are namespaced so they never collide with hers. */
+export const PREVIEW_LOGIN_PREFIX = "preview:";
+
+/**
+ * A parent viewing /study sees the plan Mae would get: same learner, student visibility, same
+ * builder. Cached under a "preview:" sign-in id so it never replaces or reuses Mae's own row.
+ */
+export async function previewPlanForLearner(
+  repo: EngineRepo,
+  learnerId: string,
+  loginId: string | null,
+  nowMs = Date.now(),
+  deps: PlanDeps = {},
+): Promise<TodayPlan | null> {
+  const previewId = loginId ? `${PREVIEW_LOGIN_PREFIX}${loginId}`.slice(0, 64) : null;
+  return todayPlan(repo, { role: "student", learnerId }, previewId, nowMs, deps);
+}
+
 const SAFE_TEXT = /^[\p{L}\p{N}\p{P}\p{Zs}\p{Emoji_Presentation}'’]+$/u;
 
 function cleanLine(value: unknown, max: number): string | null {
