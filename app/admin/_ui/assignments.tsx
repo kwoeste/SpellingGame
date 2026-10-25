@@ -181,7 +181,7 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
             <label>
               {targetType === "concept" ? "Skill" : "Chapter"}
               <span className="pd-help">It shows up first in her next Study session until she finishes it.</span>
-              <select value={targetId} onChange={(event) => setTargetId(event.target.value)}>
+              <select className="pd-chapter-select" value={targetId} onChange={(event) => setTargetId(event.target.value)}>
                 <GroupedOptions options={targetType === "concept" ? concepts : chapters} />
               </select>
             </label>

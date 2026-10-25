@@ -2,14 +2,17 @@ import { get } from "@vercel/blob";
 import { jsonForbidden, jsonUnauthorized, requireRole } from "@/lib/auth/guards";
 import { getChapter } from "@/lib/content/catalog";
 import { isMediaKind, mediaEntry } from "@/lib/content/nlm";
+import { proxiedMedia, signedMediaUrl } from "@/lib/content/media-url";
 import { chapterVisibleTo } from "@/lib/content/student";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Streams a chapter's NotebookLM video/audio from the private Blob store to signed-in
- * student/admin users only. Forwards Range so the video can seek.
+ * Gives signed-in student/admin users a chapter's NotebookLM video/audio from the private
+ * Blob store. Normally redirects (302) to a short-lived signed Blob link so the CDN serves
+ * byte ranges directly; piping a 30 MB file through this function stalled video and left
+ * audio at 0:00. Falls back to proxying with proper 206/Content-Range handling.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ chapterId: string; kind: string }> }) {
   const gate = await requireRole(req, ["student", "admin"]);
@@ -20,19 +23,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ chapterI
   const entry = mediaEntry(chapterId, kind);
   if (!entry) return new Response("Not found", { status: 404 });
 
+  const signed = await signedMediaUrl(entry.pathname).catch(() => null);
+  if (signed) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: signed, "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" },
+    });
+  }
+
   const range = req.headers.get("range");
   const blob = await get(entry.pathname, { access: "private", headers: range ? { range } : undefined }).catch(() => null);
-  if (!blob || blob.statusCode !== 200 || !blob.stream) return new Response("Not found", { status: 404 });
-
-  const headers = new Headers({
-    "Content-Type": entry.contentType,
-    "Accept-Ranges": "bytes",
-    "Cache-Control": "private, no-store",
-    "X-Content-Type-Options": "nosniff",
-  });
-  const contentRange = blob.headers.get("content-range");
-  const length = blob.headers.get("content-length");
-  if (length) headers.set("Content-Length", length);
-  if (contentRange) headers.set("Content-Range", contentRange);
-  return new Response(blob.stream, { status: contentRange ? 206 : 200, headers });
+  if (!blob || !blob.stream) return new Response("Not found", { status: 404 });
+  return proxiedMedia(blob.stream, blob.headers, entry.contentType);
 }
+

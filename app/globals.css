@@ -1450,3 +1450,11 @@ button, input, textarea, select { font: inherit; }
 .flashcard-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
 .flashcard-text { font-size: 1.35rem; font-weight: 600; }
 .flashcard-hint { font-size: 0.85rem; opacity: 0.7; }
+
+/* Keep page content clear of the floating "Report a problem" button. */
+body { padding-bottom: 64px; }
+@media (max-width: 640px) {
+  body { padding-bottom: 56px; }
+  .report-btn { right: 8px; bottom: 8px; }
+  .report-btn > button.btn { padding: 4px 10px; font-size: 0.75rem; border-radius: 999px; min-height: 0; }
+}

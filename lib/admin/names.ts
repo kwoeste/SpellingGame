@@ -18,15 +18,15 @@ export const BOOK_NAMES: Record<string, string> = {
 };
 
 
-/** "Christ Our Life Ch 4" or "Math: Times 2" for the multiplication packs. */
+/** "Christ Our Life Ch 4" or "Math Ch 2 (Times 2)" for the multiplication packs. */
 export function chapterName(chapter: { book: string; number: number; titleKid?: string }): string {
-  if (chapter.book === "math" && chapter.titleKid) return `Math: ${chapter.titleKid.split(":")[0]}`;
+  if (chapter.book === "math" && chapter.titleKid) return `Math Ch ${chapter.number} (${chapter.titleKid.split(":")[0].trim()})`;
   return `${BOOK_NAMES[chapter.book] ?? chapter.book} Ch ${chapter.number}`;
 }
 
 /** Chapter name plus its title, e.g. "Christ Our Life Ch 4: Unit 1 looking back". */
 export function chapterFullName(chapter: { book: string; number: number; titleKid: string }): string {
-  if (chapter.book === "math") return `Math: ${chapter.titleKid}`;
+  if (chapter.book === "math") return `Math Ch ${chapter.number}: ${chapter.titleKid}`;
   return `${chapterName(chapter)}: ${chapter.titleKid}`;
 }
 

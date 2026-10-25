@@ -383,6 +383,12 @@ export const memoryAdminRepo: AdminRepo = {
   async gatedChapterIds(learnerId) {
     return [...new Set(state.gates.filter((g) => g.learnerId === learnerId && g.scope === "chapter" && g.passed).map((g) => g.scopeId))];
   },
+  async chapterGateAttempts(learnerId) {
+    return state.gates
+      .filter((g) => g.learnerId === learnerId && g.scope === "chapter")
+      .sort((a, b) => a.finishedAt - b.finishedAt)
+      .map((g) => ({ chapterId: g.scopeId, score: g.overrideBy ? null : g.score, passed: g.passed, finishedAt: g.finishedAt, override: Boolean(g.overrideBy) }));
+  },
   async overrideChapterGate({ learnerId, chapterId, by, reason, at }) {
     state.gates.push({ scope: "chapter", scopeId: chapterId, itemIds: [], score: 0, passed: true, startedAt: at, finishedAt: at, learnerId, overrideBy: by, overrideReason: reason });
   },

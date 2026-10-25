@@ -8,7 +8,7 @@ const DEFAULT_LEARNER = { id: SEEDED_LEARNER_ID, nickname: "Mae" };
 
 export async function loadSnapshot(now = Date.now(), learnerId = DEFAULT_LEARNER.id): Promise<DashboardSnapshot> {
   const repo = adminRepo();
-  const [mastery, events, sessions, reviews, xp, strategies, assignments, goals, gatedChapterIds] = await Promise.all([
+  const [mastery, events, sessions, reviews, xp, strategies, assignments, goals, gatedChapterIds, chapterGates] = await Promise.all([
     repo.mastery(),
     repo.events(2000),
     repo.sessions(200),
@@ -18,6 +18,7 @@ export async function loadSnapshot(now = Date.now(), learnerId = DEFAULT_LEARNER
     repo.assignments(),
     repo.goals(),
     repo.gatedChapterIds(learnerId),
+    repo.chapterGateAttempts(learnerId).catch(() => []),
   ]);
   const goalRow = goals.find((row) => row.learnerId === learnerId) ?? null;
   const goal: LearnerGoal | null = goalRow
@@ -42,6 +43,7 @@ export async function loadSnapshot(now = Date.now(), learnerId = DEFAULT_LEARNER
     assignments: assignments as AssignmentRow[],
     goal,
     gatedChapterIds,
+    chapterGates,
   };
 }
 
@@ -89,7 +91,7 @@ export type HomeSummary = {
   planNote: string | null;
   /** One row per question (repeats collapsed), newest first. */
   recentMisses: { id: string; question: string; chapter: string | null; at: number; count?: number }[];
-  needsReteach: { key: string; label: string; chapter?: string | null }[];
+  needsReteach: { key: string; label: string; chapter?: string | null; count?: number }[];
   learnsBest: { subject: string; summary: string }[];
   lowStock: string[];
   inventoryError: boolean;
@@ -142,11 +144,12 @@ export async function loadHome(now = Date.now()): Promise<HomeSummary> {
       .map((g) => ({ id: g.first.eventId, question: g.first.itemText, chapter: g.first.chapterLabel ?? null, at: g.latestAt, count: g.count })),
     needsReteach: groupByKey(
       wrong.needsReteach.filter((r) => !r.cleared),
-      (r) => `${r.chapterId ?? r.source}|${r.label}`,
+      // Same question text in different spots is one thing to re-teach.
+      (r) => r.label.trim().toLowerCase(),
       (r) => r.lastTs,
     )
       .slice(0, 5)
-      .map((g) => ({ key: g.first.key, label: g.first.label, chapter: g.first.chapterId ? targetName(g.first.chapterId) : null })),
+      .map((g) => ({ key: g.first.key, label: g.first.label, chapter: g.first.chapterId ? targetName(g.first.chapterId) : null, count: g.count })),
     learnsBest: learns?.insight?.summary
       ? [{ subject: "all", summary: learns.insight.summary }]
       : (learns?.subjects ?? []).filter((s) => s.best).map((s) => ({ subject: s.subject, summary: `${subjectLabel(s.subject)}: ${s.summary}` })),

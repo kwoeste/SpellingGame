@@ -570,6 +570,20 @@ export const pgAdminRepo: AdminRepo = {
     );
     return rows.map((r) => String(r.scope_id));
   },
+  async chapterGateAttempts(learnerId) {
+    const rows = await adminRows(
+      `SELECT scope_id, score, passed, finished_at, (override_by IS NOT NULL) AS override
+       FROM engine.gate_attempt WHERE learner_id = $1 AND scope = 'chapter' ORDER BY finished_at NULLS FIRST`,
+      [learnerId],
+    );
+    return rows.map((r) => ({
+      chapterId: String(r.scope_id),
+      score: r.score === null || r.score === undefined ? null : Number(r.score),
+      passed: Boolean(r.passed),
+      finishedAt: ms(r.finished_at),
+      override: Boolean(r.override),
+    }));
+  },
   async overrideChapterGate({ learnerId, chapterId, by, reason, at }) {
     await withTransaction("admin", null, async (db) => {
       await db.query(

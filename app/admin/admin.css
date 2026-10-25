@@ -306,7 +306,8 @@
 
 .pd-pill.mastered { background: var(--pd-ok-wash); color: var(--pd-ok); }
 .pd-pill.in_progress { background: var(--pd-info-wash); color: var(--pd-info); }
-.pd-pill.missing, .pd-pill.not_started { background: var(--pd-miss-wash); color: var(--pd-miss); }
+.pd-pill.missing { background: var(--pd-miss-wash); color: var(--pd-miss); }
+.pd-pill.not_started { background: #eef0f3; color: #5b6470; }
 .pd-pill.review_due { background: var(--pd-warn-wash); color: var(--pd-warn); }
 .pd-pill.rusty { background: var(--pd-rust-wash); color: var(--pd-rust); }
 .pd-pill.ok { background: var(--pd-ok-wash); color: var(--pd-ok); }
@@ -357,8 +358,8 @@
 
 .pd-node[data-state="mastered"] { background: var(--pd-ok-wash); border-color: #86c8a4; }
 .pd-node[data-state="in_progress"] { background: var(--pd-info-wash); border-color: #93c5fd; }
-.pd-node[data-state="missing"],
-.pd-node[data-state="not_started"] { background: var(--pd-miss-wash); }
+.pd-node[data-state="missing"] { background: var(--pd-miss-wash); }
+.pd-node[data-state="not_started"] { background: #f4f5f7; color: #5b6470; }
 .pd-node[data-state="review_due"] { background: var(--pd-warn-wash); border-color: #f3d58a; }
 .pd-node[data-state="rusty"] { background: var(--pd-rust-wash); border-color: #fdba74; }
 
@@ -621,3 +622,13 @@
 .pd-progress > span { display: block; height: 100%; background: var(--pd-ok); }
 .pd-confirm { border: 1px solid var(--pd-line); border-radius: 8px; padding: 10px; background: var(--pd-wash); }
 .pd-node-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+/* Round 3 QA */
+.pd-session time, .pd-session-time { white-space: nowrap; }
+.pd-answers-lg { font-size: 0.98rem; }
+.pd-answers-lg .pd-note { font-size: 0.85rem; }
+.pd-relabel { display: block; width: auto; max-width: 9rem; padding: 2px 4px; font-size: 0.8rem; }
+.pd-earlier summary { cursor: pointer; font-size: 0.85rem; color: var(--pd-soft); margin-top: 4px; }
+.pd-filters select.pd-wide, .pd-chapter-select { min-width: 16rem; max-width: 100%; white-space: normal; }
+.pd-session { grid-template-columns: max-content 1fr; }
+@media (max-width: 640px) { .pd-session { grid-template-columns: 1fr; } }

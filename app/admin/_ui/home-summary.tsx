@@ -42,7 +42,7 @@ export function HomeSummaryView({ data }: { data: HomeSummary }) {
           <p className="pd-more"><Link href="/admin/learns-best">Details →</Link></p>
         </article>
         <article className="pd-card">
-          <h2>Shop supplies</h2>
+          <h2>Shop inventory</h2>
           {data.inventoryError ? (
             <p className="pd-note">Couldn&rsquo;t load supplies right now.</p>
           ) : data.lowStock.length ? (
@@ -54,7 +54,7 @@ export function HomeSummaryView({ data }: { data: HomeSummary }) {
           ) : (
             <p className="pd-note">Nothing running low.</p>
           )}
-          <p className="pd-more"><Link href="/admin/inventory">Supplies →</Link></p>
+          <p className="pd-more"><Link href="/admin/inventory">Shop inventory →</Link></p>
         </article>
       </div>
       <div className="pd-home-col">
@@ -64,7 +64,10 @@ export function HomeSummaryView({ data }: { data: HomeSummary }) {
             <ul className="pd-list">
               {data.needsReteach.map((r) => (
                 <li key={r.key} className="pd-list-row">
-                  <span>{r.label}</span>
+                  <span>
+                    {r.label}
+                    {r.count && r.count > 1 ? <span className="pd-note"> · {r.count} times</span> : null}
+                  </span>
                   {r.chapter ? <span className="pd-note">{r.chapter}</span> : null}
                 </li>
               ))}
