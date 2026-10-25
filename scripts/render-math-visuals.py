@@ -6,13 +6,13 @@ import json, sys, os
 from PIL import Image, ImageDraw
 
 W, H, S = 800, 600, 2  # draw at 2x then downsample for smooth edges
-BGS = ["#FFF6E0", "#E8F6FF", "#F0FFE8", "#FFEFF5", "#F3EEFF", "#FFF0E3"]
-DOTS = ["#FF6B6B", "#4D96FF", "#6BCB77", "#FFB830", "#B15EFF", "#FF8FB1", "#2EC4B6"]
-RING = ["#FFD3D3", "#CFE3FF", "#D5F2DA", "#FFE7B8", "#E7D3FF", "#FFD9E6", "#C9F1EC"]
+BGS = ["#F4EFE4", "#ECEFEC", "#EEF0E6", "#F2ECE6", "#EDEBEE", "#F3EDE3"]
+DOTS = ["#B5534A", "#4A6E8F", "#5E8457", "#C8963E", "#7A5C8A", "#A86B6B", "#3F7F7A"]
+RING = ["#E6CFC9", "#CDD8E2", "#D3DECF", "#E9DCC0", "#DCD2E0", "#E5D3D3", "#CBDCD9"]
 
 def dot(d, x, y, r, c):
     d.ellipse([x - r, y - r, x + r, y + r], fill=c, outline="#33334D", width=3 * S)
-    d.ellipse([x - r * .45, y - r * .55, x - r * .05, y - r * .2], fill="#FFFFFF90")
+    d.ellipse([x - r * .45, y - r * .55, x - r * .05, y - r * .2], fill="#FFFFFF40")
 
 def grid(d, rows, cols, box, colorf):
     x0, y0, x1, y1 = box
