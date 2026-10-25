@@ -37,8 +37,8 @@ export function InventoryPanel({
 
   return (
     <div className="pd-wrap">
-      <p className="pd-kicker">Parent dashboard · admin only</p>
-      <h1>Shop supplies</h1>
+      <p className="pd-kicker">Shop supplies</p>
+      <h1>What we have on hand</h1>
       <p className="pd-lead">
         Track filament spools and shop item stock. Adjust quantities as items are used or restocked.
       </p>

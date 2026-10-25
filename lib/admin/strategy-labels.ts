@@ -44,3 +44,12 @@ export function strategySourceLabel(source: string | null | undefined): string {
 
 /** Choices offered when a parent relabels a row. */
 export const RELABEL_CHOICES = Object.entries(LABELS).map(([id, v]) => ({ id, label: v.label }));
+
+const MATH_ONLY = new Set(["known_fact_or_mental", "counting_on_ones", "decomposition_tens", "partial_products_area_model", "partial_quotients"]);
+const READING_ONLY = new Set(["skim_suspected", "evidence_guess", "wrong_proof", "evidence_lookback", "order_mixup", "meaning_mixup"]);
+
+/** Relabel choices that make sense for a subject: no math methods on a Religion question, no reading-proof reasons on math. */
+export function relabelChoicesFor(subject: string | null | undefined): { id: string; label: string }[] {
+  if (subject === "math") return RELABEL_CHOICES.filter((c) => !READING_ONLY.has(c.id));
+  return RELABEL_CHOICES.filter((c) => !MATH_ONLY.has(c.id));
+}

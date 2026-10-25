@@ -1,6 +1,7 @@
 import { answerToPlain, resolveAnswer, resolveCorrect } from "@/lib/admin/answer-text";
-import { assignmentTitle, chapterDisplayName, catalogChapters, catalogConcept, catalogConcepts, hardPrereqs, locateAdminItem } from "@/lib/admin/catalog";
-import { formatEtDateTime, pct, ringPct, streakDays } from "@/lib/admin/format";
+import { assignmentTitle, chapterDisplayName, catalogChapters, catalogConcept, catalogConcepts, gameTitle, hardPrereqs, locateAdminItem } from "@/lib/admin/catalog";
+import { formatEtDateTime, pct, ringProgress, streakDays } from "@/lib/admin/format";
+import { chapterFullName, targetName } from "@/lib/admin/names";
 import { detectHoles } from "@/lib/admin/holes";
 import { isUnknownStrategy, strategyDetail, strategyLabel } from "@/lib/admin/strategy-labels";
 import { inferPace, inferStrategy, isRapidGuess } from "@/lib/admin/infer";
@@ -213,7 +214,7 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
       if (review.lastResult !== "fail") continue;
       alerts.push({
         kind: "review_due",
-        title: `Needs re-teach: ${review.targetId}`,
+        title: `Needs re-teaching: ${targetName(review.targetId)}`,
         detail: isDue(new Date(review.dueAt), now)
           ? "Shown to her as \"Let's try this again\" until she gets it right on the first try."
           : `Shows as "Let's try this again" from ${formatEtDateTime(review.dueAt)}.`,
@@ -227,9 +228,9 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
     const rusty = isRusty(new Date(review.dueAt), review.box, now);
     alerts.push({
       kind: rusty ? "rusty" : "review_due",
-      title: rusty ? `Needs a refresh: ${concept?.titleAdmin ?? review.targetId}` : `Review due: ${concept?.titleAdmin ?? review.targetId}`,
+      title: rusty ? `Needs a refresh: ${concept?.titleAdmin ?? targetName(review.targetId)}` : `Review due: ${concept?.titleAdmin ?? targetName(review.targetId)}`,
       detail: rusty
-        ? `Overdue by more than twice the box interval (box ${review.box}).`
+        ? `Not practiced in a while; a quick review was due ${formatEtDateTime(review.dueAt)}.`
         : `Due ${formatEtDateTime(review.dueAt)}.`,
       targetType: review.targetType === "concept" ? "concept" : undefined,
       targetId: review.targetId,
@@ -241,7 +242,7 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
       alerts.push({
         kind: "rusty",
         title: `Needs a refresh: ${node.titleAdmin}`,
-        detail: "Mastery slipped after a missed review.",
+        detail: "She knew this before but missed it on a later review.",
         targetType: "concept",
         targetId: node.id,
         severity: 3,
@@ -256,7 +257,7 @@ function buildAlerts(snap: DashboardSnapshot, nodes: KnowledgeNode[], daily: Day
   if (rushing >= 3) {
     alerts.push({
       kind: "rushing",
-      title: "Rushing signals this week",
+      title: "Rushing this week",
       detail: `${rushing} answers came in under 1.5 seconds and were wrong.`,
       severity: 2,
     });
@@ -299,58 +300,21 @@ export function buildOverview(snap: DashboardSnapshot): Overview {
   };
   const gated = new Set(snap.gatedChapterIds);
   const chapters = catalogChapters();
+  const starred = chapters.filter((chapter) => gated.has(chapter.id)).length;
+  const ring = (id: string, label: string, done: number, target: number, unit: string): GoalRing => {
+    const r = ringProgress(done, target);
+    return { id, label, done, goal: target, pct: r.pct, arcPct: r.arcPct, text: r.label, unit };
+  };
+  const remainingReviews = reviewsDue.length;
   const rings: GoalRing[] = [
-    {
-      id: "minutes",
-      label: "Today's minutes",
-      done: minutesToday,
-      goal: goal.dailyMinutesGoal,
-      pct: ringPct(minutesToday, goal.dailyMinutesGoal),
-      unit: "min",
-    },
-    {
-      id: "week",
-      label: "Weekly XP",
-      done: xpWeek,
-      goal: goal.weeklyXpGoal,
-      pct: ringPct(xpWeek, goal.weeklyXpGoal),
-      unit: "XP",
-    },
-    {
-      id: "chapters",
-      label: "Chapters gated",
-      done: chapters.filter((chapter) => gated.has(chapter.id)).length,
-      goal: Math.max(1, chapters.length),
-      pct: ringPct(chapters.filter((chapter) => gated.has(chapter.id)).length, chapters.length),
-      unit: "chapters",
-    },
-    {
-      id: "review",
-      label: "Reviews due",
-      done: Math.max(0, reviewsDue.length - reviewsDoneToday),
-      goal: Math.max(1, reviewsDue.length),
-      pct: reviewsDue.length === 0 ? 100 : ringPct(reviewsDue.length - Math.min(reviewsDue.length, reviewsDue.length), reviewsDue.length),
-      unit: "due",
-    },
+    ring("minutes", "Today's minutes", minutesToday, goal.dailyMinutesGoal, "min"),
+    ring("week", "Weekly XP", xpWeek, goal.weeklyXpGoal, "XP"),
+    { ...ring("chapters", "Chapter stars", starred, Math.max(1, chapters.length), "chapters"), text: `${pct(starred, chapters.length)}%` },
+    remainingReviews === 0
+      ? { id: "review", label: "Reviews clear", done: 0, goal: 0, pct: -1, arcPct: 0, text: "—", unit: "" }
+      : { id: "review", label: `${remainingReviews} review${remainingReviews === 1 ? "" : "s"} due`, done: 0, goal: remainingReviews, pct: 0, arcPct: 0, text: "0%", unit: "to do" },
   ];
-  // Review ring: remaining due items. Show dash when none are due.
-  const reviewRing = rings.find((ring) => ring.id === "review");
-  if (reviewRing) {
-    const remaining = reviewsDue.length;
-    if (remaining === 0) {
-      reviewRing.done = 0;
-      reviewRing.goal = 0;
-      reviewRing.pct = -1;
-      reviewRing.label = "Reviews clear";
-      reviewRing.unit = "";
-    } else {
-      reviewRing.done = 0;
-      reviewRing.goal = remaining;
-      reviewRing.pct = 0;
-      reviewRing.label = `${remaining} review${remaining === 1 ? "" : "s"} due`;
-      reviewRing.unit = "to do";
-    }
-  }
+  void reviewsDoneToday;
 
   const weekBuckets = new Map<string, { correct: number; total: number }>();
   for (const event of first) {
@@ -413,6 +377,22 @@ export function buildRushMeter(answers: AdminEventRow[], now: number): RushMeter
   };
 }
 
+/**
+ * Items whose most recent first try was right with at most a small hint. This mirrors the chapter
+ * star rule (90% first-try right, hint level 1 or less), so a chapter can be 100% "answered right"
+ * but still short of a star when some answers only came after retries or big hints.
+ */
+export function chapterFirstTryCorrect(events: Pick<AdminEventRow, "itemId" | "attemptNo" | "isCorrect" | "hintLevel" | "serverTs">[]): number {
+  const latest = new Map<string, { ts: number; ok: boolean }>();
+  for (const event of events) {
+    if (!event.itemId || event.attemptNo !== 1) continue;
+    const prev = latest.get(event.itemId);
+    if (prev && prev.ts > event.serverTs) continue;
+    latest.set(event.itemId, { ts: event.serverTs, ok: event.isCorrect === true && (event.hintLevel ?? 0) <= 1 });
+  }
+  return [...latest.values()].filter((v) => v.ok).length;
+}
+
 export function buildProgress(snap: DashboardSnapshot): ProgressView {
   const nodes = buildKnowledgeNodes(snap);
   const events = forLearner(snap.events, snap.learnerId).filter((event) => event.type === "answer_submitted" && !event.isPreview);
@@ -431,6 +411,8 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
       rusty: group.filter((node) => node.state === "rusty").length,
       masteryPct: pct(mastered, group.length),
       toward90: pct(mastered, group.length),
+      chaptersTotal: catalogChapters().filter((chapter) => chapter.subject === subject).length,
+      chaptersStarred: catalogChapters().filter((chapter) => chapter.subject === subject && gated.has(chapter.id)).length,
       avgMilestone: group.length ? group.reduce((sum, node) => sum + node.milestoneLevel, 0) / group.length : null,
       frontier: milestoneFrontier(group),
       gradeSpread: gradeBands(group),
@@ -446,6 +428,7 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
     const correctIds = new Set(chapterEvents.filter((event) => event.isCorrect).map((event) => event.itemId));
     const attemptedIds = new Set(chapterEvents.map((event) => event.itemId));
     const last = chapterEvents.reduce<number | null>((max, event) => (max === null || event.serverTs > max ? event.serverTs : max), null);
+    const firstTryCorrect = chapterFirstTryCorrect(chapterEvents);
     return {
       chapterId: chapter.id,
       title: chapter.titleKid,
@@ -456,6 +439,8 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
       itemsCorrect: correctIds.size,
       itemsAttempted: attemptedIds.size,
       masteryPct: pct(correctIds.size, chapter.items.length),
+      firstTryCorrect,
+      firstTryPct: pct(firstTryCorrect, chapter.items.length),
       gated: gated.has(chapter.id),
       lastSeenAt: last,
     };
@@ -617,7 +602,7 @@ export function buildNeedsReteach(events: AdminEventRow[]): NeedsReteachRow[] {
       row.cleared = false;
     } else if (event.type === "hint_requested" && payload.source === "watch_check") {
       const chapterId = event.activityId ?? "";
-      const row = ensure(`watch:${chapterId}`, () => ({ source: "watch_check", label: `Watch it quick check · ${chapterId}`, chapterId, conceptId: null }));
+      const row = ensure(`watch:${chapterId}`, () => ({ source: "watch_check", label: "Quick check after the video", chapterId, conceptId: null }));
       if (detail === "hint_shown") row.hints += 1;
       if (detail === "revealed") row.reveals += 1;
       if (detail === "skipped") row.skips += 1;
@@ -626,7 +611,7 @@ export function buildNeedsReteach(events: AdminEventRow[]): NeedsReteachRow[] {
     } else if (event.type === "game_event" && ["stuck", "revealed", "skipped"].includes(detail)) {
       const game = typeof payload.game_id === "string" ? payload.game_id : "game";
       const item = typeof payload.item === "string" ? payload.item : "";
-      const row = ensure(`game:${game}:${item}`, () => ({ source: "game", label: item ? `${game} · ${item}` : game, chapterId: null, conceptId: null }));
+      const row = ensure(`game:${game}:${item}`, () => ({ source: "game", label: item ? `${gameTitle(game)} · ${item}` : gameTitle(game), chapterId: null, conceptId: null }));
       if (detail === "stuck") row.hints += 1;
       if (detail === "revealed") row.reveals += 1;
       if (detail === "skipped") row.skips += 1;
@@ -663,10 +648,14 @@ export function buildSessions(snap: DashboardSnapshot): SessionHistoryView {
     const rapid = sessionEvents.filter((event) => isRapidGuess(event.latencyMs, event.isCorrect)).length;
     const pace = inferPace({ latencies, stems, rapidCount: rapid, items: sessionEvents.length });
     const minutes = xp.filter((row) => row.sessionId === session.id).length;
+    const allTs = events.filter((event) => event.sessionId === session.id).map((event) => event.serverTs);
+    const lastActivityAt = Math.max(session.lastEventAt, ...allTs);
     return {
       id: session.id,
       startedAt: session.startedAt,
       endedAt: session.endedAt,
+      lastActivityAt,
+      firstQuestionAt: sessionEvents.length ? Math.min(...sessionEvents.map((event) => event.serverTs)) : null,
       entryPoint: session.entryPoint,
       engagedMinutes: minutes,
       idleMinutes: Math.max(0, Math.round(((session.endedAt ?? session.lastEventAt) - session.startedAt) / 60000) - minutes),
@@ -703,11 +692,13 @@ export function buildAssignments(snap: DashboardSnapshot): AssignmentsView {
     suggestedHoles: detectHoles(nodes, snap.now),
     goal,
     concepts: catalogConcepts()
-      .map((concept) => ({ id: concept.id, title: concept.titleAdmin }))
-      .sort((a, b) => a.title.localeCompare(b.title)),
+      .map((concept) => ({ id: concept.id, title: concept.titleAdmin, subject: concept.subject }))
+      .sort((a, b) => a.subject.localeCompare(b.subject) || a.title.localeCompare(b.title, undefined, { numeric: true })),
+    // Full names keep look-alikes apart ("Christ Our Life Ch 4: Unit 1 looking back" vs "… Ch 9: Unit 2 looking back").
     chapters: catalogChapters()
-      .map((chapter) => ({ id: chapter.id, title: chapter.titleKid }))
-      .sort((a, b) => a.title.localeCompare(b.title)),
+      .map((chapter) => ({ id: chapter.id, title: chapterFullName(chapter), subject: chapter.subject, n: chapter.number }))
+      .sort((a, b) => a.subject.localeCompare(b.subject) || a.title.localeCompare(b.title, undefined, { numeric: true }))
+      .map(({ id, title, subject }) => ({ id, title, subject })),
     gatedChapterIds: [...snap.gatedChapterIds].sort(),
   };
 }

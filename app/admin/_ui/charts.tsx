@@ -1,3 +1,4 @@
+import { formatDayKey } from "@/lib/admin/format";
 type Point = { x: string; y: number | null };
 
 const W = 360;
@@ -21,6 +22,8 @@ export function LineChart(props: {
   yMax?: number;
   band?: { low: number; high: number };
   caption?: string;
+  /** Put before each axis date, e.g. "Week of ". */
+  xPrefix?: string;
 }) {
   const values = props.points.map((p) => p.y).filter((y): y is number => y !== null);
   const min = props.yMin ?? (values.length ? Math.min(0, ...values) : 0);
@@ -54,15 +57,25 @@ export function LineChart(props: {
           ),
         )}
         <text x={PAD.l} y={H - 6} fontSize="9" fill="var(--pd-soft)">
-          {props.points[0]?.x ?? ""}
+          {props.xPrefix ?? ""}{axisLabel(props.points[0]?.x, Boolean(props.xPrefix))}
         </text>
-        <text x={W - PAD.r} y={H - 6} fontSize="9" fill="var(--pd-soft)" textAnchor="end">
-          {props.points.at(-1)?.x ?? ""}
-        </text>
+        {props.points.length > 1 ? (
+          <text x={W - PAD.r} y={H - 6} fontSize="9" fill="var(--pd-soft)" textAnchor="end">
+            {props.xPrefix ?? ""}{axisLabel(props.points.at(-1)?.x, Boolean(props.xPrefix))}
+          </text>
+        ) : null}
       </svg>
       {props.caption ? <p className="pd-chart-caption">{props.caption}</p> : null}
     </div>
   );
+}
+
+/** Day keys (2026-10-19) read as "Mon, Oct 19"; anything else passes through. */
+export function axisLabel(x: string | undefined, dateOnly = false): string {
+  if (!x) return "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(x)) return x;
+  const label = formatDayKey(x);
+  return dateOnly ? label.replace(/^\w+, /, "") : label;
 }
 
 export function BarChart(props: { title: string; points: Point[]; caption?: string }) {
@@ -93,14 +106,16 @@ export function BarChart(props: { title: string; points: Point[]; caption?: stri
   );
 }
 
-export function GoalRing(props: { label: string; pct: number; done: number; goal: number; unit: string }) {
+export function GoalRing(props: { label: string; pct: number; arcPct?: number; text?: string; done: number; goal: number; unit: string }) {
   const r = 28;
   const c = 2 * Math.PI * r;
   const isNoData = props.pct < 0;
-  const dash = isNoData ? 0 : Math.max(0, Math.min(100, props.pct)) / 100 * c;
+  const arc = props.arcPct ?? Math.min(100, props.pct);
+  const dash = isNoData ? 0 : Math.max(0, Math.min(100, arc)) / 100 * c;
+  const text = props.text ?? `${props.pct}%`;
   return (
     <div className="pd-ring">
-      <svg width="80" height="80" viewBox="0 0 80 80" role="img" aria-label={`${props.label} ${isNoData ? "none" : `${props.pct}%`}`}>
+      <svg width="80" height="80" viewBox="0 0 80 80" role="img" aria-label={`${props.label} ${isNoData ? "none" : text}`}>
         <circle cx="40" cy="40" r={r} fill="none" stroke="var(--pd-line)" strokeWidth="8" />
         {!isNoData && (
           <circle
@@ -115,8 +130,8 @@ export function GoalRing(props: { label: string; pct: number; done: number; goal
             transform="rotate(-90 40 40)"
           />
         )}
-        <text x="40" y="44" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--pd-ink)">
-          {isNoData ? "—" : `${props.pct}%`}
+        <text x="40" y="44" textAnchor="middle" fontSize={text.length > 5 ? "10" : "13"} fontWeight="700" fill="var(--pd-ink)">
+          {isNoData ? "—" : text}
         </text>
       </svg>
       <strong>{props.label}</strong>

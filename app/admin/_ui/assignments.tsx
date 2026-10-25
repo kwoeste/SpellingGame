@@ -3,7 +3,25 @@
 import { useState } from "react";
 import { EmptyState } from "@/app/admin/_ui/empty";
 import { formatEtDateTime } from "@/lib/admin/format";
-import type { AssignmentsView } from "@/lib/admin/types";
+import { groupBySubject } from "@/lib/admin/group";
+import type { AssignTargetOption, AssignmentsView } from "@/lib/admin/types";
+
+/** Dropdown options grouped by subject, each label prefixed with the subject so look-alikes are clear. */
+function GroupedOptions({ options }: { options: AssignTargetOption[] }) {
+  return (
+    <>
+      {groupBySubject(options, (o) => o.subject).map((group) => (
+        <optgroup key={group.subject} label={group.label}>
+          {group.rows.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.title.startsWith(group.label) ? o.title : `${group.label} · ${o.title}`}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </>
+  );
+}
 
 export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
   const concepts = data.concepts;
@@ -17,6 +35,7 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
   const ungated = chapters.filter((chapter) => !gated.has(chapter.id));
   const [gateChapter, setGateChapter] = useState(ungated[0]?.id ?? "");
   const [gateReason, setGateReason] = useState("");
+  const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,27 +81,50 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!gateChapter) return;
-                if (!window.confirm("Give this chapter's star without the 90% check?")) return;
+                if (!confirming) {
+                  setConfirming(true);
+                  return;
+                }
+                setConfirming(false);
                 void post({ action: "gate_override", chapterId: gateChapter, reason: gateReason || undefined });
               }}
             >
               <label>
                 Chapter
-                <select value={gateChapter} onChange={(event) => setGateChapter(event.target.value)}>
-                  {ungated.map((chapter) => (
-                    <option key={chapter.id} value={chapter.id}>
-                      {chapter.title}
-                    </option>
-                  ))}
+                <select
+                  value={gateChapter}
+                  onChange={(event) => {
+                    setGateChapter(event.target.value);
+                    setConfirming(false);
+                  }}
+                >
+                  <GroupedOptions options={ungated} />
                 </select>
               </label>
               <label>
                 Reason (optional)
                 <input value={gateReason} maxLength={200} onChange={(event) => setGateReason(event.target.value)} />
               </label>
-              <button className="pd-btn" type="submit" disabled={busy}>
-                Give the star
-              </button>
+              {confirming ? (
+                <div className="pd-confirm" role="alertdialog" aria-label="Confirm star">
+                  <p className="pd-note" style={{ margin: 0 }}>
+                    Give the star for <strong>{chapters.find((c) => c.id === gateChapter)?.title ?? "this chapter"}</strong> without the 90% check? This
+                    unlocks what comes after it.
+                  </p>
+                  <p style={{ display: "flex", gap: 8, margin: "8px 0 0" }}>
+                    <button className="pd-btn" type="submit" disabled={busy}>
+                      Yes, give the star
+                    </button>
+                    <button className="pd-btn secondary" type="button" onClick={() => setConfirming(false)}>
+                      Cancel
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <button className="pd-btn" type="submit" disabled={busy}>
+                  Give the star…
+                </button>
+              )}
             </form>
           )}
         </section>
@@ -122,7 +164,8 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
             }}
           >
             <label>
-              Type
+              What to assign
+              <span className="pd-help">A whole chapter, or one skill inside a chapter (like its word meanings).</span>
               <select
                 value={targetType}
                 onChange={(event) => {
@@ -131,28 +174,19 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
                   setTargetId(next === "concept" ? (concepts[0]?.id ?? "") : (chapters[0]?.id ?? ""));
                 }}
               >
-                <option value="concept">Concept</option>
-                <option value="chapter">Chapter</option>
+                <option value="concept">One skill</option>
+                <option value="chapter">Whole chapter</option>
               </select>
             </label>
             <label>
-              Target
+              {targetType === "concept" ? "Skill" : "Chapter"}
+              <span className="pd-help">It shows up first in her next Study session until she finishes it.</span>
               <select value={targetId} onChange={(event) => setTargetId(event.target.value)}>
-                {targetType === "concept"
-                  ? concepts.map((concept) => (
-                      <option key={concept.id} value={concept.id}>
-                        {concept.title}
-                      </option>
-                    ))
-                  : chapters.map((chapter) => (
-                      <option key={chapter.id} value={chapter.id}>
-                        {chapter.title}
-                      </option>
-                    ))}
+                <GroupedOptions options={targetType === "concept" ? concepts : chapters} />
               </select>
             </label>
             <label>
-              Note
+              Note for yourself (optional)
               <input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={400} />
             </label>
             <button className="pd-btn" type="submit" disabled={busy || !targetId}>
@@ -182,8 +216,13 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
           disabled={busy || data.suggestedHoles.length === 0}
           onClick={() => void post({ action: "auto_holes" })}
         >
-          Auto-assign hole-fills
+          Assign all suggested gaps
         </button>
+        <p className="pd-help">
+          {data.suggestedHoles.length === 0
+            ? "Turned off because there are no gaps to assign right now."
+            : `Adds each of the ${data.suggestedHoles.length} gaps above to her assignments in one step.`}
+        </p>
       </section>
       <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>Open and recent</h2>
@@ -207,11 +246,11 @@ export function AssignmentsPanel({ data }: { data: AssignmentsView }) {
                 {data.assignments.map((row) => (
                   <tr key={row.id}>
                     <td>{formatEtDateTime(row.createdAt)}</td>
-                    <td>{row.kind}</td>
+                    <td>{row.kind === "hole_fill" ? "Gap to fill" : "You assigned"}</td>
                     <td>{row.title}</td>
                     <td>{row.reason ?? "—"}</td>
                     <td>
-                      <span className={`pd-pill ${row.status === "open" ? "in_progress" : "mastered"}`}>{row.status}</span>
+                      <span className={`pd-pill ${row.status === "open" ? "in_progress" : "mastered"}`}>{{ open: "Open", paused: "Paused", done: "Done", cancelled: "Cancelled" }[row.status]}</span>
                     </td>
                     <td>
                       {row.status === "open" ? (
