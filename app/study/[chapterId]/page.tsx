@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ChapterPlayer } from "@/components/ChapterPlayer";
 import { ChapterHeader } from "@/components/ChapterHeader";
 import { NotAllowed } from "@/components/NotAllowed";
+import { WatchListen } from "@/components/WatchListen";
+import { watchListenFor } from "@/lib/content/nlm";
 import { requirePageUser } from "@/lib/auth/server";
 import { engineRepo } from "@/lib/engine/repos";
 import { chooseReteachModality } from "@/lib/engine/modality";
@@ -38,6 +40,7 @@ export default async function ChapterPage({
   const reteachStartWith = reteachItemId
     ? await chooseReteachModality(engineRepo(), { role: user.role, learnerId: user.learnerId }, reteachItemId).catch(() => null)
     : null;
+  const watchListen = watchListenFor(chapter.id);
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
@@ -48,6 +51,7 @@ export default async function ChapterPage({
         <p className="notice">Admin note: Religion chapters are hidden from Mae until approved.</p>
       ) : null}
       <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} reteachStartWith={reteachStartWith} />
+      {watchListen ? <WatchListen data={watchListen} /> : null}
     </div>
   );
 }

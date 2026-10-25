@@ -1,0 +1,16 @@
+{
+  "savvas.ch1": {
+    "video": {
+      "pathname": "nlm/savvas.ch1/video-cbb6a7944c65.mp4",
+      "contentType": "video/mp4",
+      "size": 23537446,
+      "sha256": "cbb6a7944c656e23a962f383811064a00b09b06ca9cc5174a0009ca5e65c1d97"
+    },
+    "audio": {
+      "pathname": "nlm/savvas.ch1/audio-e5d2453bc784.m4a",
+      "contentType": "audio/mp4",
+      "size": 2715987,
+      "sha256": "e5d2453bc784cd1eb63de100f5a4878160b4838e71999260a27633deca42d573"
+    }
+  }
+}
