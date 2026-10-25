@@ -4,26 +4,34 @@ import c0 from "@/lib/content/flashcards/ckla.u2.ch1.json";
 import c1 from "@/lib/content/flashcards/ckla.u2.ch2.json";
 import c2 from "@/lib/content/flashcards/ckla.u2.ch3.json";
 import c3 from "@/lib/content/flashcards/ckla.u2.ch4.json";
-import c4 from "@/lib/content/flashcards/savvas.ch1.json";
-import c5 from "@/lib/content/flashcards/savvas.ch2.json";
-import c6 from "@/lib/content/flashcards/savvas.ch3.json";
-import c7 from "@/lib/content/flashcards/savvas.ch4.json";
-import c8 from "@/lib/content/flashcards/savvas.ch5.json";
-import c9 from "@/lib/content/flashcards/savvas.ch6.json";
-import c10 from "@/lib/content/flashcards/savvas.ch7.json";
-import c11 from "@/lib/content/flashcards/savvas.ch8.json";
+import c4 from "@/lib/content/flashcards/col.ch1.json";
+import c5 from "@/lib/content/flashcards/col.ch2.json";
+import c6 from "@/lib/content/flashcards/col.ch3.json";
+import c7 from "@/lib/content/flashcards/col.ch4.json";
+import c8 from "@/lib/content/flashcards/savvas.ch1.json";
+import c9 from "@/lib/content/flashcards/savvas.ch2.json";
+import c10 from "@/lib/content/flashcards/savvas.ch3.json";
+import c11 from "@/lib/content/flashcards/savvas.ch4.json";
+import c12 from "@/lib/content/flashcards/savvas.ch5.json";
+import c13 from "@/lib/content/flashcards/savvas.ch6.json";
+import c14 from "@/lib/content/flashcards/savvas.ch7.json";
+import c15 from "@/lib/content/flashcards/savvas.ch8.json";
 
 export const FLASHCARDS: Record<string, Flashcard[]> = {
   "ckla.u2.ch1": c0,
   "ckla.u2.ch2": c1,
   "ckla.u2.ch3": c2,
   "ckla.u2.ch4": c3,
-  "savvas.ch1": c4,
-  "savvas.ch2": c5,
-  "savvas.ch3": c6,
-  "savvas.ch4": c7,
-  "savvas.ch5": c8,
-  "savvas.ch6": c9,
-  "savvas.ch7": c10,
-  "savvas.ch8": c11,
+  "col.ch1": c4,
+  "col.ch2": c5,
+  "col.ch3": c6,
+  "col.ch4": c7,
+  "savvas.ch1": c8,
+  "savvas.ch2": c9,
+  "savvas.ch3": c10,
+  "savvas.ch4": c11,
+  "savvas.ch5": c12,
+  "savvas.ch6": c13,
+  "savvas.ch7": c14,
+  "savvas.ch8": c15,
 };
