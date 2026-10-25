@@ -7,7 +7,7 @@ import type { WatchListen as WatchListenData } from "@/lib/content/nlm";
 /** Modalities logged as `media_event` so learns-best reporting can count video / podcast / flashcards. */
 export type MediaModality = "video" | "podcast" | "flashcards";
 
-function logMedia(chapterId: string, modality: MediaModality, action: string, extra: Record<string, unknown> = {}) {
+export function logMedia(chapterId: string, modality: MediaModality, action: string, extra: Record<string, unknown> = {}) {
   void fetch("/api/engine/events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,18 +17,19 @@ function logMedia(chapterId: string, modality: MediaModality, action: string, ex
   }).catch(() => undefined);
 }
 
-function mediaHandlers(chapterId: string, modality: MediaModality) {
+export function mediaHandlers(chapterId: string, modality: MediaModality, extra: Record<string, unknown> = {}, onStart?: () => void) {
   const started = { current: false };
   return {
     onPlay: () => {
-      if (!started.current) logMedia(chapterId, modality, "play");
+      if (!started.current) logMedia(chapterId, modality, "play", extra);
       started.current = true;
+      onStart?.();
     },
-    onEnded: (e: React.SyntheticEvent<HTMLMediaElement>) => logMedia(chapterId, modality, "complete", { seconds: Math.round(e.currentTarget.duration || 0) }),
+    onEnded: (e: React.SyntheticEvent<HTMLMediaElement>) => logMedia(chapterId, modality, "complete", { ...extra, seconds: Math.round(e.currentTarget.duration || 0) }),
   };
 }
 
-function Flashcards({ chapterId, cards }: { chapterId: string; cards: WatchListenData["flashcards"] }) {
+export function Flashcards({ chapterId, cards, extra = {}, onFlip }: { chapterId: string; cards: WatchListenData["flashcards"]; extra?: Record<string, unknown>; onFlip?: () => void }) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [canFlip, setCanFlip] = useState(false);
@@ -45,9 +46,10 @@ function Flashcards({ chapterId, cards }: { chapterId: string; cards: WatchListe
   function flip() {
     if (!canFlip) return;
     setFlipped((f) => !f);
+    onFlip?.();
     if (!flipped && !seen.current.has(index)) {
       seen.current.add(index);
-      logMedia(chapterId, "flashcards", seen.current.size === cards.length ? "complete" : "flip", { card: index, seen: seen.current.size, total: cards.length });
+      logMedia(chapterId, "flashcards", seen.current.size === cards.length ? "complete" : "flip", { ...extra, card: index, seen: seen.current.size, total: cards.length });
     }
   }
 
@@ -109,5 +111,39 @@ export function WatchListen({ data }: { data: WatchListenData }) {
         {tab === "flashcards" && data.flashcards.length > 0 ? <Flashcards chapterId={data.chapterId} cards={data.flashcards} /> : null}
       </div>
     </section>
+  );
+}
+
+/** NotebookLM media as the first step of a teach / re-teach ("Start with the video, then practice"). */
+export function MediaStart({
+  data,
+  modality,
+  context,
+  onDone,
+}: {
+  data: WatchListenData;
+  modality: "nlm_video" | "nlm_podcast" | "nlm_flashcards";
+  context: "first_teach" | "reteach";
+  onDone: () => void;
+}) {
+  const [started, setStarted] = useState(false);
+  const extra = { context, start: true };
+  const video = mediaHandlers(data.chapterId, "video", extra, () => setStarted(true));
+  const audio = mediaHandlers(data.chapterId, "podcast", extra, () => setStarted(true));
+  const label = modality === "nlm_video" ? "Watch the video" : modality === "nlm_podcast" ? "Listen to the podcast" : "Flip through the flashcards";
+  return (
+    <div className="media-start">
+      <p className="kid-kicker">{label}, then practice</p>
+      {modality === "nlm_video" && data.video ? (
+        <video controls preload="metadata" playsInline controlsList="nodownload" style={{ width: "100%", borderRadius: 12 }} src={data.video} onPlay={video.onPlay} onEnded={video.onEnded} />
+      ) : null}
+      {modality === "nlm_podcast" && data.audio ? (
+        <audio controls preload="metadata" controlsList="nodownload" style={{ width: "100%" }} src={data.audio} onPlay={audio.onPlay} onEnded={audio.onEnded} />
+      ) : null}
+      {modality === "nlm_flashcards" && data.flashcards.length > 0 ? <Flashcards chapterId={data.chapterId} cards={data.flashcards} extra={extra} onFlip={() => setStarted(true)} /> : null}
+      <button type="button" className="btn" onClick={onDone} disabled={!started} style={{ marginTop: 12 }}>
+        {started ? "I'm ready to practice" : modality === "nlm_flashcards" ? "Flip a card first" : "Press play first"}
+      </button>
+    </div>
   );
 }

@@ -12,6 +12,11 @@ import { answerUnlockMs } from "@/lib/ui/careful-read";
 import type { StudentChapter, StudentStep } from "@/lib/content/student";
 import { StuckHelpPanel } from "@/components/ui/StuckHelpPanel";
 import { hintLevelFor, type StuckHelp } from "@/lib/help/ladder";
+import { MediaStart } from "@/components/WatchListen";
+import type { WatchListen as WatchListenData } from "@/lib/content/nlm";
+import type { Modality } from "@/lib/engine/repo";
+
+type NlmModality = "nlm_video" | "nlm_podcast" | "nlm_flashcards";
 
 type Progress = {
   chapterId: string;
@@ -39,6 +44,7 @@ type Feedback = {
 type View =
   | { kind: "loading" }
   | { kind: "watch" }
+  | { kind: "media"; modality: NlmModality }
   | { kind: "read" }
   | { kind: "keywords" }
   | { kind: "step"; index: number }
@@ -53,13 +59,31 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** True when this chapter has the NotebookLM media the modality needs. */
+export function hasNlm(media: WatchListenData | null | undefined, m: Modality | null | undefined): m is NlmModality {
+  if (!media) return false;
+  if (m === "nlm_video") return Boolean(media.video);
+  if (m === "nlm_podcast") return Boolean(media.audio);
+  if (m === "nlm_flashcards") return media.flashcards.length > 0;
+  return false;
+}
+
 /**
- * Re-teach starts with the modality the server's chooser picked (watch recap, careful read, or a
- * straight retry); without a pick, the Watch it recap when there is one, else the Careful Read.
+ * Re-teach starts with the modality the server's chooser picked (watch recap, careful read, a
+ * straight retry, or NotebookLM video / podcast / flashcards); without a pick, the Watch it recap
+ * when there is one, else the Careful Read.
  */
-export function reteachStart(hasRecap: boolean, startWith?: "watch" | "read" | "retry" | null, index = 0): View {
+export function reteachStart(hasRecap: boolean, startWith?: Modality | null, index = 0, media: WatchListenData | null = null): View {
   if (startWith === "retry") return { kind: "step", index };
+  if (hasNlm(media, startWith)) return { kind: "media", modality: startWith };
   if (startWith === "read" || (startWith === "watch" && !hasRecap)) return { kind: "read" };
+  return hasRecap ? { kind: "watch" } : { kind: "read" };
+}
+
+/** First teach (nothing answered yet): the chooser's pick, else the usual recap-then-read start. */
+export function firstTeachStart(hasRecap: boolean, startWith: Modality | null | undefined, media: WatchListenData | null = null): View {
+  if (hasNlm(media, startWith)) return { kind: "media", modality: startWith };
+  if (startWith === "read") return { kind: "read" };
   return hasRecap ? { kind: "watch" } : { kind: "read" };
 }
 
@@ -75,13 +99,18 @@ export function ChapterPlayer({
   nextChapterHref,
   reteachItemId = null,
   reteachStartWith = null,
+  firstTeachStartWith = null,
+  media = null,
 }: {
   chapter: StudentChapter;
   isAdmin: boolean;
   nextChapterHref: string | null;
   /** "Let's try this again": recap (or Careful Read) first, then straight to this step. */
   reteachItemId?: string | null;
-  reteachStartWith?: "watch" | "read" | "retry" | null;
+  reteachStartWith?: Modality | null;
+  /** First teach of an unstarted chapter, chosen by the server (e.g. start with the video). */
+  firstTeachStartWith?: Modality | null;
+  media?: WatchListenData | null;
 }) {
   const reteachIndex = reteachItemId ? chapter.steps.findIndex((step) => step.itemId === reteachItemId) : -1;
   const reteach = useRef(reteachIndex >= 0);
@@ -106,18 +135,22 @@ export function ChapterPlayer({
         setPreview(json.preview);
         setProgress(json.chapter);
         if (reteach.current) {
-          const start = reteachStart(Boolean(chapter.recap), reteachStartWith, reteachIndex);
+          const start = reteachStart(Boolean(chapter.recap), reteachStartWith, reteachIndex, media);
           if (start.kind === "step") reteach.current = false;
           setView(start);
           return;
         }
         setWelcomeBack(Boolean(json.chapter && (json.chapter.readDone || json.chapter.nextStep > 0)));
+        if (firstTeachStartWith && !(json.chapter && (json.chapter.readDone || json.chapter.nextStep > 0))) {
+          setView(firstTeachStart(Boolean(chapter.recap), firstTeachStartWith, media));
+          return;
+        }
         setView(viewFor(json.chapter, chapter.steps.length, chapter.keywords.length > 0, Boolean(chapter.recap)));
       })
       .catch(() => {
         if (cancelled) return;
         setError("We couldn't load your place. Check the internet and refresh.");
-        setView(reteach.current ? reteachStart(Boolean(chapter.recap), reteachStartWith, reteachIndex) : chapter.recap ? { kind: "watch" } : { kind: "read" });
+        setView(reteach.current ? reteachStart(Boolean(chapter.recap), reteachStartWith, reteachIndex, media) : chapter.recap ? { kind: "watch" } : { kind: "read" });
       });
     return () => {
       cancelled = true;
@@ -158,6 +191,16 @@ export function ChapterPlayer({
         // Watching is a warm-up; don't block reading if saving fails.
       }
     }
+    if (reteach.current) {
+      reteach.current = false;
+      setView({ kind: "step", index: reteachIndex });
+      return;
+    }
+    setView({ kind: "read" });
+  }
+
+  /** After NotebookLM media: re-teach goes straight to the question; first teach continues to the read. */
+  function finishMedia() {
     if (reteach.current) {
       reteach.current = false;
       setView({ kind: "step", index: reteachIndex });
@@ -220,7 +263,9 @@ export function ChapterPlayer({
         <p className="notice try-again-note">Let&apos;s try this again!{" "}
           {reteachStartWith === "retry"
             ? `Give question ${reteachIndex + 1} a fresh try.`
-            : `${reteachStartWith !== "read" && chapter.recap ? "Watch the recap" : "Read it once more"}, then try question ${reteachIndex + 1}.`}</p>
+            : hasNlm(media, reteachStartWith)
+              ? `${reteachStartWith === "nlm_video" ? "Watch the video" : reteachStartWith === "nlm_podcast" ? "Listen to the podcast" : "Flip the flashcards"}, then try question ${reteachIndex + 1}.`
+              : `${reteachStartWith !== "read" && chapter.recap ? "Watch the recap" : "Read it once more"}, then try question ${reteachIndex + 1}.`}</p>
       ) : welcomeBack && view.kind !== "done" ? <p className="notice">Welcome back! Picking up where you left off.</p> : null}
       <p className="kid-kicker">{view.kind === "keywords" ? "Words you'll see" : chapter.bigQuestion}</p>
       {error ? (
@@ -231,6 +276,9 @@ export function ChapterPlayer({
 
       {view.kind === "loading" ? <p>Loading…</p> : null}
       {view.kind === "watch" && chapter.recap ? <WatchIt chapterId={chapter.id} recap={chapter.recap} onDone={finishWatch} /> : null}
+      {view.kind === "media" && media ? (
+        <MediaStart data={media} modality={view.modality} context={reteach.current ? "reteach" : "first_teach"} onDone={finishMedia} />
+      ) : null}
       {view.kind === "read" ? (
         <>
           <CarefulRead sentences={chapter.sentences} onReady={setReadReady} />

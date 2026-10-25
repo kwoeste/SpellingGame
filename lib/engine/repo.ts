@@ -162,24 +162,47 @@ export interface LearnerTx {
   insertEpisode(row: ModalityEpisode): Promise<void>;
   /** Latest unresolved episode for this item, if any. */
   openEpisode(itemId: string): Promise<ModalityEpisode | null>;
-  resolveEpisode(id: string, success: boolean, at: number): Promise<void>;
+  resolveEpisode(id: string, outcome: EpisodeOutcome, at: number): Promise<void>;
   /** Every episode for this learner (small: one per re-teach). */
   listEpisodes(): Promise<ModalityEpisode[]>;
+  /** Latest Grok/deterministic learning insight for this learner (chooser prior, planner hint). */
+  latestInsight(): Promise<LearningInsight | null>;
 }
 
-export type Modality = "watch" | "read" | "retry";
+export type Modality = "watch" | "read" | "retry" | "nlm_video" | "nlm_podcast" | "nlm_flashcards";
+export type EpisodeContext = "reteach" | "first_teach";
+/** Scored on her next answer to the episode's item: same rule for every modality. */
+export type EpisodeOutcome = { success: boolean; latencyMs: number | null; rushed: boolean };
 export type ModalityEpisode = {
   id: string;
   itemId: string;
   conceptId: string;
   subject: string;
-  context: "reteach";
+  context: EpisodeContext;
   modality: Modality;
   chosenBy: "thompson" | "explore" | "only_option";
   samples: Record<string, number>;
   startedAt: number;
   resolvedAt: number | null;
   success: boolean | null;
+  followupLatencyMs?: number | null;
+  followupRushed?: boolean | null;
+};
+
+/** Per-subject suggested modality weights (each 0..1, relative). */
+export type ModalityWeights = Record<string, Partial<Record<Modality, number>>>;
+
+export type LearningInsight = {
+  id: string;
+  createdAt: number;
+  trigger: "weekly" | "admin";
+  source: "ai" | "deterministic";
+  model: string | null;
+  stats: Record<string, unknown>;
+  summary: string;
+  confidence: string;
+  weights: ModalityWeights;
+  requestedBy: string | null;
 };
 
 export type SessionPlanRecord = {
@@ -221,6 +244,10 @@ export interface AdminRepo {
   goals(): Promise<LearnerGoalRecord[]>;
   sessionPlans(sinceDay: string): Promise<Array<SessionPlanRecord & { learnerId: string }>>;
   modalityEpisodes(): Promise<Array<ModalityEpisode & { learnerId: string }>>;
+  /** First-try, non-preview answers (concept id, correctness, time) for retention stats. */
+  firstTryAnswers(learnerId: string, since: number): Promise<Array<{ conceptId: string; isCorrect: boolean; serverTs: number }>>;
+  insights(learnerId: string, limit: number): Promise<LearningInsight[]>;
+  insertInsight(learnerId: string, row: LearningInsight): Promise<void>;
   upsertGoal(goal: LearnerGoalRecord): Promise<void>;
   relabelStrategy(eventId: string, learnerId: string, strategy: string, createdBy: string): Promise<void>;
 }
