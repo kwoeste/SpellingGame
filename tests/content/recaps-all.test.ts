@@ -6,8 +6,8 @@ import { listChapters } from "@/lib/content/catalog";
 import { MATH_SEEDS, visualValue } from "@/lib/content/recaps-math";
 
 /** Subjects whose Watch it recaps have shipped. Grows to cover the whole catalog. */
-const COVERED = ["savvas.", "math.", "ckla."];
-const covered = (id: string) => COVERED.some((p) => id.startsWith(p));
+const COVERED = ["savvas.", "math.", "ckla.", "col.ch1", "col.ch2", "col.ch3", "col.ch4", "col.ch5", "col.ch6", "col.ch7", "col.ch8", "col.ch9", "col.ch10", "col.ch11", "col.ch12", "col.ch13"];
+const covered = (id: string) => COVERED.some((p) => (p.endsWith(".") ? id.startsWith(p) : id === p));
 const pub = (p: string) => path.join(process.cwd(), "public", p);
 
 describe("Watch it recaps across the catalog", () => {
