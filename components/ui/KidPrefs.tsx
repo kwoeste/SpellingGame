@@ -10,7 +10,7 @@ import {
   type VoicePrefs,
 } from "@/lib/ui/voice";
 import { grokVoiceFromName } from "@/lib/tts/core";
-import { fetchGrokClip, playGrokClip, stopGrokAudio, unlockGrokAudio } from "@/lib/tts/client";
+import { fetchGrokClip, playGrokClip, reportTtsFallback, stopGrokAudio, unlockGrokAudio } from "@/lib/tts/client";
 
 type SpeakOpts = { onend?: () => void; onboundary?: (charIndex: number) => void };
 
@@ -51,16 +51,20 @@ export function KidPrefsProvider({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefs] = useState<VoicePrefs>(DEFAULT_VOICE_PREFS);
   const [grokEnabled, setGrokEnabled] = useState(false);
   const speakToken = useRef(0);
+  // Resolves once we know whether Grok is on, so a tap right after page load doesn't use the browser voice.
+  const grokReady = useRef<Promise<boolean> | null>(null);
 
   useEffect(() => {
     setPrefs(readVoicePrefs());
     let alive = true;
-    fetch("/api/tts", { cache: "no-store" })
+    grokReady.current = fetch("/api/tts", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { enabled?: boolean } | null) => {
-        if (alive) setGrokEnabled(Boolean(data?.enabled));
+        const enabled = Boolean(data?.enabled);
+        if (alive) setGrokEnabled(enabled);
+        return enabled;
       })
-      .catch(() => undefined);
+      .catch(() => false);
     return () => {
       alive = false;
     };
@@ -77,23 +81,37 @@ export function KidPrefsProvider({ children }: { children: React.ReactNode }) {
     }
     function speak(text: string, opts?: SpeakOpts) {
       const current = readVoicePrefs();
-      const voiceName = effectiveVoiceName(current, grokEnabled);
-      const grokVoice = grokEnabled ? grokVoiceFromName(voiceName) : null;
-      if (!grokVoice) {
-        speakWithBrowser(text, { ...current, voiceName }, opts);
+      const pending = !grokEnabled && grokReady.current;
+      // A device voice the kid picked by hand wins; otherwise Grok (default luna) is used when enabled.
+      if (!grokEnabled && !pending) {
+        speakWithBrowser(text, { ...current, voiceName: effectiveVoiceName(current, false) }, opts);
+        return;
+      }
+      if (grokEnabled && !grokVoiceFromName(effectiveVoiceName(current, true))) {
+        speakWithBrowser(text, { ...current, voiceName: effectiveVoiceName(current, true) }, opts);
         return;
       }
       stopSpeak();
       const token = speakToken.current;
       unlockGrokAudio();
-      // Grok failed, timed out (~4s), or was blocked: read it with the device voice instead.
-      const fallback = () => {
-        if (token === speakToken.current) speakWithBrowser(text, { ...current, voiceName: "" }, opts);
+      // Grok genuinely failed, timed out, or was blocked: read it with the device voice, and log why.
+      const fallback = (error: unknown) => {
+        if (token !== speakToken.current) return;
+        reportTtsFallback(error instanceof Error ? `${error.name}:${error.message}` : String(error), text.length);
+        speakWithBrowser(text, { ...current, voiceName: "" }, opts);
       };
-      fetchGrokClip(text, grokVoice, current.rate)
-        .then((clip) => {
-          if (token !== speakToken.current) return;
-          return playGrokClip(clip, opts ?? {});
+      const enabled = grokEnabled ? Promise.resolve(true) : (grokReady.current ?? Promise.resolve(false));
+      enabled
+        .then((on) => {
+          const grokVoice = on ? grokVoiceFromName(effectiveVoiceName(current, true)) : null;
+          if (!grokVoice) {
+            if (token === speakToken.current) speakWithBrowser(text, { ...current, voiceName: effectiveVoiceName(current, on) }, opts);
+            return;
+          }
+          return fetchGrokClip(text, grokVoice, current.rate).then((clip) => {
+            if (token !== speakToken.current) return;
+            return playGrokClip(clip, opts ?? {});
+          });
         })
         .catch(fallback);
     }
