@@ -9,6 +9,7 @@ import { RAPID_GUESS_MS, RETEACH_TARGET, locateItem } from "@/lib/engine/service
 import { warmupQueue } from "@/lib/engine/warmup";
 import { preferredBySubject } from "@/lib/engine/learning-insight";
 import { eligibleArms } from "@/lib/engine/modality";
+import { activeUpcomingTest, practiceTestHref } from "@/lib/practice/upcoming";
 import { aiOrderPlan, type PlannerFacts, type AiPlanResult } from "@/lib/engine/ai-planner";
 
 export const DEFAULT_DAILY_MINUTES = 15;
@@ -58,6 +59,25 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
   const visible = listChapters().filter((c) => chapterVisibleTo(c, role));
   const passed = new Set(await tx.passedGateScopeIds("chapter"));
 
+  // 0. Upcoming class test: the practice test goes first every day until the test.
+  const upcoming = activeUpcomingTest(nowMs);
+  const upcomingChapter = upcoming ? getChapter(upcoming.chapterId) : null;
+  if (upcoming && upcomingChapter && chapterVisibleTo(upcomingChapter, role)) {
+    const todayEvents = await tx.eventsSince(dayStart - 1, ["game_event"]);
+    const finished = todayEvents.filter((e) => e.payload?.game_id === "practice-test" && e.payload?.detail === "finished" && e.payload?.chapter_id === upcoming.chapterId);
+    const fullDone = finished.some((e) => e.payload?.mode !== "retry");
+    blocks.push({
+      id: `practice-test:${upcoming.id}`,
+      kind: "assignment",
+      title: upcoming.isTestDay ? "Test today! Retry missed, then 1 full practice test" : `Test prep: Learn it + full practice test (${upcomingChapter.titleKid})`,
+      href: practiceTestHref(upcoming.chapterId, upcoming.isTestDay ? "retry" : undefined),
+      minutes: upcoming.isTestDay ? 10 : 20,
+      done: upcoming.isTestDay ? fullDone && finished.some((e) => e.payload?.mode === "retry") || (fullDone && finished.length >= 2) : fullDone,
+      locked: true,
+      conceptIds: [...new Set(upcomingChapter.items.map((i) => i.conceptId))],
+    });
+  }
+
   // 1. Re-teach (open flags whose time has come).
   const reteach = (await tx.listReviews(RETEACH_TARGET)).filter((r) => r.lastResult === "fail" && r.dueAt <= nowMs);
   for (const row of reteach.sort((a, b) => a.dueAt - b.dueAt).slice(0, 3)) {
@@ -103,6 +123,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
       continue;
     }
     if (!chapter || !chapterVisibleTo(chapter, role)) continue;
+    if (upcoming && a.targetType === "chapter" && chapter.id === upcoming.chapterId) continue; // covered by the practice-test block
     blocks.push({
       id: `assignment:${a.id}`,
       kind: "assignment",
@@ -140,7 +161,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
     title: "Game time",
     href: "/games",
     minutes: 5,
-    done: today.some((e) => e.type === "game_event"),
+    done: today.some((e) => e.type === "game_event" && e.payload?.game_id !== "practice-test"),
     locked: false,
     conceptIds: [],
   });

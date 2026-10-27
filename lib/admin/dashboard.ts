@@ -26,6 +26,7 @@ import {
   type Overview,
   type RushMeter,
   type ProgressView,
+  type PracticeTestRow,
   type SessionHistoryRow,
   type SessionHistoryView,
   type SubjectProgress,
@@ -543,7 +544,35 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
     else point.mastered = lastMastered;
   }
 
-  return { subjects, chapters, trend };
+  return { subjects, chapters, trend, practiceTests: buildPracticeTests(snap.events, snap.learnerId) };
+}
+
+const numOr = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+const strList = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+
+/** Finished practice-test attempts (newest first), from the game_event the test page logs. */
+export function buildPracticeTests(events: AdminEventRow[], learnerId: string | null): PracticeTestRow[] {
+  return events
+    .filter((e) => (!learnerId || e.learnerId === learnerId) && !e.isPreview && e.type === "game_event" && e.payload?.game_id === "practice-test" && e.payload?.detail === "finished")
+    .sort((a, b) => b.serverTs - a.serverTs)
+    .map((e) => {
+      const p = e.payload ?? {};
+      const byLesson = Array.isArray(p.by_lesson)
+        ? (p.by_lesson as Record<string, unknown>[]).map((r) => ({ lesson: numOr(r?.lesson), right: numOr(r?.right), total: numOr(r?.total) })).filter((r) => r.total > 0)
+        : [];
+      return {
+        at: e.serverTs,
+        chapterId: typeof p.chapter_id === "string" ? p.chapter_id : e.activityId ?? "",
+        mode: p.mode === "retry" ? "retry" : "full",
+        score: numOr(p.score),
+        total: numOr(p.total),
+        exactSpelling: numOr(p.exact_spelling),
+        byLesson,
+        missed: strList(p.missed),
+        misspelled: strList(p.misspelled),
+        minutes: typeof p.minutes === "number" ? p.minutes : null,
+      };
+    });
 }
 
 export function buildWrongAnswers(snap: DashboardSnapshot): WrongAnswerView {

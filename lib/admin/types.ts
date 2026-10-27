@@ -117,7 +117,21 @@ export type ChapterProgressRow = {
   lastSeenAt: number | null;
 };
 
+export type PracticeTestRow = {
+  at: number;
+  chapterId: string;
+  mode: "full" | "retry";
+  score: number;
+  total: number;
+  exactSpelling: number;
+  byLesson: { lesson: number; right: number; total: number }[];
+  missed: string[];
+  misspelled: string[];
+  minutes: number | null;
+};
+
 export type ProgressView = {
+  practiceTests?: PracticeTestRow[];
   subjects: SubjectProgress[];
   chapters: ChapterProgressRow[];
   trend: { day: string; mastered: number; accuracy: number | null }[];
