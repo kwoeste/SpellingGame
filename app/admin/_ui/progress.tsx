@@ -89,6 +89,45 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
           </section>
         ))}
       </div>
+      <section className="pd-card" style={{ marginTop: 14 }} data-testid="practice-tests">
+        <h2>Practice tests</h2>
+        <p className="pd-note">Fill-in-the-blank practice tests modeled on her class Guided Notes. Score is right on the first try; spelling counts on the real test.</p>
+        {!data.practiceTests?.length ? (
+          <EmptyState title="No practice tests yet" body="Results show here after Mae finishes a practice test." />
+        ) : (
+          <div className="pd-table-wrap">
+            <table className="pd-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Kind</th>
+                  <th>Score</th>
+                  <th>Spelled exactly</th>
+                  <th>By lesson</th>
+                  <th>Missed</th>
+                  <th>Misspelled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.practiceTests.map((t) => (
+                  <tr key={`${t.at}-${t.chapterId}`}>
+                    <td>{formatEtWeekday(t.at)}</td>
+                    <td>{t.mode === "retry" ? "Retry missed" : "Full test"}</td>
+                    <td>
+                      {t.score} of {t.total}
+                      {t.total ? ` (${Math.round((t.score / t.total) * 100)}%)` : ""}
+                    </td>
+                    <td>{t.exactSpelling} of {t.score}</td>
+                    <td>{t.byLesson.map((l) => `L${l.lesson} ${l.right}/${l.total}`).join(" · ")}</td>
+                    <td>{t.missed.join(", ") || "—"}</td>
+                    <td>{t.misspelled.join(", ") || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
       <section className="pd-card" style={{ marginTop: 14 }}>
         <h2>Skills mastered over time</h2>
         {data.trend.length < 2 ? (

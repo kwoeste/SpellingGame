@@ -96,6 +96,7 @@ export function knownGame(gameId: string): boolean {
 }
 
 export function gameTitle(gameId: string): string {
+  if (gameId === "practice-test") return "Practice test";
   return NAMED_GAMES.find((game) => game.id === gameId)?.title ?? gameId;
 }
 

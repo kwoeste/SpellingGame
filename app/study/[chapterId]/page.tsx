@@ -10,6 +10,8 @@ import { engineRepo } from "@/lib/engine/repos";
 import { chooseFirstTeachModality, chooseReteachModality } from "@/lib/engine/modality";
 import { getChapter, getNextChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo, toStudentChapter } from "@/lib/content/student";
+import { hasPracticeTest } from "@/lib/practice/bank";
+import { practiceTestHref } from "@/lib/practice/upcoming";
 
 export async function generateMetadata({ params }: { params: Promise<{ chapterId: string }> }): Promise<Metadata> {
   const { chapterId } = await params;
@@ -49,6 +51,11 @@ export default async function ChapterPage({
     <div className="kid-shell">
       <p className="kid-kicker">Study pack</p>
       <ChapterHeader subject={chapter.subject} title={chapter.titleKid} />
+      {hasPracticeTest(chapter.id) ? (
+        <p>
+          <a className="btn" href={practiceTestHref(chapter.id)}>📝 Practice test (like the Guided Notes)</a>
+        </p>
+      ) : null}
       {studentChapter.storyHook ? <p className="story-hook">{studentChapter.storyHook}</p> : null}
       {/* Admin-only banner, rendered on the server so the text never ships in a client bundle. */}
       {isAdmin && chapter.pendingReligionReview ? (
