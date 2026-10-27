@@ -301,13 +301,26 @@
                 finished = true;
                 onDone();
             };
-            const fallbackToVoice = () => {
+            const browserVoice = () => {
                 if (finished || token !== speakToken) return;
                 if (!('speechSynthesis' in window)) { finish(); return; }
                 const utterance = makeUtterance(text);
                 utterance.onend = finish;
                 utterance.onerror = finish;
                 window.speechSynthesis.speak(utterance);
+            };
+            // No recorded clip: use the Grok voice (same as the rest of the site); browser voice only if Grok fails.
+            const fallbackToVoice = () => {
+                if (finished || token !== speakToken) return;
+                grokSpeak(text, token).then((audio) => {
+                    if (token !== speakToken) { audio.pause(); return; }
+                    currentClip = audio;
+                    audio.onended = finish;
+                    audio.onerror = finish;
+                }).catch((err) => {
+                    reportGrokFallback(err, text);
+                    browserVoice();
+                });
             };
             let usedFallback = false;
             const fallbackOnce = () => {
@@ -320,6 +333,47 @@
             clip.onended = finish;
             clip.onerror = fallbackOnce;
             clip.play().catch(fallbackOnce);
+        }
+
+        const GROK_VOICES = ["luna", "cosmo", "carina", "lux", "eve"];
+        function grokVoice() {
+            let name = "";
+            try { name = localStorage.getItem("mae-voice-name") || ""; } catch (e) {}
+            const id = name.startsWith("grok:") ? name.slice(5) : "luna";
+            return GROK_VOICES.includes(id) ? id : "luna";
+        }
+        async function grokSpeak(text, token) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), Math.min(30000, 8000 + text.length * 20));
+            try {
+                const res = await fetch("/api/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text, voice: grokVoice(), rate: speechRate }),
+                    signal: controller.signal,
+                });
+                if (!res.ok) throw new Error("tts_http_" + res.status);
+                const data = await res.json();
+                if (!data.audio) throw new Error("tts_empty");
+                const audio = new Audio("data:" + (data.contentType || "audio/mpeg") + ";base64," + data.audio);
+                if (token === speakToken) await audio.play();
+                return audio;
+            } catch (err) {
+                if (controller.signal.aborted) throw new Error("tts_client_timeout");
+                throw err;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+        function reportGrokFallback(err, text) {
+            try {
+                const reason = String(err && err.message || err).slice(0, 120);
+                console.warn("[tts] Grok voice fell back to the browser voice:", reason);
+                const body = JSON.stringify({ reason, chars: text.length, path: location.pathname });
+                if (!(navigator.sendBeacon && navigator.sendBeacon("/api/tts/fallback", new Blob([body], { type: "application/json" })))) {
+                    fetch("/api/tts/fallback", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+                }
+            } catch (e) {}
         }
 
         function sayWordAndSentence(word) {

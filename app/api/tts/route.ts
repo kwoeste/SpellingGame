@@ -4,6 +4,7 @@ import { GROK_VOICES, TTS_MAX_CHARS, isGrokVoiceId, normalizeTtsText, rateToSpee
 import { TtsError, synthesize, ttsEnabled } from "@/lib/tts/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 /** Tells the voice picker whether Grok voices are available (never reveals the key). */
 export async function GET(req: Request) {
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
   } catch (error) {
     const status = error instanceof TtsError ? error.status : 500;
     const code = error instanceof TtsError ? error.message : "tts_failed";
-    if (status >= 500) console.error("tts", code);
+    console.error("tts failed", { status, code, chars: text.length });
     return NextResponse.json({ error: code }, { status, headers: noStoreHeaders() });
   }
 }

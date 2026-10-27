@@ -1,6 +1,6 @@
 "use client";
 
-import { TTS_CLIENT_TIMEOUT_MS, wordAtTime, type GrokVoiceId, type TtsWord } from "@/lib/tts/core";
+import { ttsClientTimeoutMs, wordAtTime, type GrokVoiceId, type TtsWord } from "@/lib/tts/core";
 
 type Clip = { src: string; words: TtsWord[] };
 
@@ -63,7 +63,7 @@ export async function fetchGrokClip(text: string, voice: GrokVoiceId, rate: numb
   const cached = clipCache.get(key);
   if (cached) return cached;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TTS_CLIENT_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), ttsClientTimeoutMs(text.length));
   try {
     const response = await fetch("/api/tts", {
       method: "POST",
@@ -71,15 +71,33 @@ export async function fetchGrokClip(text: string, voice: GrokVoiceId, rate: numb
       body: JSON.stringify({ text, voice, rate }),
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`tts ${response.status}`);
+    if (!response.ok) {
+      const detail = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(`tts_http_${response.status}${detail?.error ? `_${detail.error}` : ""}`);
+    }
     const data = (await response.json()) as { audio?: string; contentType?: string; words?: TtsWord[] };
     if (!data.audio) throw new Error("tts empty");
     const clip = { src: `data:${data.contentType || "audio/mpeg"};base64,${data.audio}`, words: Array.isArray(data.words) ? data.words : [] };
     if (clipCache.size >= CLIP_CACHE_MAX) clipCache.delete(clipCache.keys().next().value as string);
     clipCache.set(key, clip);
     return clip;
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("tts_client_timeout");
+    throw error;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/** Fire-and-forget: tell the server the browser voice was used instead of Grok, so it shows in Vercel logs. */
+export function reportTtsFallback(reason: string, chars: number): void {
+  try {
+    console.warn("[tts] Grok voice fell back to the browser voice:", reason);
+    const body = JSON.stringify({ reason: String(reason).slice(0, 120), chars, path: window.location.pathname });
+    if (navigator.sendBeacon?.("/api/tts/fallback", new Blob([body], { type: "application/json" }))) return;
+    void fetch("/api/tts/fallback", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => undefined);
+  } catch {
+    // Logging must never break read-aloud.
   }
 }
 

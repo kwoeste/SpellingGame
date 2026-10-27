@@ -23,8 +23,22 @@ export const DEFAULT_GROK_VOICE_NAME = `${GROK_PREFIX}${DEFAULT_GROK_VOICE}`;
 export const TTS_MAX_CHARS = 2000;
 /** Fresh (uncached) characters one user may synthesize per Eastern day. ~$0.75/day worst case. */
 export const TTS_DAILY_CHAR_CAP = 50_000;
-/** Client gives up on Grok audio and uses the browser voice after this long. */
-export const TTS_CLIENT_TIMEOUT_MS = 4000;
+/**
+ * Floor for how long the client waits for Grok audio before using the browser voice.
+ * Fresh (uncached) xAI synthesis of a long passage routinely takes well over 4 s, so a flat 4 s
+ * timeout silently fell back to the robotic browser voice for every new passage or question.
+ */
+export const TTS_CLIENT_TIMEOUT_MS = 8000;
+/** Hard ceiling, just above the server's own xAI timeout. */
+export const TTS_CLIENT_TIMEOUT_MAX_MS = 30_000;
+/** Server-side wait for xAI. */
+export const TTS_UPSTREAM_TIMEOUT_MS = 25_000;
+
+/** Longer text takes xAI longer to synthesize, so give it proportionally more time. */
+export function ttsClientTimeoutMs(chars: number): number {
+  const n = Number.isFinite(chars) && chars > 0 ? chars : 0;
+  return Math.min(TTS_CLIENT_TIMEOUT_MAX_MS, TTS_CLIENT_TIMEOUT_MS + Math.ceil(n * 20));
+}
 
 export function isGrokVoiceId(value: unknown): value is GrokVoiceId {
   return typeof value === "string" && GROK_VOICES.some((voice) => voice.id === value);

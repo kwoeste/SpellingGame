@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { hasDatabase, queryOnce } from "@/lib/db/client";
 import { etDateKey } from "@/lib/engine/scheduler";
-import { TTS_DAILY_CHAR_CAP, wordsFromTimestamps, type GrokVoiceId, type TtsWord } from "@/lib/tts/core";
+import { TTS_DAILY_CHAR_CAP, TTS_UPSTREAM_TIMEOUT_MS, wordsFromTimestamps, type GrokVoiceId, type TtsWord } from "@/lib/tts/core";
 
 /** Bump when xAI changes models or we change output format, so old audio is regenerated. */
 export const TTS_MODEL_TAG = "xai-tts-v1-mp3-24k-64k";
@@ -122,10 +122,15 @@ async function callXai(text: string, voice: GrokVoiceId, speed: number): Promise
       with_timestamps: true,
       output_format: { codec: "mp3", sample_rate: 24000, bit_rate: 64000 },
     }),
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(TTS_UPSTREAM_TIMEOUT_MS),
   }).catch(() => null);
   if (!response) throw new TtsError(502, "tts_upstream_unreachable");
-  if (!response.ok) throw new TtsError(502, `tts_upstream_${response.status}`);
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    // Never log the key; xAI's error body is safe (e.g. "Incorrect API key provided", credit errors).
+    console.error("tts xai_error", response.status, detail.slice(0, 300));
+    throw new TtsError(502, `tts_upstream_${response.status}`);
+  }
   const payload = (await response.json().catch(() => null)) as {
     audio?: string;
     content_type?: string;
@@ -152,7 +157,9 @@ export async function synthesize(args: { email: string; text: string; voice: Gro
   const day = etDateKey(args.now ?? new Date());
   const allowed = args.skipDailyCap || await s.takeChars(userKey(args.email), day, args.text.length, TTS_DAILY_CHAR_CAP);
   if (!allowed) throw new TtsError(429, "tts_daily_cap");
+  const started = Date.now();
   const fresh = await callXai(args.text, args.voice, args.speed);
+  console.info("tts fresh", { chars: args.text.length, voice: args.voice, ms: Date.now() - started });
   await s.put(key, { ...fresh, voice: args.voice, speed: args.speed, chars: args.text.length }).catch(() => undefined);
   return { audioBase64: fresh.audio, contentType: fresh.content_type, words: fresh.words, duration: fresh.duration, cached: false };
 }
