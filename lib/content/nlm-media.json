@@ -19,6 +19,12 @@
       "contentType": "audio/mp4",
       "size": 3038823,
       "sha256": "b23c5aac5d589e7f81c48d2d444df07e27eecf31e7c3bc26c0a7f2da3fd2f277"
+    },
+    "video": {
+      "pathname": "nlm/ckla.u2.ch2/video-066612eeaa9c.mp4",
+      "contentType": "video/mp4",
+      "size": 26337121,
+      "sha256": "066612eeaa9c978b6aacd3d146012eb65c923037dc96586adc1c436113ebc342"
     }
   },
   "ckla.u2.ch3": {
@@ -27,6 +33,12 @@
       "contentType": "audio/mp4",
       "size": 3266039,
       "sha256": "3db1c803e33b76d46745bc3fb53cb8181e0a93afe2313e4d60e4d5a20c4b0463"
+    },
+    "video": {
+      "pathname": "nlm/ckla.u2.ch3/video-b4142248d91f.mp4",
+      "contentType": "video/mp4",
+      "size": 26704479,
+      "sha256": "b4142248d91fd4bd1c5a7ab20d655419dca070ab1917428ca55c9418572b5c53"
     }
   },
   "ckla.u2.ch4": {
@@ -35,6 +47,52 @@
       "contentType": "audio/mp4",
       "size": 2915534,
       "sha256": "0a61d46e1d968008eaf7796de508ce7649f73b3c19d7dc366760f62b29888dfd"
+    },
+    "video": {
+      "pathname": "nlm/ckla.u2.ch4/video-cd71a0355f6e.mp4",
+      "contentType": "video/mp4",
+      "size": 23617162,
+      "sha256": "cd71a0355f6e6c3d4cac8142d1ccea13417e7c29012345be13bc8394dbb7793e"
+    }
+  },
+  "ckla.u2.ch5": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch5/audio-41565d47eada.m4a",
+      "contentType": "audio/mp4",
+      "size": 2712252,
+      "sha256": "41565d47eadafe644226b115ae68f656495503a44bf9bbad846dc0318a9b74aa"
+    }
+  },
+  "ckla.u2.ch6": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch6/audio-36fcc52a96c5.m4a",
+      "contentType": "audio/mp4",
+      "size": 2700299,
+      "sha256": "36fcc52a96c54152a2695cc6e9373e34cce492bff0e81333c824daa34f534ca7"
+    }
+  },
+  "ckla.u2.ch7": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch7/audio-96df8763a78b.m4a",
+      "contentType": "audio/mp4",
+      "size": 2830284,
+      "sha256": "96df8763a78bcb093e7b92bd6e9481800238efcc25c42ea9c228107b3a86fd82"
+    }
+  },
+  "ckla.u2.ch8": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch8/audio-920d962d9ea5.m4a",
+      "contentType": "audio/mp4",
+      "size": 2844477,
+      "sha256": "920d962d9ea522e8018a24cfaa25574e0ccb05699007eaba147b13ff6943fd6e"
+    }
+  },
+  "ckla.u2.ch9": {
+    "audio": {
+      "pathname": "nlm/ckla.u2.ch9/audio-d35d37f882d8.m4a",
+      "contentType": "audio/mp4",
+      "size": 2587380,
+      "sha256": "d35d37f882d82d6f7168f61809a1557657453060e44b6c81377e4b8d94c7c2f2"
     }
   },
   "col.ch1": {
@@ -145,6 +203,12 @@
       "contentType": "audio/mp4",
       "size": 3099333,
       "sha256": "3909292fdaf553438c62d97724f8187a79b21322d5616ddcb20cfceabc5f75ba"
+    },
+    "video": {
+      "pathname": "nlm/savvas.ch6/video-4f788b07816c.mp4",
+      "contentType": "video/mp4",
+      "size": 21665496,
+      "sha256": "4f788b07816c19e0adcb589684ce0da86222855134ea4f46b805873f1b67b45f"
     }
   },
   "savvas.ch7": {
@@ -153,6 +217,12 @@
       "contentType": "audio/mp4",
       "size": 2870624,
       "sha256": "ac900e1dcf77dcfa1128cba94e98a50cd66727a8d5e793c9729ca6eb6d9936de"
+    },
+    "video": {
+      "pathname": "nlm/savvas.ch7/video-6c8a3f7966ce.mp4",
+      "contentType": "video/mp4",
+      "size": 22010135,
+      "sha256": "6c8a3f7966ce2059b89ea61f2a17cdb1d744933762eff5d80846cc954ee238d0"
     }
   },
   "savvas.ch8": {
