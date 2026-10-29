@@ -176,10 +176,10 @@ function Progress({ at, total, streak, stars }: { at: number; total: number; str
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.15rem", fontWeight: 600 }}>
-        <span>Word {Math.min(at, total)} of {total}</span>
+        <span>{at > total ? "Bonus try" : `Word ${at} of ${total}`}</span>
         {stars !== undefined ? <span aria-label={`${stars} stars, streak ${streak ?? 0}`}>⭐ {stars}{streak && streak > 1 ? ` · 🔥 ${streak} in a row` : ""}</span> : null}
       </div>
-      <div className="sp-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={at - 1}><span style={{ width: `${Math.round(((at - 1) / Math.max(1, total)) * 100)}%` }} /></div>
+      <div className="sp-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.min(at - 1, total)}><span style={{ width: `${Math.round((Math.min(at - 1, total) / Math.max(1, total)) * 100)}%` }} /></div>
     </div>
   );
 }
@@ -214,6 +214,7 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
   const [burst, setBurst] = useState(0);
   const [score, setScore] = useState({ firstTry: 0, streak: 0, best: 0, missed: new Set<string>() });
   const wrongTimes = useRef<number[]>([]);
+  const afterBreath = useRef<string | null>(null);
   const requeued = useRef(new Set<string>());
   const inputRef = useRef<HTMLInputElement>(null);
   const word = findWord(queue[idx]);
@@ -243,6 +244,14 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, [waiting]);
+
+  const locked = now < cooldownUntil;
+  useEffect(() => {
+    if (!locked && afterBreath.current !== null) {
+      setFeedback(afterBreath.current);
+      afterBreath.current = null;
+    }
+  }, [locked]);
 
   const finished = !word;
   const reported = useRef(false);
@@ -329,7 +338,9 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
       const tryText = answer.typed ?? "";
       setLastTry(tryText);
       const msg = missMessage(word.word, tryText, m);
-      setFeedback(slow ? `${SPELLING_BREATHE} ${msg}` : result.help.level === "hint" ? `${msg} Here's a hint.` : msg);
+      const after = result.help.level === "hint" ? `${msg} Here's a hint.` : msg;
+      setFeedback(slow ? SPELLING_BREATHE : after);
+      afterBreath.current = slow ? after : null;
       if (slow) {
         wrongTimes.current = [];
         setCooldownUntil(t + COOLDOWN_MS);
@@ -348,7 +359,7 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
   return (
     <section className="card" style={{ padding: 20, position: "relative" }}>
       {burst ? <Burst key={burst} /> : null}
-      <Progress at={idx + 1} total={queue.length} streak={score.streak} stars={score.firstTry} />
+      {idx < words.length ? <Progress at={idx + 1} total={words.length} streak={score.streak} stars={score.firstTry} /> : <><Progress at={words.length + 1} total={words.length} streak={score.streak} stars={score.firstTry} /><p style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 8px" }}>🔁 One more time! ({queue.length - idx} left)</p></>}
 
       {mode === "flash" && !covered ? (
         <div>
@@ -383,8 +394,12 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
               <button className="btn secondary" style={big} aria-label="Hear the word" onClick={hear}>🔊</button></p>
           ) : null}
           <form onSubmit={(e) => { e.preventDefault(); void submit({ typed }); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <input ref={inputRef} className="sp-input" value={typed} readOnly={mode === "tiles"} onChange={(e) => setTyped(e.target.value)} disabled={right || revealed}
-              autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Type the word" />
+            {mode === "tiles" ? (
+              <div className="sp-input" role="status" aria-label={`Your word so far: ${typed || "empty"}`} style={{ minHeight: 60, letterSpacing: "0.12em", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{typed || <span style={{ opacity: 0.35 }}>tap the letters</span>}</div>
+            ) : (
+              <input ref={inputRef} className="sp-input" value={typed} onChange={(e) => setTyped(e.target.value)} disabled={right || revealed}
+                autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Type the word" />
+            )}
             {mode === "tiles" && !right && !revealed ? (
               <>
                 <div className="sp-row" style={{ margin: "4px 0" }}>
@@ -406,9 +421,9 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
         </div>
       )}
 
-      {lastTry && !right && !revealed ? <Letters target={word.word} typed={lastTry} /> : null}
+      {lastTry && !right && !revealed && !coolingDown ? <Letters target={word.word} typed={lastTry} /> : null}
       {feedback ? <p aria-live="polite" style={{ fontSize: "1.25rem" }}>{feedback}</p> : null}
-      {help.level === "hint" && help.hint ? <p className="story-hook">💡 {help.hint}</p> : null}
+      {help.level === "hint" && help.hint && !coolingDown ? <p className="story-hook">💡 {help.hint}</p> : null}
       {revealed && mode !== "sort" ? (
         <div className="story-hook">
           <p style={{ margin: 0 }}>Here&apos;s how to spell it:</p>
