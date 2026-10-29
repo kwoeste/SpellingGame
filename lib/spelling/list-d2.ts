@@ -90,13 +90,17 @@ export const SESSION_NEXT_UP: Record<string, string> = {
   tiles: "Next up: Letter tiles!",
   fix: "Next up: Fix the misspelling!",
   sort: "Next up: Sort by sound!",
-  mock: "Last one: a quick spelling check!",
+  mock: "Next up: Quick spelling check!",
 };
+/** Sort by sound praise (no spelling involved). */
+export const SORT_RIGHT: Record<Vowel, string> = { i: "Yes! That's the short i sound.", o: "Yes! That's the short o sound.", u: "Yes! That's the short u sound." };
+/** Right after one or more misses: softer than first-try praise. */
+export const SPELLING_GOT_IT = "You got it!";
 export const SESSION_LINES = {
   start: "Here's today's spelling mix. I'll pick the games!",
   done: "You finished today's spelling session. Great work!",
 };
 
 export function allSpellingClips(): string[] {
-  return [...new Set([...Object.values(SPELLING_LINES), ...Object.values(SESSION_NEXT_UP), ...Object.values(SESSION_LINES), ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
+  return [...new Set([...Object.values(SPELLING_LINES), ...Object.values(SESSION_NEXT_UP), ...Object.values(SESSION_LINES), ...Object.values(SORT_RIGHT), SPELLING_GOT_IT, ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
 }

@@ -32,7 +32,7 @@ export async function spellingSummary(repo: EngineRepo, actor: EngineActor, now 
   });
 }
 
-export type CheckInput = { word: unknown; typed?: unknown; vowel?: unknown; mode: unknown; misses: unknown; sessionId?: string | null };
+export type CheckInput = { word: unknown; typed?: unknown; vowel?: unknown; mode: unknown; misses: unknown; retry?: unknown; sessionId?: string | null };
 export type CheckResult = {
   correct: boolean;
   help: ReturnType<typeof spellingHelp>;
@@ -67,7 +67,7 @@ export async function checkSpelling(repo: EngineRepo, actor: EngineActor, input:
       isCorrect: correct,
       latencyMs: null,
       hintLevel: misses + 1 >= 5 ? 3 : misses + 1 >= 4 ? 1 : 0,
-      payload: { word: word.word, mode, first_try: misses === 0, list: LIST_ID },
+      payload: { word: word.word, mode, first_try: misses === 0 && input.retry !== true, list: LIST_ID },
       isPreview: false,
     });
     await awardMinute(tx, session.id, now, false);
