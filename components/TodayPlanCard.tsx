@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 export type TodayPlanView = {
-  blocks: { id: string; kind: string; title: string; href: string; minutes: number; done: boolean }[];
+  blocks: { id: string; kind: string; title: string; href: string; minutes: number; done: boolean; detail?: string }[];
   goalMinutes: number;
   minutesToday: number;
   timeBack: boolean;
   whyKid: string;
 };
 
-const ICON: Record<string, string> = { reteach: "↻", warmup: "🔥", assignment: "⭐", chapter: "📖", game: "🎮" };
+const ICON: Record<string, string> = { reteach: "↻", warmup: "🔥", assignment: "⭐", chapter: "📖", game: "🎮", spelling: "✏️", test: "📅" };
 
 function MinutesRing({ done, goal }: { done: number; goal: number }) {
   const pct = goal > 0 ? Math.min(1, done / goal) : 0;
@@ -58,7 +58,7 @@ export function TodayPlanCard({ plan }: { plan: TodayPlanView }) {
               <span className="continue-icon" aria-hidden>{b.done ? "✅" : ICON[b.kind] ?? "▶"}</span>
               <span className="continue-text">
                 <strong>{b.title}</strong>
-                <span>{b.done ? "Done!" : `about ${b.minutes} min`}</span>
+                <span>{b.done ? "Done!" : `about ${b.minutes} min`}{b.detail ? ` · ${b.detail}` : ""}</span>
               </span>
               <span className="continue-arrow">→</span>
             </Link>

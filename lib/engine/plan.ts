@@ -9,14 +9,19 @@ import { RAPID_GUESS_MS, RETEACH_TARGET, locateItem } from "@/lib/engine/service
 import { warmupQueue } from "@/lib/engine/warmup";
 import { preferredBySubject } from "@/lib/engine/learning-insight";
 import { eligibleArms } from "@/lib/engine/modality";
-import { activeUpcomingTest, practiceTestHref } from "@/lib/practice/upcoming";
+import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
+import { DEFAULT_UPCOMING, activeUpcomingTests, practiceTestHref, upcomingHref, type UpcomingTest } from "@/lib/practice/upcoming";
+import { daysUntil, masteredCount } from "@/lib/spelling/engine";
+import { D2_WORDS, LIST_ID, LIST_SHORT_TITLE } from "@/lib/spelling/list-d2";
+import { learnerSpellingStats, SPELLING_EVENT } from "@/lib/spelling/service";
+import type { SubjectId } from "@/lib/content/types";
 import { aiOrderPlan, type PlannerFacts, type AiPlanResult } from "@/lib/engine/ai-planner";
 
 export const DEFAULT_DAILY_MINUTES = 15;
 /** Safety cap on AI planner calls per learner per ET day (guards against sign-in loops). */
 export const AI_PLAN_DAILY_CAP = 10;
 
-export type PlanBlockKind = "reteach" | "warmup" | "assignment" | "chapter" | "game";
+export type PlanBlockKind = "reteach" | "warmup" | "assignment" | "chapter" | "game" | "spelling" | "test";
 
 export type PlanBlock = {
   id: string;
@@ -29,6 +34,8 @@ export type PlanBlock = {
   locked: boolean;
   conceptIds: string[];
   due?: number;
+  /** Short status line under the title (e.g. "8 days left · 14 of 25 mastered"). */
+  detail?: string;
 };
 
 export type TodayPlan = {
@@ -53,29 +60,103 @@ function chapterForConcept(conceptId: string, role: AppRole): ChapterPack | null
 }
 
 /** Deterministic candidate blocks with live done flags. Never calls the network. */
-export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number, random = Math.random): Promise<Live> {
+/** Subjects in the order they rotate when she's never touched any (reading first). */
+export const SUBJECT_ROTATION: SubjectId[] = ["ela", "science", "religion", "math"];
+export const ROTATION_SLOTS = 2;
+const ROTATION_LOOKBACK_MS = 60 * 86_400_000;
+
+/** Last time she worked in each subject, from answers, reads and watches in the database. */
+export async function subjectLastWorked(tx: LearnerTx, nowMs: number): Promise<Partial<Record<SubjectId, number>>> {
+  const events = await tx.eventsSince(nowMs - ROTATION_LOOKBACK_MS, ["answer_submitted", "read_done", "watch_done"]);
+  const out: Partial<Record<SubjectId, number>> = {};
+  for (const e of events) {
+    const ch = (e.itemId ? locateItem(e.itemId)?.chapter : null) ?? (e.activityId ? getChapter(e.activityId) : null);
+    if (ch) out[ch.subject] = Math.max(out[ch.subject] ?? 0, e.serverTs);
+  }
+  return out;
+}
+
+/** Pure ordering: least recently worked subject first; never-worked subjects first, in SUBJECT_ROTATION order. */
+export function rotateSubjects(subjects: SubjectId[], last: Partial<Record<SubjectId, number>>): SubjectId[] {
+  const rank = (s: SubjectId) => (SUBJECT_ROTATION.indexOf(s) + 99) % 99;
+  return [...new Set(subjects)].sort((a, b) => (last[a] ?? 0) - (last[b] ?? 0) || rank(a) - rank(b));
+}
+
+async function rotationPicks(tx: LearnerTx, visible: ChapterPack[], passed: Set<string>, resumeId: string | null, nowMs: number): Promise<ChapterPack[]> {
+  const open = visible.filter((c) => !passed.has(c.id));
+  const order = rotateSubjects(open.map((c) => c.subject), await subjectLastWorked(tx, nowMs));
+  return order.slice(0, ROTATION_SLOTS).map((subject) => open.find((c) => c.id === resumeId && c.subject === subject) ?? open.find((c) => c.subject === subject)!);
+}
+
+export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number, random = Math.random, upcoming: UpcomingTest[] = DEFAULT_UPCOMING): Promise<Live> {
   const dayStart = etDayStart(nowMs);
   const blocks: PlanBlock[] = [];
   const visible = listChapters().filter((c) => chapterVisibleTo(c, role));
   const passed = new Set(await tx.passedGateScopeIds("chapter"));
 
-  // 0. Upcoming class test: the practice test goes first every day until the test.
-  const upcoming = activeUpcomingTest(nowMs);
-  const upcomingChapter = upcoming ? getChapter(upcoming.chapterId) : null;
-  if (upcoming && upcomingChapter && chapterVisibleTo(upcomingChapter, role)) {
-    const todayEvents = await tx.eventsSince(dayStart - 1, ["game_event"]);
-    const finished = todayEvents.filter((e) => e.payload?.game_id === "practice-test" && e.payload?.detail === "finished" && e.payload?.chapter_id === upcoming.chapterId);
-    const fullDone = finished.some((e) => e.payload?.mode !== "retry");
-    blocks.push({
-      id: `practice-test:${upcoming.id}`,
-      kind: "assignment",
-      title: upcoming.isTestDay ? "Test today! Retry missed, then 1 full practice test" : `Test prep: Learn it + full practice test (${upcomingChapter.titleKid})`,
-      href: practiceTestHref(upcoming.chapterId, upcoming.isTestDay ? "retry" : undefined),
-      minutes: upcoming.isTestDay ? 10 : 20,
-      done: upcoming.isTestDay ? fullDone && finished.some((e) => e.payload?.mode === "retry") || (fullDone && finished.length >= 2) : fullDone,
-      locked: true,
-      conceptIds: [...new Set(upcomingChapter.items.map((i) => i.conceptId))],
-    });
+  // 0. Dated items (class tests, spelling lists) go first, soonest test first, until their date passes.
+  const goalRow = await tx.getGoal();
+  const sessionGoal = goalRow?.dailyMinutesGoal ?? DEFAULT_DAILY_MINUTES;
+  const active = activeUpcomingTests(nowMs, upcoming);
+  const todayDated = active.length ? await tx.eventsSince(dayStart - 1, ["game_event", SPELLING_EVENT]) : [];
+  /** Within a day of a test, dated items may fill the whole session (subject rotation steps aside). */
+  let crunch = false;
+  const coveredChapters = new Set<string>();
+  for (const t of active) {
+    const days = daysUntil(t.testDate, nowMs);
+    const daysText = t.isTestDay ? "Test today!" : days === 1 ? "Test tomorrow!" : `${days} days left`;
+    if (t.kind === "spelling") {
+      if (t.refId !== LIST_ID) continue;
+      const stats = await learnerSpellingStats(tx);
+      const mastered = masteredCount(stats);
+      const today = todayDated.filter((e) => e.activityId === LIST_ID);
+      const firstTryRight = today.filter((e) => e.type === SPELLING_EVENT && e.isCorrect && e.payload?.first_try === true).length;
+      const mockDone = today.some((e) => e.type === "game_event" && e.payload?.game_id === LIST_ID && e.payload?.detail === "finished" && e.payload?.mode === "mock");
+      if (days <= 1) crunch = true;
+      blocks.push({
+        id: `upcoming:${t.id}`,
+        kind: "spelling",
+        title: t.isTestDay ? `${LIST_SHORT_TITLE}: test today! One last mock test` : LIST_SHORT_TITLE,
+        href: upcomingHref(t),
+        minutes: days <= 1 ? sessionGoal : 10,
+        done: mastered === D2_WORDS.length ? firstTryRight >= 5 || mockDone : firstTryRight >= 15 || (mockDone && firstTryRight >= 25),
+        locked: true,
+        conceptIds: [],
+        detail: `${daysText} · ${mastered} of ${D2_WORDS.length} mastered`,
+      });
+      continue;
+    }
+    const chapter = getChapter(t.refId);
+    if (!chapter || !chapterVisibleTo(chapter, role)) continue;
+    coveredChapters.add(chapter.id);
+    if (days <= 1) crunch = true;
+    if (t.kind === "practice-test") {
+      const finished = todayDated.filter((e) => e.type === "game_event" && e.payload?.game_id === "practice-test" && e.payload?.detail === "finished" && e.payload?.chapter_id === t.refId);
+      const fullDone = finished.some((e) => e.payload?.mode !== "retry");
+      blocks.push({
+        id: `practice-test:${t.id}`,
+        kind: "assignment",
+        title: t.isTestDay ? "Test today! Retry missed, then 1 full practice test" : `Test prep: Learn it + full practice test (${chapter.titleKid})`,
+        href: practiceTestHref(t.refId, t.isTestDay ? "retry" : undefined),
+        minutes: t.isTestDay ? 10 : 20,
+        done: t.isTestDay ? fullDone && finished.some((e) => e.payload?.mode === "retry") || (fullDone && finished.length >= 2) : fullDone,
+        locked: true,
+        conceptIds: [...new Set(chapter.items.map((i) => i.conceptId))],
+        detail: daysText,
+      });
+    } else {
+      blocks.push({
+        id: `upcoming:${t.id}`,
+        kind: "test",
+        title: `Test prep: ${t.title}`,
+        href: upcomingHref(t),
+        minutes: days <= 1 ? sessionGoal : 10,
+        done: false,
+        locked: true,
+        conceptIds: [...new Set(chapter.items.map((i) => i.conceptId))],
+        detail: daysText,
+      });
+    }
   }
 
   // 1. Re-teach (open flags whose time has come).
@@ -123,7 +204,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
       continue;
     }
     if (!chapter || !chapterVisibleTo(chapter, role)) continue;
-    if (upcoming && a.targetType === "chapter" && chapter.id === upcoming.chapterId) continue; // covered by the practice-test block
+    if (a.targetType === "chapter" && coveredChapters.has(chapter.id)) continue; // covered by the dated block
     blocks.push({
       id: `assignment:${a.id}`,
       kind: "assignment",
@@ -136,22 +217,25 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
     });
   }
 
-  // 4. Current chapter: the resume chapter if unfinished, else the first unpassed one.
-  const session = await tx.latestOpenSession();
-  const resumeId = session?.resumeState.chapterId;
-  const current =
-    (resumeId && !passed.has(resumeId) ? visible.find((c) => c.id === resumeId) : undefined) ?? visible.find((c) => !passed.has(c.id));
-  if (current && !blocks.some((b) => b.href === chapterHref(current.id))) {
-    blocks.push({
-      id: `chapter:${current.id}`,
-      kind: "chapter",
-      title: current.titleKid,
-      href: chapterHref(current.id),
-      minutes: 10,
-      done: false,
-      locked: false,
-      conceptIds: [...new Set(current.items.map((i) => i.conceptId))],
-    });
+  // 4. Subject rotation: the subjects she worked on least recently go next (from her real history),
+  //    each at its current chapter, so every subject makes slow, steady progress. Locked so the order holds.
+  if (!crunch) {
+    const session = await tx.latestOpenSession();
+    for (const pick of await rotationPicks(tx, visible, passed, session?.resumeState.chapterId ?? null, nowMs)) {
+      if (blocks.some((b) => b.href === chapterHref(pick.id))) continue;
+      const first = !blocks.some((b) => b.id.startsWith("chapter:"));
+      blocks.push({
+        id: `chapter:${pick.id}`,
+        kind: "chapter",
+        title: pick.titleKid,
+        href: chapterHref(pick.id),
+        minutes: first ? 10 : 8,
+        done: false,
+        // The least-recent subject is pinned right after dated items; the rest stay orderable by the AI planner.
+        locked: first,
+        conceptIds: [...new Set(pick.items.map((i) => i.conceptId))],
+      });
+    }
   }
 
   // 5. A game.
@@ -161,13 +245,12 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
     title: "Game time",
     href: "/games",
     minutes: 5,
-    done: today.some((e) => e.type === "game_event" && e.payload?.game_id !== "practice-test"),
+    done: today.some((e) => e.type === "game_event" && e.payload?.game_id !== "practice-test" && e.payload?.game_id !== LIST_ID),
     locked: false,
     conceptIds: [],
   });
 
-  const goal = await tx.getGoal();
-  const goalMinutes = goal?.dailyMinutesGoal ?? DEFAULT_DAILY_MINUTES;
+  const goalMinutes = sessionGoal;
   const minutesToday = (await tx.xpRows()).filter((r) => r.minuteStart >= dayStart).length;
 
   // De-identified facts for the AI planner.
@@ -249,7 +332,7 @@ function toPlan(blocks: PlanBlock[], live: Live, why: string, note: string, sour
   };
 }
 
-export type PlanDeps = { ai?: (facts: PlannerFacts) => Promise<AiPlanResult | null>; random?: () => number };
+export type PlanDeps = { ai?: (facts: PlannerFacts) => Promise<AiPlanResult | null>; random?: () => number; upcoming?: UpcomingTest[] };
 
 /**
  * Today's plan. With a sign-in id, the first request of that sign-in builds the plan (AI-ordered
@@ -264,8 +347,9 @@ export async function todayPlan(
 ): Promise<TodayPlan | null> {
   if (!actor.learnerId) return null;
   const ai = deps.ai ?? aiOrderPlan;
+  const upcoming = deps.upcoming ?? (await loadUpcomingTests());
   return repo.withLearner(actor.learnerId, async (tx) => {
-    const live = await liveCandidates(tx, actor.role, nowMs, deps.random);
+    const live = await liveCandidates(tx, actor.role, nowMs, deps.random, upcoming);
     if (loginId) {
       const cached = await tx.getSessionPlan(loginId);
       if (cached) {
@@ -276,7 +360,7 @@ export async function todayPlan(
     const day = etDateKey(new Date(nowMs));
     let order = deterministicOrder(live.blocks);
     let why = defaultWhy(live.blocks);
-    let note = "Deterministic plan: re-teach, warm-up, Dad's picks, chapter, game.";
+    let note = "Deterministic plan: dated tests, re-teach, warm-up, subject rotation (least recent first), Dad's picks, game.";
     let source: TodayPlan["source"] = "deterministic";
     let attempted = false;
     const orderable = live.facts.candidates.filter((c) => !c.locked);

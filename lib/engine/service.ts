@@ -117,7 +117,7 @@ function newSession(learnerId: string, entryPoint: string, now: number, resume: 
  * latest live one, otherwise a new one that carries the previous resume point. Sessions idle for
  * 30 minutes are closed.
  */
-async function currentSession(tx: LearnerTx, requestedId: string | null, entryPoint: string, now: number): Promise<PlaySession> {
+export async function currentSession(tx: LearnerTx, requestedId: string | null, entryPoint: string, now: number): Promise<PlaySession> {
   const requested = requestedId && UUID_RE.test(requestedId) ? await tx.getSession(requestedId) : null;
   const candidate = requested && !requested.endedAt && !requested.isPreview ? requested : await tx.latestOpenSession();
   if (candidate && now - candidate.lastEventAt <= SESSION_IDLE_MS) return candidate;
@@ -291,7 +291,7 @@ async function runChapterGate(tx: LearnerTx, chapter: ChapterPack, since: number
   return { passed, correct, total: itemIds.length, needPct: 90 };
 }
 
-async function awardMinute(tx: LearnerTx, sessionId: string, now: number, rapidGuess: boolean, accuracy: number | null = null): Promise<void> {
+export async function awardMinute(tx: LearnerTx, sessionId: string, now: number, rapidGuess: boolean, accuracy: number | null = null): Promise<void> {
   const xp = accuracyWeightedXp(xpForMinute({ qualifyingActions: 1, idleGapMs: 0, majorityRapidGuess: rapidGuess, videoHidden: false }), accuracy);
   if (xp > 0) await tx.awardXp(sessionId, truncateMinute(now), xp);
 }
