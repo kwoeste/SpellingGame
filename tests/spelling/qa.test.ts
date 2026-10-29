@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { canCover, markLetters, missMessage, mockStep, rightMessage, tooQuick } from "@/lib/spelling/feedback";
 import { allSpellingClips, SPELLING_BREATHE, SPELLING_SO_CLOSE, SPELLING_YAYS } from "@/lib/spelling/list-d2";
-import { isPastTest, todayNY } from "@/app/admin/upcoming-tests/editor";
+import { isPastTest, showDate, todayNY } from "@/app/admin/upcoming-tests/editor";
 
 describe("mock test start", () => {
   it("starts immediately on tap, without waiting for audio", () => {
@@ -69,5 +69,12 @@ describe("admin test dates", () => {
     expect(today).toBe("2026-10-29");
     expect(isPastTest({ testDate: "2026-10-28" }, today)).toBe(true);
     expect(isPastTest({ testDate: "2026-10-29" }, today)).toBe(false);
+  });
+});
+
+describe("admin test dates are visible as text", () => {
+  it("formats YYYY-MM-DD", () => {
+    expect(showDate("2026-11-06")).toBe("Fri, Nov 6, 2026");
+    expect(showDate("")).toBe("—");
   });
 });

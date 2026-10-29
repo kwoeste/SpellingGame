@@ -13,11 +13,18 @@ export function isPastTest(t: Pick<UpcomingTest, "testDate">, today: string): bo
   return t.testDate < today;
 }
 
+/** "Fri, Nov 6, 2026" from YYYY-MM-DD, as plain text so it shows without an input. */
+export function showDate(d: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return d || "—";
+  return new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
 export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
   const [rows, setRows] = useState<UpcomingTest[]>(initial);
   const [draft, setDraft] = useState<UpcomingTest>(BLANK);
   const [msg, setMsg] = useState<string | null>(null);
   const [showPast, setShowPast] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const today = todayNY();
   const pastCount = rows.filter((t) => isPastTest(t, today)).length;
 
@@ -48,12 +55,25 @@ export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
         <tbody>
           {rows.map((t, i) => isPastTest(t, today) && !showPast ? null : (
             <tr key={t.id} style={isPastTest(t, today) ? { opacity: 0.5 } : undefined}>
-              <td>{isPastTest(t, today) ? <small>past · </small> : null}<input value={t.title} onChange={(e) => edit(i, { title: e.target.value })} /></td>
-              <td>{t.kind}</td>
-              <td>{t.refId}</td>
-              <td><input type="date" value={t.startDate} onChange={(e) => edit(i, { startDate: e.target.value })} /></td>
-              <td><input type="date" value={t.testDate} onChange={(e) => edit(i, { testDate: e.target.value })} /></td>
-              <td><button onClick={() => void save(t)}>Save</button> <button onClick={() => void remove(t.id)}>Remove</button></td>
+              {editing === t.id ? (
+                <>
+                  <td><input aria-label="Title" style={{ minWidth: 240 }} value={t.title} onChange={(e) => edit(i, { title: e.target.value })} /></td>
+                  <td>{t.kind}</td>
+                  <td>{t.refId}</td>
+                  <td><input aria-label="Pin from" type="date" value={t.startDate} onChange={(e) => edit(i, { startDate: e.target.value })} /></td>
+                  <td><input aria-label="Test date" type="date" value={t.testDate} onChange={(e) => edit(i, { testDate: e.target.value })} /></td>
+                  <td><button onClick={() => void save(t).then(() => setEditing(null))}>Save</button> <button onClick={() => setEditing(null)}>Done</button></td>
+                </>
+              ) : (
+                <>
+                  <td>{isPastTest(t, today) ? <small>past · </small> : null}<b>{t.title || "(untitled)"}</b></td>
+                  <td>{t.kind}</td>
+                  <td>{t.refId}</td>
+                  <td>{showDate(t.startDate)}</td>
+                  <td><b>{showDate(t.testDate)}</b></td>
+                  <td><button onClick={() => setEditing(t.id)}>Edit</button> <button onClick={() => void remove(t.id)}>Remove</button></td>
+                </>
+              )}
             </tr>
           ))}
           <tr>
