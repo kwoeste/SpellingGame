@@ -341,6 +341,9 @@ export const memoryAdminRepo: AdminRepo = {
   async events(limit) {
     return clone(state.events.slice(-limit).reverse());
   },
+  async eventsOfType(type, limit) {
+    return clone(state.events.filter((e) => e.type === type).slice(-limit).reverse());
+  },
   async decisions(limit) {
     return clone(state.decisions.slice(-limit).reverse());
   },

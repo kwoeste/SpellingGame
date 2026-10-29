@@ -5,6 +5,7 @@
  *
  *   XAI_API_KEY=... DATABASE_URL=<neon owner url> npx -y tsx scripts/tts-prewarm.ts [--area=practice,study,...] [--voice=luna] [--rates=0.85,0.7,1] [--dry-run]
  */
+import { allSpellingClips } from "@/lib/spelling/list-d2";
 import { listChapters } from "@/lib/content/catalog";
 import { listRecaps } from "@/lib/content/recaps";
 import { bankSize, practiceBank, practiceHelp } from "@/lib/practice/bank";
@@ -56,6 +57,7 @@ export const AREAS: Area[] = [
   { name: "practice", texts: practiceTexts },
   { name: "study", texts: studyTexts },
   { name: "watch", texts: watchTexts },
+  { name: "spelling", texts: () => allSpellingClips() },
 ];
 
 function arg(name: string): string | undefined {

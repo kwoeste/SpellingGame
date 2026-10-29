@@ -51,7 +51,7 @@ export default async function StudyIndexPage() {
         plan={
           plan
             ? {
-                blocks: plan.blocks.map((b) => ({ id: b.id, kind: b.kind, title: b.title, href: b.href, minutes: b.minutes, done: b.done })),
+                blocks: plan.blocks.map((b) => ({ id: b.id, kind: b.kind, title: b.title, href: b.href, minutes: b.minutes, done: b.done, detail: b.detail })),
                 goalMinutes: plan.goalMinutes,
                 minutesToday: plan.minutesToday,
                 timeBack: plan.timeBack,

@@ -65,7 +65,7 @@ describe("today's plan", () => {
     const empty = await todayPlan(repo, mae, null, T0, { ai: fakeAi() });
     expect(empty?.goalMinutes).toBe(1);
     expect(empty?.timeBack).toBe(false);
-    expect(empty?.blocks.map((b) => b.kind)).toEqual(["chapter", "game"]);
+    expect(empty?.blocks.map((b) => b.kind)).toEqual(["chapter", "chapter", "game"]);
     await finishChapter("savvas.ch1", T0);
     const after = await todayPlan(repo, mae, null, T0 + 120_000, { ai: fakeAi() });
     expect(after?.minutesToday).toBeGreaterThanOrEqual(1);
@@ -77,7 +77,8 @@ describe("today's plan", () => {
     const first = await todayPlan(repo, mae, "login-1", T0, { ai });
     expect(ai).toHaveBeenCalledTimes(1);
     expect(first?.source).toBe("ai");
-    expect(first?.blocks.map((b) => b.kind)).toEqual(["game", "chapter"]);
+    // The least-recent subject stays pinned first; the AI orders the rest.
+    expect(first?.blocks.map((b) => b.kind)).toEqual(["chapter", "game", "chapter"]);
     await todayPlan(repo, mae, "login-1", T0 + 1000, { ai });
     expect(ai).toHaveBeenCalledTimes(1);
     // Progress updates checkmarks locally: the chapter block is checked off without a new call.
@@ -100,7 +101,7 @@ describe("today's plan", () => {
   it("falls back to the deterministic plan when the AI fails or answers badly", async () => {
     const boom = await todayPlan(repo, mae, "a", T0, { ai: async () => { throw new Error("down"); } });
     expect(boom?.source).toBe("deterministic");
-    expect(boom?.blocks.map((b) => b.kind)).toEqual(["chapter", "game"]);
+    expect(boom?.blocks.map((b) => b.kind)).toEqual(["chapter", "chapter", "game"]);
     const bad = await todayPlan(repo, mae, "b", T0, { ai: async () => ({ order: ["made-up"], why_kid: "hi", admin_note: "x" }) });
     expect(bad?.source).toBe("deterministic");
     const missingKey = await aiOrderPlan({ minutes_goal: 15, minutes_today: 0, recent_accuracy: null, recent_answers: 0, rush_rate: 0, candidates: [] }, fetch, "");

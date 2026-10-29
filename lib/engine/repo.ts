@@ -232,6 +232,8 @@ export interface AdminRepo {
   mastery(): Promise<AdminMasteryRow[]>;
   wrongAnswers(limit: number): Promise<AdminEventRow[]>;
   events(limit: number): Promise<AdminEventRow[]>;
+  /** Newest-first events of one type (so busy event streams can't crowd them out). */
+  eventsOfType(type: string, limit: number): Promise<AdminEventRow[]>;
   decisions(limit: number): Promise<Record<string, unknown>[]>;
   likes(): Promise<(LikeRow & { learnerId: string })[]>;
   engagedMinutesByDay(): Promise<{ day: string; minutes: number }[]>;

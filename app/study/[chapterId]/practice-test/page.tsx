@@ -7,7 +7,8 @@ import { requirePageUser } from "@/lib/auth/server";
 import { getChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
 import { bankSize, practiceBank } from "@/lib/practice/bank";
-import { activeUpcomingTest } from "@/lib/practice/upcoming";
+import { activeUpcomingTests } from "@/lib/practice/upcoming";
+import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
 
 export const metadata: Metadata = { title: "Practice test | Mae's Lab" };
 
@@ -26,8 +27,9 @@ export default async function PracticeTestPage({
   const chapter = getChapter(chapterId);
   const bank = practiceBank(chapterId);
   if (!chapter || !bank || !chapterVisibleTo(chapter, user.role)) notFound();
-  const upcoming = activeUpcomingTest(Date.now());
-  const testNote = upcoming && upcoming.chapterId === chapter.id ? (upcoming.isTestDay ? "Your test is today. You've got this!" : `Your class test is on ${upcoming.testDate === "2026-10-28" ? "Wednesday" : upcoming.testDate}.`) : null;
+  const upcoming = activeUpcomingTests(Date.now(), await loadUpcomingTests()).find((t) => t.kind !== "spelling" && t.refId === chapter.id);
+  const weekday = upcoming ? new Date(`${upcoming.testDate}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" }) : "";
+  const testNote = upcoming ? (upcoming.isTestDay ? "Your test is today. You've got this!" : `Your class test is on ${weekday}.`) : null;
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Practice test</p>

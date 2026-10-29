@@ -483,6 +483,10 @@ export const pgAdminRepo: AdminRepo = {
     const rows = await adminRows("SELECT * FROM engine.interaction_event ORDER BY server_ts DESC LIMIT $1", [limit]);
     return rows.map(toEvent);
   },
+  async eventsOfType(type, limit) {
+    const rows = await adminRows("SELECT * FROM engine.interaction_event WHERE type = $1 ORDER BY server_ts DESC LIMIT $2", [type, limit]);
+    return rows.map(toEvent);
+  },
   async decisions(limit) {
     return adminRows("SELECT * FROM admin_api.decisions ORDER BY ts DESC LIMIT $1", [limit]);
   },
