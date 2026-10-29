@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
-import { D2_WORDS, LIST_TITLE, SPELLING_LINES, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
+import { D2_WORDS, LIST_TITLE, SPELLING_BREATHE, SPELLING_LINES, SPELLING_SO_CLOSE, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
 import type { SpellingMode, WordStat } from "@/lib/spelling/engine";
+import { COOLDOWN_MS, FLASH_STUDY_MS, canCover, markLetters, missMessage, mockStep, rightMessage, tooQuick, type MockState } from "@/lib/spelling/feedback";
 
 type Summary = { stats: WordStat[]; mastered: number; total: number; queue: string[] };
 type Help = { level: "none" | "hint" | "reveal"; hint?: string; answer?: string };
@@ -15,11 +16,11 @@ const MODES: { id: SpellingMode; icon: string; title: string; blurb: string }[] 
   { id: "flash", icon: "🃏", title: "Flashcards", blurb: "Look, cover, spell." },
   { id: "tiles", icon: "🔤", title: "Letter tiles", blurb: "Unscramble the letters." },
   { id: "fix", icon: "🛠️", title: "Fix the misspelling", blurb: "Find the oops and fix it." },
-  { id: "sort", icon: "🗂️", title: "Sort by sound", blurb: "Short i, o, or u?" },
+  { id: "sort", icon: "🗂️", title: "Sort by sound", blurb: "Hear it. Short i, o, or u?" },
   { id: "mock", icon: "📝", title: "Mock test", blurb: "All 25 words, like the real test." },
 ];
 
-const big: React.CSSProperties = { minHeight: "var(--touch, 48px)", fontSize: "1.1rem" };
+const big: React.CSSProperties = { minHeight: 56, fontSize: "1.15rem", touchAction: "manipulation" };
 
 function Highlight({ w }: { w: SpellingWord }) {
   return (
@@ -54,7 +55,7 @@ function postFinished(mode: SpellingMode, score: number, total: number, missed: 
   void fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ finished: { mode, score, total, missed } }) }).catch(() => undefined);
 }
 
-export function SpellingD2({ testDate, daysLeft }: { testDate: string; daysLeft: number }) {
+export function SpellingD2({ testDate, daysLeft, preview = false }: { testDate: string; daysLeft: number; preview?: boolean }) {
   const prefs = useKidPrefs();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [mode, setMode] = useState<SpellingMode | null>(null);
@@ -88,11 +89,13 @@ export function SpellingD2({ testDate, daysLeft }: { testDate: string; daysLeft:
       <div className="kid-shell">
         <p className="kid-kicker">{LIST_TITLE}</p>
         <button className="btn secondary" style={big} onClick={() => { setMode(null); void refresh(); }}>← Back to the word list</button>
+        <div className="sp-stage">
         {mode === "mock" ? (
           <MockTest words={roundWords} onRetry={(missed) => start("listen", missed)} onDone={() => void refresh()} />
         ) : (
           <Round key={`${mode}-${roundWords.join()}`} mode={mode} words={roundWords} onDone={() => void refresh()} onAgain={() => start(mode)} />
         )}
+        </div>
       </div>
     );
   }
@@ -114,8 +117,11 @@ export function SpellingD2({ testDate, daysLeft }: { testDate: string; daysLeft:
         </div>
       </section>
 
+      {preview ? (
+        <p className="story-hook" role="note">Admin preview: you can try every mode, but practice from an admin account isn&apos;t saved. Only Mae&apos;s answers count toward stars and the admin stats.</p>
+      ) : null}
       <h2>Practice</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+      <div className="sp-modes">
         {MODES.map((m) => (
           <button key={m.id} className="kid-card" style={{ ...big, textAlign: "left", padding: 16, cursor: "pointer" }} onClick={() => start(m.id)}>
             <div style={{ fontSize: "1.8rem" }} aria-hidden>{m.icon}</div>
@@ -153,6 +159,40 @@ export function SpellingD2({ testDate, daysLeft }: { testDate: string; daysLeft:
   );
 }
 
+function Burst({ n = 14 }: { n?: number }) {
+  const bits = useMemo(() => Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    const r = 90 + Math.random() * 80;
+    return { ch: i % 3 === 0 ? "🎉" : "⭐", dx: `${Math.round(Math.cos(a) * r)}px`, dy: `${Math.round(Math.sin(a) * r)}px` };
+  }), [n]);
+  return (
+    <div className="sp-burst" aria-hidden>
+      {bits.map((b, i) => <span key={i} style={{ ["--dx" as string]: b.dx, ["--dy" as string]: b.dy } as React.CSSProperties}>{b.ch}</span>)}
+    </div>
+  );
+}
+
+function Progress({ at, total, streak, stars }: { at: number; total: number; streak?: number; stars?: number }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.15rem", fontWeight: 600 }}>
+        <span>Word {Math.min(at, total)} of {total}</span>
+        {stars !== undefined ? <span aria-label={`${stars} stars, streak ${streak ?? 0}`}>⭐ {stars}{streak && streak > 1 ? ` · 🔥 ${streak} in a row` : ""}</span> : null}
+      </div>
+      <div className="sp-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={at - 1}><span style={{ width: `${Math.round(((at - 1) / Math.max(1, total)) * 100)}%` }} /></div>
+    </div>
+  );
+}
+
+function Letters({ target, typed }: { target: string; typed: string }) {
+  const { marks } = markLetters(target, typed);
+  return (
+    <p aria-label={`Your try: ${typed}`} style={{ margin: "8px 0" }}>
+      {marks.map((m, i) => <span key={i} className={`sp-letter ${m.ok ? "ok" : "bad"}`}>{m.ch}</span>)}
+    </p>
+  );
+}
+
 /** One practice round. Words missed until the answer is shown go back in the queue once. */
 function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: string[]; onDone: () => void; onAgain: () => void }) {
   const prefs = useKidPrefs();
@@ -160,13 +200,20 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
   const [idx, setIdx] = useState(0);
   const [misses, setMisses] = useState(0);
   const [typed, setTyped] = useState("");
+  const [lastTry, setLastTry] = useState<string | null>(null);
   const [tilesUsed, setTilesUsed] = useState<number[]>([]);
   const [help, setHelp] = useState<Help>({ level: "none" });
   const [feedback, setFeedback] = useState<string | null>(null);
   const [right, setRight] = useState(false);
   const [covered, setCovered] = useState(false);
+  const [heard, setHeard] = useState(false);
+  const [shownAt, setShownAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
-  const [score, setScore] = useState({ firstTry: 0, missed: new Set<string>() });
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [burst, setBurst] = useState(0);
+  const [score, setScore] = useState({ firstTry: 0, streak: 0, best: 0, missed: new Set<string>() });
+  const wrongTimes = useRef<number[]>([]);
   const requeued = useRef(new Set<string>());
   const inputRef = useRef<HTMLInputElement>(null);
   const word = findWord(queue[idx]);
@@ -178,19 +225,31 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
     setTilesUsed([]);
     setHelp({ level: "none" });
     setFeedback(null);
+    setLastTry(null);
     setRight(false);
     setCovered(false);
+    setHeard(false);
+    setShownAt(Date.now());
     setMisses(0);
-    if (mode === "listen") prefs.speak(wordClip(word));
-    if (mode === "sort") prefs.speak(wordClip(word));
+    wrongTimes.current = [];
+    if (mode === "listen" || mode === "sort") prefs.speak(wordClip(word));
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [idx, queue]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ticks only while something time-based is pending (flashcard study time, the slow-down pause).
+  const waiting = (mode === "flash" && !covered && !heard && now - shownAt < FLASH_STUDY_MS) || now < cooldownUntil;
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [waiting]);
 
   const finished = !word;
   const reported = useRef(false);
   useEffect(() => {
     if (finished && !reported.current) {
       reported.current = true;
+      setBurst((b) => b + 1);
       postFinished(mode, score.firstTry, words.length, [...score.missed]);
       onDone();
     }
@@ -198,9 +257,11 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
 
   if (!word) {
     return (
-      <section className="card" style={{ textAlign: "center", padding: 24 }}>
+      <section className="card" style={{ textAlign: "center", padding: 24, position: "relative" }}>
+        {burst ? <Burst key={burst} n={22} /> : null}
         <h2>Round done! 🎉</h2>
-        <p style={{ fontSize: "1.2rem" }}>{score.firstTry} of {words.length} right on the first try.</p>
+        <p style={{ fontSize: "1.3rem" }}>⭐ {score.firstTry} of {words.length} right on the first try.</p>
+        {score.best > 1 ? <p>Best streak: 🔥 {score.best} in a row</p> : null}
         {score.missed.size ? <p>Keep practicing: {[...score.missed].join(", ")}</p> : <p>Every word on the first try. Amazing!</p>}
         <button className="btn" style={big} onClick={onAgain}>Another round</button>
       </section>
@@ -210,9 +271,17 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
   function next() {
     setIdx((i) => i + 1);
   }
+  function hear() {
+    if (!word) return;
+    setHeard(true);
+    prefs.speak(wordClip(word));
+  }
+
+  const coolingDown = now < cooldownUntil;
 
   async function submit(answer: { typed?: string; vowel?: Vowel }) {
     if (!word || busy || right) return;
+    if (Date.now() < cooldownUntil) return;
     if (answer.typed !== undefined && !answer.typed.trim()) return;
     setBusy(true);
     const result = await postCheck({ word: word.word, mode, misses, ...answer });
@@ -223,51 +292,79 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
     }
     if (result.correct) {
       setRight(true);
-      setFeedback(misses === 0 ? "Yes! Spelled just right. ⭐" : "You got it!");
-      prefs.speak(SPELLING_LINES.right);
-      if (misses === 0) setScore((s) => ({ ...s, firstTry: s.firstTry + 1 }));
+      setLastTry(null);
+      const first = misses === 0;
+      const line = rightMessage(score.firstTry + score.streak + idx);
+      setFeedback(first ? `${line} ⭐` : line);
+      prefs.speak(line);
+      if (first) {
+        setBurst((b) => b + 1);
+        setScore((s) => ({ ...s, firstTry: s.firstTry + 1, streak: s.streak + 1, best: Math.max(s.best, s.streak + 1) }));
+      } else {
+        setScore((s) => ({ ...s, streak: 0 }));
+      }
       return;
     }
     const m = misses + 1;
     setMisses(m);
-    setScore((s) => ({ ...s, missed: new Set(s.missed).add(word.word) }));
+    setScore((s) => ({ ...s, streak: 0, missed: new Set(s.missed).add(word.word) }));
     setHelp(result.help);
     if (mode === "sort") {
       setFeedback(`It's ${result.vowel?.label ?? "a different sound"}: ${result.help.hint ?? ""}`);
       setRight(true);
       return;
     }
+    const t = Date.now();
+    wrongTimes.current = [...wrongTimes.current, t];
+    const slow = tooQuick(wrongTimes.current, t) && result.help.level !== "reveal";
     if (result.help.level === "reveal") {
       setFeedback(null);
+      setLastTry(null);
       prefs.speak(revealClip(word));
       if (!requeued.current.has(word.word)) {
         requeued.current.add(word.word);
         setQueue((q) => [...q, word.word]);
       }
     } else {
-      setFeedback(result.help.level === "hint" ? "Here's a hint." : "Not quite. Look at every letter and try again.");
+      const tryText = answer.typed ?? "";
+      setLastTry(tryText);
+      const msg = missMessage(word.word, tryText, m);
+      setFeedback(slow ? `${SPELLING_BREATHE} ${msg}` : result.help.level === "hint" ? `${msg} Here's a hint.` : msg);
+      if (slow) {
+        wrongTimes.current = [];
+        setCooldownUntil(t + COOLDOWN_MS);
+        setNow(t);
+        prefs.speak(SPELLING_BREATHE);
+      } else if (msg.startsWith(SPELLING_SO_CLOSE)) {
+        prefs.speak(SPELLING_SO_CLOSE);
+      }
     }
     if (mode === "tiles") setTilesUsed([]);
     if (mode !== "fix" && mode !== "tiles") setTyped("");
   }
 
   const revealed = help.level === "reveal";
+  const flashReady = canCover(shownAt, heard, now);
   return (
-    <section className="card" style={{ padding: 20 }}>
-      <p style={{ margin: 0 }}>Word {idx + 1} of {queue.length}</p>
+    <section className="card" style={{ padding: 20, position: "relative" }}>
+      {burst ? <Burst key={burst} /> : null}
+      <Progress at={idx + 1} total={queue.length} streak={score.streak} stars={score.firstTry} />
 
       {mode === "flash" && !covered ? (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "2.4rem", fontWeight: 700, margin: "16px 0" }}><Highlight w={word} /></p>
-          <p>{word.trick}</p>
-          <button className="btn secondary" style={big} onClick={() => prefs.speak(wordClip(word))}>🔊 Hear it</button>{" "}
-          <button className="btn" style={big} onClick={() => setCovered(true)}>Cover it & spell →</button>
+        <div>
+          <p style={{ fontSize: "2.6rem", fontWeight: 700, margin: "16px 0" }}><Highlight w={word} /></p>
+          <p style={{ fontSize: "1.15rem" }}>{word.trick}</p>
+          <div className="sp-row">
+            <button className="btn secondary" style={big} onClick={hear}>🔊 Hear it</button>
+            <button className="btn" style={big} disabled={!flashReady} onClick={() => setCovered(true)}>{flashReady ? "Cover it & spell →" : "Look at each letter…"}</button>
+          </div>
         </div>
       ) : mode === "sort" ? (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "2.4rem", fontWeight: 700, margin: "16px 0" }}>{word.word}</p>
-          <p>Which short vowel sound do you hear?</p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <div>
+          <button className="btn" aria-label="Hear the word" style={{ fontSize: "3rem", minWidth: 120, minHeight: 100, margin: "12px auto", borderRadius: 24 }} onClick={hear}>🔊</button>
+          <p style={{ fontSize: "1.5rem", fontWeight: 700, margin: "4px 0" }}>{word.word}</p>
+          <p style={{ fontSize: "1.2rem" }}>Which sound?</p>
+          <div className="sp-row">
             {(["i", "o", "u"] as Vowel[]).map((v) => (
               <button key={v} className="btn" disabled={busy || right} style={{ ...big, minWidth: 140 }} onClick={() => void submit({ vowel: v })}>
                 short {v}<br /><small>{VOWEL_KEY[v].example}</small>
@@ -277,44 +374,51 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
           {right ? <p style={{ fontSize: "1.6rem" }}><Highlight w={word} /></p> : null}
         </div>
       ) : (
-        <div style={{ textAlign: "center" }}>
-          {mode === "listen" || mode === "flash" ? (
-            <button className="btn secondary" style={big} onClick={() => prefs.speak(wordClip(word))}>🔊 Hear it again</button>
+        <div>
+          {mode === "listen" || mode === "flash" || mode === "tiles" ? (
+            <div className="sp-row"><button className="btn secondary" style={big} onClick={hear}>🔊 Hear it again</button></div>
           ) : null}
-          {mode === "fix" ? <p style={{ fontSize: "1.3rem" }}>This word is spelled wrong: <s style={{ fontWeight: 700 }}>{word.oops}</s>. <button className="btn secondary" style={big} onClick={() => prefs.speak(wordClip(word))}>🔊</button></p> : null}
-          {mode === "tiles" ? (
-            <>
-              <button className="btn secondary" style={big} onClick={() => prefs.speak(wordClip(word))}>🔊 Hear it</button>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", margin: "16px 0" }}>
-                {tiles.map((ch, i) => (
-                  <button key={i} className="btn" disabled={tilesUsed.includes(i) || right || revealed} style={{ ...big, minWidth: 52, fontSize: "1.5rem" }}
-                    onClick={() => { setTilesUsed((u) => [...u, i]); setTyped((t) => t + ch); }}>{ch}</button>
-                ))}
-              </div>
-            </>
+          {mode === "fix" ? (
+            <p style={{ fontSize: "1.3rem" }}>This word is spelled wrong: <s style={{ fontWeight: 700 }}>{word.oops}</s>{" "}
+              <button className="btn secondary" style={big} aria-label="Hear the word" onClick={hear}>🔊</button></p>
           ) : null}
-          <form onSubmit={(e) => { e.preventDefault(); void submit({ typed }); }} style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
-            <input ref={inputRef} value={typed} readOnly={mode === "tiles"} onChange={(e) => setTyped(e.target.value)} disabled={right || revealed}
-              autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Type the word"
-              style={{ fontSize: "1.6rem", padding: "8px 12px", minHeight: 56, borderRadius: 12, border: "2px solid #d7c4ae", width: "min(320px, 100%)" }} />
-            {mode === "tiles" && !right && !revealed ? <button type="button" className="btn secondary" style={big} onClick={() => { setTilesUsed([]); setTyped(""); }}>Clear</button> : null}
-            {!right && !revealed ? <button type="submit" className="btn" style={big} disabled={busy}>Check</button> : null}
+          <form onSubmit={(e) => { e.preventDefault(); void submit({ typed }); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8 }}>
+            <input ref={inputRef} className="sp-input" value={typed} readOnly={mode === "tiles"} onChange={(e) => setTyped(e.target.value)} disabled={right || revealed}
+              autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Type the word" />
+            {mode === "tiles" && !right && !revealed ? (
+              <>
+                <div className="sp-row" style={{ margin: "4px 0" }}>
+                  {tiles.map((ch, i) => (
+                    <button type="button" key={i} className="btn sp-tile" disabled={tilesUsed.includes(i)} aria-label={`Letter ${ch}`}
+                      onClick={() => { setTilesUsed((u) => [...u, i]); setTyped((t) => t + ch); }}>{ch}</button>
+                  ))}
+                </div>
+                <div className="sp-row" style={{ margin: 0 }}>
+                  <button type="button" className="btn secondary" style={big} disabled={!tilesUsed.length} onClick={() => { setTilesUsed((u) => u.slice(0, -1)); setTyped((t) => t.slice(0, -1)); }}>⌫ Undo</button>
+                  <button type="button" className="btn secondary" style={big} disabled={!tilesUsed.length} onClick={() => { setTilesUsed([]); setTyped(""); }}>Clear</button>
+                </div>
+              </>
+            ) : null}
+            {!right && !revealed ? (
+              <button type="submit" className="btn" style={{ ...big, minWidth: 200 }} disabled={busy || coolingDown}>{coolingDown ? "Take a breath…" : "Check ✓"}</button>
+            ) : null}
           </form>
         </div>
       )}
 
-      {feedback ? <p aria-live="polite" style={{ fontSize: "1.2rem", textAlign: "center" }}>{feedback}</p> : null}
-      {help.level === "hint" && help.hint ? <p className="story-hook" style={{ textAlign: "center" }}>💡 {help.hint}</p> : null}
+      {lastTry && !right && !revealed ? <Letters target={word.word} typed={lastTry} /> : null}
+      {feedback ? <p aria-live="polite" style={{ fontSize: "1.25rem" }}>{feedback}</p> : null}
+      {help.level === "hint" && help.hint ? <p className="story-hook">💡 {help.hint}</p> : null}
       {revealed && mode !== "sort" ? (
-        <div className="story-hook" style={{ textAlign: "center" }}>
+        <div className="story-hook">
           <p style={{ margin: 0 }}>Here&apos;s how to spell it:</p>
           <p style={{ fontSize: "2.2rem", fontWeight: 700, margin: "8px 0" }}><Highlight w={word} /></p>
           <p style={{ margin: 0 }}>{word.trick} We&apos;ll try it again later.</p>
         </div>
       ) : null}
       {right || revealed ? (
-        <div style={{ textAlign: "center", marginTop: 12 }}>
-          <button className="btn" style={big} onClick={next} autoFocus>Next word →</button>
+        <div className="sp-row">
+          <button className="btn" style={{ ...big, minWidth: 200 }} onClick={next} autoFocus>Next word →</button>
         </div>
       ) : null}
     </section>
@@ -322,19 +426,22 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
 }
 
 /** All 25 words in random order: one try each, no hints, then a score and the missed words to retry. */
-function MockTest({ words, onRetry, onDone }: { words: string[]; onRetry: (missed: string[]) => void; onDone: () => void }) {
+export function MockTest({ words, onRetry, onDone }: { words: string[]; onRetry: (missed: string[]) => void; onDone: () => void }) {
   const prefs = useKidPrefs();
-  const [started, setStarted] = useState(false);
-  const [idx, setIdx] = useState(0);
+  const [state, setState] = useState<MockState>({ started: false, idx: 0, missed: [] });
+  const [hydrated, setHydrated] = useState(false);
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
-  const [missed, setMissed] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { started, idx, missed } = state;
   const word = findWord(words[idx]);
+  useEffect(() => setHydrated(true), []);
 
   useEffect(() => {
     if (started && word) {
-      prefs.speak(wordClip(word));
+      // The intro plays before word 1, but the test is already on screen: starting never waits on audio.
+      if (idx === 0) prefs.speak(SPELLING_LINES.mockStart, { onend: () => prefs.speak(wordClip(word)) });
+      else prefs.speak(wordClip(word));
       setTimeout(() => inputRef.current?.focus(), 50);
     }
     if (started && !word) {
@@ -348,15 +455,17 @@ function MockTest({ words, onRetry, onDone }: { words: string[]; onRetry: (misse
     return (
       <section className="card" style={{ textAlign: "center", padding: 24 }}>
         <h2>Mock test 📝</h2>
-        <p>I&apos;ll say all {words.length} words in a random order. Each word gets one try, just like the real test.</p>
-        <button className="btn" style={big} onClick={() => { let go = false; const begin = () => { if (!go) { go = true; setStarted(true); } }; prefs.speak(SPELLING_LINES.mockStart, { onend: begin }); setTimeout(begin, 9000); }}>Start the test</button>
+        <p style={{ fontSize: "1.15rem" }}>I&apos;ll say all {words.length} words in a random order. Each word gets one try, just like the real test.</p>
+        <button type="button" className="btn" data-testid="mock-start" style={{ ...big, minWidth: 220 }} disabled={!hydrated}
+          onClick={() => setState((s) => mockStep(s, { type: "start" }))}>{hydrated ? "Start the test" : "Getting ready…"}</button>
       </section>
     );
   }
   if (!word) {
     const score = words.length - missed.length;
     return (
-      <section className="card" style={{ textAlign: "center", padding: 24 }}>
+      <section className="card" style={{ textAlign: "center", padding: 24, position: "relative" }}>
+        <Burst n={24} />
         <h2>You scored {score} out of {words.length}! {score === words.length ? "🏆" : "🎉"}</h2>
         {missed.length ? (
           <>
@@ -377,19 +486,18 @@ function MockTest({ words, onRetry, onDone }: { words: string[]; onRetry: (misse
     const result = await postCheck({ word: word.word, mode: "mock", misses: 0, typed });
     setBusy(false);
     if (!result) return;
-    if (!result.correct) setMissed((m) => [...m, word.word]);
     setTyped("");
-    setIdx((i) => i + 1);
+    setState((s) => mockStep(s, { type: "answer", word: word.word, correct: result.correct }));
   }
 
   return (
-    <section className="card" style={{ textAlign: "center", padding: 24 }}>
-      <p style={{ fontSize: "1.4rem", margin: 0 }}>Word <b>{idx + 1}</b> of {words.length}</p>
-      <button className="btn secondary" style={{ ...big, marginTop: 12 }} onClick={() => prefs.speak(wordClip(word))}>🔊 Say it again</button>
-      <form onSubmit={(e) => { e.preventDefault(); void submit(); }} style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
-        <input ref={inputRef} value={typed} onChange={(e) => setTyped(e.target.value)} autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false}
-          aria-label={`Spell word ${idx + 1}`} style={{ fontSize: "1.6rem", padding: "8px 12px", minHeight: 56, borderRadius: 12, border: "2px solid #d7c4ae", width: "min(320px, 100%)" }} />
-        <button type="submit" className="btn" style={big} disabled={busy}>Next →</button>
+    <section className="card" style={{ padding: 24 }}>
+      <Progress at={idx + 1} total={words.length} />
+      <div className="sp-row"><button className="btn secondary" style={big} onClick={() => prefs.speak(wordClip(word))}>🔊 Say it again</button></div>
+      <form onSubmit={(e) => { e.preventDefault(); void submit(); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8 }}>
+        <input ref={inputRef} className="sp-input" value={typed} onChange={(e) => setTyped(e.target.value)} autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false}
+          aria-label={`Spell word ${idx + 1}`} />
+        <button type="submit" className="btn" style={{ ...big, minWidth: 200 }} disabled={busy}>Next →</button>
       </form>
     </section>
   );
