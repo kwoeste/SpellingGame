@@ -202,7 +202,7 @@ function GuidedSession({ rounds, onRefresh, onExit, preview }: { rounds: Session
   const [between, setBetween] = useState(true);
   const [results, setResults] = useState<RoundResult[]>([]);
   const [complete, setComplete] = useState(false);
-  const plan = useMemo(() => rounds.map((r) => (r.mode === "mock" ? { ...r, words: checkOrder(r.words) } : r)), [rounds]);
+  const [plan] = useState(() => rounds.map((r) => (r.mode === "mock" ? { ...r, words: checkOrder(r.words) } : r)));
   const round = plan[at];
   const info = round ? MODES.find((m) => m.id === round.mode) : null;
   const atRef = useRef(0);
@@ -267,7 +267,7 @@ function GuidedSession({ rounds, onRefresh, onExit, preview }: { rounds: Session
         <MockTest key={`g${at}`} title="Quick spelling check 📝" words={round.words} onRetry={() => setComplete(true)}
           onDone={(r) => { record(r); onRefresh(); prefs.speak(SESSION_LINES.done); setTimeout(() => setComplete(true), 2500); }} />
       ) : (
-        <Round key={`g${at}`} mode={round.mode} words={round.words} onDone={(r) => { record(r); onRefresh(); const cur = at; setTimeout(() => advance(cur), 1800); }} onAgain={() => advance(at)} againLabel="Next game →" />
+        <Round key={`g${at}`} mode={round.mode} words={round.words} onDone={(r) => { record(r); onRefresh(); const cur = at; setTimeout(() => (cur + 1 >= plan.length ? setComplete(true) : advance(cur)), 1800); }} onAgain={() => advance(at)} againLabel="Next game →" />
       )}
     </>
   );
