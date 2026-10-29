@@ -83,6 +83,20 @@ export const SPELLING_YAYS = ["Yes! Spelled just right.", "You got it!", "Awesom
 export const SPELLING_SO_CLOSE = "So close! Just one letter is off.";
 export const SPELLING_BREATHE = "Take a breath and look at each letter.";
 
+/** Guided session lines ("Next up" per game, start and end), all prewarmed. */
+export const SESSION_NEXT_UP: Record<string, string> = {
+  listen: "Next up: Listen & spell!",
+  flash: "Next up: Flashcards!",
+  tiles: "Next up: Letter tiles!",
+  fix: "Next up: Fix the misspelling!",
+  sort: "Next up: Sort by sound!",
+  mock: "Last one: a quick spelling check!",
+};
+export const SESSION_LINES = {
+  start: "Here's today's spelling mix. I'll pick the games!",
+  done: "You finished today's spelling session. Great work!",
+};
+
 export function allSpellingClips(): string[] {
-  return [...new Set([...Object.values(SPELLING_LINES), ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
+  return [...new Set([...Object.values(SPELLING_LINES), ...Object.values(SESSION_NEXT_UP), ...Object.values(SESSION_LINES), ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
 }

@@ -1,6 +1,7 @@
 import type { EngineRepo, LearnerTx, StoredEvent } from "@/lib/engine/repo";
 import { awardMinute, currentSession, type EngineActor } from "@/lib/engine/service";
 import { D2_WORDS, LIST_ID, VOWEL_KEY, findWord, type Vowel } from "@/lib/spelling/list-d2";
+import { buildMix, parseMix, planSession, type SessionRound, type SpellingMix } from "@/lib/spelling/mix";
 import { SPELLING_MODES, gradeSpelling, masteredCount, practiceQueue, spellingHelp, wordStats, type SpellingAttempt, type WordStat } from "@/lib/spelling/engine";
 
 export const SPELLING_EVENT = "spelling_attempt";
@@ -92,5 +93,23 @@ export async function finishSpellingRound(repo: EngineRepo, actor: EngineActor, 
     });
     session.lastEventAt = now;
     await tx.updateSession(session);
+  });
+}
+
+/**
+ * Today's guided session for the spelling page: the mix stored with this sign-in's plan (built once,
+ * maybe by Grok), else deterministic weights from her attempts; rounds use live word stats.
+ */
+export async function spellingSession(repo: EngineRepo, learnerId: string | null, loginId: string | null, now = Date.now()): Promise<{ mix: SpellingMix; rounds: SessionRound[] }> {
+  if (!learnerId) {
+    const mix = await buildMix([], wordStats([]), now, null);
+    return { mix, rounds: planSession(wordStats([]), mix.weights, now) };
+  }
+  return repo.withLearner(learnerId, async (tx) => {
+    const attempts = attemptsFromEvents(await tx.eventsSince(0, [SPELLING_EVENT]));
+    const stats = wordStats(attempts);
+    const cached = loginId ? await tx.getSessionPlan(loginId).catch(() => null) : null;
+    const mix = parseMix((cached?.plan as { spellingMix?: unknown } | undefined)?.spellingMix) ?? (await buildMix(attempts, stats, now, null));
+    return { mix, rounds: planSession(stats, mix.weights, now) };
   });
 }

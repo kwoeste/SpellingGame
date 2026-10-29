@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
-import { D2_WORDS, LIST_TITLE, SPELLING_BREATHE, SPELLING_LINES, SPELLING_SO_CLOSE, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
+import { D2_WORDS, LIST_TITLE, SPELLING_BREATHE, SPELLING_LINES, SESSION_LINES, SESSION_NEXT_UP, SPELLING_SO_CLOSE, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
 import type { SpellingMode, WordStat } from "@/lib/spelling/engine";
+import type { SessionRound } from "@/lib/spelling/mix";
 import { COOLDOWN_MS, FLASH_STUDY_MS, canCover, markLetters, missMessage, mockStep, rightMessage, tooQuick, type MockState } from "@/lib/spelling/feedback";
 
 type Summary = { stats: WordStat[]; mastered: number; total: number; queue: string[] };
@@ -55,7 +56,8 @@ function postFinished(mode: SpellingMode, score: number, total: number, missed: 
   void fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ finished: { mode, score, total, missed } }) }).catch(() => undefined);
 }
 
-export function SpellingD2({ testDate, daysLeft, preview = false }: { testDate: string; daysLeft: number; preview?: boolean }) {
+export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null }: { testDate: string; daysLeft: number; preview?: boolean; rounds?: SessionRound[] | null }) {
+  const [guided, setGuided] = useState<number | null>(null);
   const prefs = useKidPrefs();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [mode, setMode] = useState<SpellingMode | null>(null);
@@ -82,6 +84,18 @@ export function SpellingD2({ testDate, daysLeft, preview = false }: { testDate: 
     setRoundWords(words ?? (m === "mock" ? shuffle(D2_WORDS.map((w) => w.word)) : m === "sort" ? shuffle(D2_WORDS.map((w) => w.word)).slice(0, 12) : queue));
     setMode(m);
     window.scrollTo?.({ top: 0 });
+  }
+
+  if (guided !== null && rounds?.length) {
+    return (
+      <div className="kid-shell">
+        <p className="kid-kicker">{LIST_TITLE} · Today&apos;s spelling session</p>
+        <button className="btn secondary" style={big} onClick={() => { setGuided(null); void refresh(); }}>← Back to the word list</button>
+        <div className="sp-stage">
+          <GuidedSession rounds={rounds} onRefresh={() => void refresh()} onExit={() => { setGuided(null); void refresh(); }} />
+        </div>
+      </div>
+    );
   }
 
   if (mode) {
@@ -120,7 +134,15 @@ export function SpellingD2({ testDate, daysLeft, preview = false }: { testDate: 
       {preview ? (
         <p className="story-hook" role="note">Admin preview: you can try every mode, but practice from an admin account isn&apos;t saved. Only Mae&apos;s answers count toward stars and the admin stats.</p>
       ) : null}
-      <h2>Practice</h2>
+      {rounds?.length ? (
+        <section className="kid-card" style={{ padding: 20, textAlign: "center" }}>
+          <div style={{ fontSize: "2rem" }} aria-hidden>🎮✨</div>
+          <h2 style={{ margin: "4px 0" }}>Today&apos;s spelling session</h2>
+          <p style={{ fontSize: "1.1rem", margin: "4px 0 12px" }}>I&apos;ll pick a mix of games for your trickiest words: {rounds.filter((r) => r.mode !== "mock").map((r) => MODES.find((m) => m.id === r.mode)?.icon).join(" ")} then a quick check 📝</p>
+          <button className="btn" data-testid="guided-start" style={{ ...big, minWidth: 260, fontSize: "1.3rem" }} onClick={() => { setGuided(0); window.scrollTo?.({ top: 0 }); }}>▶ Start today&apos;s session</button>
+        </section>
+      ) : null}
+      <h2>Pick my own game</h2>
       <div className="sp-modes">
         {MODES.map((m) => (
           <button key={m.id} className="kid-card" style={{ ...big, textAlign: "left", padding: 16, cursor: "pointer" }} onClick={() => start(m.id)}>
@@ -159,6 +181,70 @@ export function SpellingD2({ testDate, daysLeft, preview = false }: { testDate: 
   );
 }
 
+/** Plays the planned rounds in order with a short "Next up" break between games, ending with a mock check. */
+function GuidedSession({ rounds, onRefresh, onExit }: { rounds: SessionRound[]; onRefresh: () => void; onExit: () => void }) {
+  const prefs = useKidPrefs();
+  const [at, setAt] = useState(0);
+  const [between, setBetween] = useState(true);
+  const round = rounds[at];
+  const info = round ? MODES.find((m) => m.id === round.mode) : null;
+
+  useEffect(() => {
+    if (!between || !round) return;
+    prefs.speak(at === 0 ? SESSION_LINES.start : SESSION_NEXT_UP[round.mode]);
+    const t = setTimeout(() => setBetween(false), 3500);
+    return () => clearTimeout(t);
+  }, [at, between]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const atRef = useRef(0);
+  function advance(from: number) {
+    if (atRef.current !== from || from + 1 >= rounds.length) return;
+    atRef.current = from + 1;
+    setAt(from + 1);
+    setBetween(true);
+    window.scrollTo?.({ top: 0 });
+  }
+
+  function finishedRound() {
+    onRefresh();
+    if (at + 1 >= rounds.length) return;
+    const cur = at;
+    setTimeout(() => advance(cur), 1800);
+  }
+
+  if (!round || !info) return null;
+  const dots = (
+    <p aria-label={`Game ${at + 1} of ${rounds.length}`} style={{ fontSize: "1.6rem", margin: "4px 0", textAlign: "center" }}>
+      {rounds.map((r, i) => <span key={i} style={{ opacity: i <= at ? 1 : 0.3, margin: "0 4px" }}>{MODES.find((m) => m.id === r.mode)?.icon}</span>)}
+    </p>
+  );
+  if (between) {
+    return (
+      <section className="card" style={{ textAlign: "center", padding: 28 }} aria-live="polite">
+        {dots}
+        <p style={{ fontSize: "1.1rem", margin: 0 }}>{at === 0 ? "Here's today's spelling mix!" : "Great job! 🎉"}</p>
+        <div style={{ fontSize: "3.2rem" }} aria-hidden>{info.icon}</div>
+        <h2 style={{ margin: "4px 0" }}>{round.mode === "mock" ? "Last one: a quick spelling check!" : `Next up: ${info.title}!`}</h2>
+        <p style={{ fontSize: "1.1rem" }}>{round.mode === "mock" ? `${round.words.length} words, one try each.` : `${info.blurb} ${round.words.length} words.`}</p>
+        <button className="btn" style={{ ...big, minWidth: 220 }} onClick={() => setBetween(false)} autoFocus>Let&apos;s go →</button>
+      </section>
+    );
+  }
+  return (
+    <>
+      {dots}
+      {round.mode === "mock" ? (
+        <>
+          <MockTest key={`g${at}`} words={round.words} onRetry={onExit} onDone={() => { onRefresh(); prefs.speak(SESSION_LINES.done); }} />
+          <div className="sp-row"><button className="btn secondary" style={big} onClick={onExit}>🏁 All done for today</button></div>
+        </>
+      ) : (
+        <Round key={`g${at}`} mode={round.mode} words={round.words} onDone={finishedRound} onAgain={() => advance(at)} againLabel="Next game →" />
+      )}
+    </>
+  );
+}
+
 function Burst({ n = 14 }: { n?: number }) {
   const bits = useMemo(() => Array.from({ length: n }, (_, i) => {
     const a = (i / n) * Math.PI * 2;
@@ -194,7 +280,7 @@ function Letters({ target, typed }: { target: string; typed: string }) {
 }
 
 /** One practice round. Words missed until the answer is shown go back in the queue once. */
-function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: string[]; onDone: () => void; onAgain: () => void }) {
+function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: { mode: SpellingMode; words: string[]; onDone: () => void; onAgain: () => void; againLabel?: string }) {
   const prefs = useKidPrefs();
   const [queue, setQueue] = useState<string[]>(words);
   const [idx, setIdx] = useState(0);
@@ -272,7 +358,7 @@ function Round({ mode, words, onDone, onAgain }: { mode: SpellingMode; words: st
         <p style={{ fontSize: "1.3rem" }}>⭐ {score.firstTry} of {words.length} right on the first try.</p>
         {score.best > 1 ? <p>Best streak: 🔥 {score.best} in a row</p> : null}
         {score.missed.size ? <p>Keep practicing: {[...score.missed].join(", ")}</p> : <p>Every word on the first try. Amazing!</p>}
-        <button className="btn" style={big} onClick={onAgain}>Another round</button>
+        <button className="btn" style={big} onClick={onAgain}>{againLabel}</button>
       </section>
     );
   }

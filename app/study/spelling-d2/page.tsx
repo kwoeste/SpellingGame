@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { NotAllowed } from "@/components/NotAllowed";
 import { SpellingD2 } from "@/components/SpellingD2";
-import { requirePageUser } from "@/lib/auth/server";
+import { currentLoginId, requirePageUser } from "@/lib/auth/server";
+import { engineRepo } from "@/lib/engine/repos";
+import { spellingSession } from "@/lib/spelling/service";
 import { SPELLING_D2_TEST_DATE } from "@/lib/practice/upcoming";
 import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
 import { daysUntil } from "@/lib/spelling/engine";
@@ -15,5 +17,7 @@ export default async function SpellingD2Page() {
   if (!user) return <NotAllowed />;
   const tests = await loadUpcomingTests();
   const testDate = tests.find((t) => t.kind === "spelling" && t.refId === LIST_ID)?.testDate ?? SPELLING_D2_TEST_DATE;
-  return <SpellingD2 testDate={testDate} daysLeft={daysUntil(testDate, Date.now())} preview={!user.learnerId} />;
+  const loginId = await currentLoginId().catch(() => null);
+  const session = await spellingSession(engineRepo(), user.learnerId, loginId).catch(() => null);
+  return <SpellingD2 testDate={testDate} daysLeft={daysUntil(testDate, Date.now())} preview={!user.learnerId} rounds={session?.rounds ?? null} />;
 }

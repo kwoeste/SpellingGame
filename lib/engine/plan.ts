@@ -13,7 +13,9 @@ import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
 import { DEFAULT_UPCOMING, activeUpcomingTests, practiceTestHref, upcomingHref, type UpcomingTest } from "@/lib/practice/upcoming";
 import { daysUntil, masteredCount } from "@/lib/spelling/engine";
 import { D2_WORDS, LIST_ID, LIST_SHORT_TITLE } from "@/lib/spelling/list-d2";
-import { learnerSpellingStats, SPELLING_EVENT } from "@/lib/spelling/service";
+import { attemptsFromEvents, learnerSpellingStats, SPELLING_EVENT } from "@/lib/spelling/service";
+import { buildMix, grokMix, type MixAi, type SpellingMix } from "@/lib/spelling/mix";
+import { wordStats } from "@/lib/spelling/engine";
 import type { SubjectId } from "@/lib/content/types";
 import { aiOrderPlan, type PlannerFacts, type AiPlanResult } from "@/lib/engine/ai-planner";
 
@@ -332,7 +334,7 @@ function toPlan(blocks: PlanBlock[], live: Live, why: string, note: string, sour
   };
 }
 
-export type PlanDeps = { ai?: (facts: PlannerFacts) => Promise<AiPlanResult | null>; random?: () => number; upcoming?: UpcomingTest[] };
+export type PlanDeps = { ai?: (facts: PlannerFacts) => Promise<AiPlanResult | null>; spellingAi?: MixAi | null; random?: () => number; upcoming?: UpcomingTest[] };
 
 /**
  * Today's plan. With a sign-in id, the first request of that sign-in builds the plan (AI-ordered
@@ -378,11 +380,19 @@ export async function todayPlan(
       }
     }
     const blocks = applyCached({ order, whyKid: why, adminNote: note, snapshot: live.blocks }, live.blocks);
+    // Spelling game mix: built once per sign-in with the plan (Grok only for Mae's own sign-in).
+    let spellingMix: SpellingMix | null = null;
+    if (loginId && live.blocks.some((b) => b.kind === "spelling")) {
+      const attempts = attemptsFromEvents(await tx.eventsSince(0, [SPELLING_EVENT]));
+      const useAi = actor.role === "student" && !loginId.startsWith(PREVIEW_LOGIN_PREFIX) && (attempted || (await tx.aiPlanAttempts(day)) < AI_PLAN_DAILY_CAP);
+      if (useAi && attempts.length) attempted = true;
+      spellingMix = await buildMix(attempts, wordStats(attempts), nowMs, useAi ? (deps.spellingAi === undefined ? grokMix : deps.spellingAi) : null).catch(() => null);
+    }
     if (loginId) {
       const row: SessionPlanRecord = {
         loginId,
         day,
-        plan: { order, whyKid: why, adminNote: note, snapshot: live.blocks } as unknown as Record<string, unknown>,
+        plan: { order, whyKid: why, adminNote: note, snapshot: live.blocks, spellingMix } as unknown as Record<string, unknown>,
         source,
         aiAttempted: attempted,
         createdAt: nowMs,
