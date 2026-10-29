@@ -1,6 +1,6 @@
 import { editDistance } from "@/lib/practice/grade";
 import { normalizeSpelling } from "@/lib/spelling/engine";
-import { SPELLING_SO_CLOSE, SPELLING_YAYS } from "@/lib/spelling/list-d2";
+import { SORT_RIGHT, SPELLING_GOT_IT, SPELLING_SO_CLOSE, SPELLING_YAYS, type Vowel } from "@/lib/spelling/list-d2";
 
 export type LetterMark = { ch: string; ok: boolean };
 
@@ -59,4 +59,33 @@ export function mockStep(s: MockState, a: { type: "start" } | { type: "answer"; 
   if (a.type === "start") return s.started ? s : { ...s, started: true };
   if (!s.started) return s;
   return { ...s, idx: s.idx + 1, missed: a.correct ? s.missed : [...s.missed, a.word] };
+}
+
+const FIRST_TRY_YAYS = SPELLING_YAYS.filter((y) => y !== SPELLING_GOT_IT);
+
+/** Mode-appropriate praise: vowel praise in Sort by sound, softer "You got it!" after misses. */
+export function praiseFor(mode: string, firstTry: boolean, n: number, vowel?: Vowel | null): string {
+  if (mode === "sort") return vowel ? SORT_RIGHT[vowel] : SPELLING_GOT_IT;
+  if (!firstTry) return SPELLING_GOT_IT;
+  return FIRST_TRY_YAYS[n % FIRST_TRY_YAYS.length];
+}
+
+/** A right answer counts as "first try" only on the word's first showing this round, with no misses. */
+export function isFirstTry(word: string, misses: number, missedThisRound: ReadonlySet<string>): boolean {
+  return misses === 0 && !missedThisRound.has(word);
+}
+
+/** What stays in the answer box after a wrong Check: Fix keeps her edit; tiles and typing start fresh. */
+export function answerAfterMiss(mode: string, typed: string): string {
+  return mode === "fix" ? typed : "";
+}
+
+/** The "take a breath" pause never replaces a hint or the answer. */
+export function shouldBreathe(quick: boolean, helpLevel: "none" | "hint" | "reveal"): boolean {
+  return quick && helpLevel === "none";
+}
+
+/** Sentence with the word hidden, so text support doesn't give the spelling away. */
+export function blankWord(sentence: string, word: string): string {
+  return sentence.replace(new RegExp(word, "gi"), "_____");
 }

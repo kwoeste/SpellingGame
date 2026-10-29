@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         vowel: check.vowel,
         mode: check.mode,
         misses: check.misses,
+        retry: check.retry === true,
         sessionId: typeof check.sessionId === "string" ? check.sessionId : null,
       });
       return result ? engineJson({ result }) : engineJson({ error: "not_found" }, 404);
