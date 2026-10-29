@@ -5,10 +5,21 @@ import type { UpcomingTest } from "@/lib/practice/upcoming";
 
 const BLANK: UpcomingTest = { id: "", kind: "chapter", refId: "", title: "", startDate: "", testDate: "" };
 
+/** Today's date (YYYY-MM-DD) in New York, where the tests happen. */
+export function todayNY(now = Date.now()): string {
+  return new Date(now).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+}
+export function isPastTest(t: Pick<UpcomingTest, "testDate">, today: string): boolean {
+  return t.testDate < today;
+}
+
 export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
   const [rows, setRows] = useState<UpcomingTest[]>(initial);
   const [draft, setDraft] = useState<UpcomingTest>(BLANK);
   const [msg, setMsg] = useState<string | null>(null);
+  const [showPast, setShowPast] = useState(false);
+  const today = todayNY();
+  const pastCount = rows.filter((t) => isPastTest(t, today)).length;
 
   async function save(t: UpcomingTest) {
     setMsg(null);
@@ -27,12 +38,17 @@ export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
 
   return (
     <section className="pd-card">
+      {pastCount ? (
+        <label style={{ display: "block", marginBottom: 8 }}>
+          <input type="checkbox" checked={showPast} onChange={(e) => setShowPast(e.target.checked)} /> Show past ({pastCount})
+        </label>
+      ) : null}
       <table className="pd-table">
         <thead><tr><th>Title</th><th>Kind</th><th>For (chapter / list id)</th><th>Pin from</th><th>Test date</th><th /></tr></thead>
         <tbody>
-          {rows.map((t, i) => (
-            <tr key={t.id}>
-              <td><input value={t.title} onChange={(e) => edit(i, { title: e.target.value })} /></td>
+          {rows.map((t, i) => isPastTest(t, today) && !showPast ? null : (
+            <tr key={t.id} style={isPastTest(t, today) ? { opacity: 0.5 } : undefined}>
+              <td>{isPastTest(t, today) ? <small>past · </small> : null}<input value={t.title} onChange={(e) => edit(i, { title: e.target.value })} /></td>
               <td>{t.kind}</td>
               <td>{t.refId}</td>
               <td><input type="date" value={t.startDate} onChange={(e) => edit(i, { startDate: e.target.value })} /></td>

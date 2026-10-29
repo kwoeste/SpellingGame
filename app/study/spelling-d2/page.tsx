@@ -15,5 +15,5 @@ export default async function SpellingD2Page() {
   if (!user) return <NotAllowed />;
   const tests = await loadUpcomingTests();
   const testDate = tests.find((t) => t.kind === "spelling" && t.refId === LIST_ID)?.testDate ?? SPELLING_D2_TEST_DATE;
-  return <SpellingD2 testDate={testDate} daysLeft={daysUntil(testDate, Date.now())} />;
+  return <SpellingD2 testDate={testDate} daysLeft={daysUntil(testDate, Date.now())} preview={!user.learnerId} />;
 }

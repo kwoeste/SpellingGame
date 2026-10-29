@@ -32,6 +32,9 @@ export default async function SpellingAdminPage() {
       <p>
         <b>{masteredCount(stats)} of {D2_WORDS.length}</b> mastered (mastered = {MASTERY_STREAK} first-try right in a row, across 2+ separate sessions).
       </p>
+      <p className="pd-card" role="note" style={{ padding: 12 }}>
+        These stats are Mae&apos;s answers only{events.length ? "" : " (none recorded yet)"}. Admin accounts have no learner profile, so practice done while signed in as an admin runs in preview mode and is never saved. To see data here, practice from Mae&apos;s account.
+      </p>
       {mocks.length ? (
         <section className="pd-card">
           <h2>Mock tests</h2>

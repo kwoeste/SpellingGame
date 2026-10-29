@@ -78,6 +78,11 @@ export const SPELLING_LINES = {
   mockDone: "All done! Let's see how you did.",
 };
 
+/** Spoken on a right answer (rotates). */
+export const SPELLING_YAYS = ["Yes! Spelled just right.", "You got it!", "Awesome spelling!", "Perfect!", "Nailed it!"];
+export const SPELLING_SO_CLOSE = "So close! Just one letter is off.";
+export const SPELLING_BREATHE = "Take a breath and look at each letter.";
+
 export function allSpellingClips(): string[] {
-  return [...Object.values(SPELLING_LINES), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
+  return [...new Set([...Object.values(SPELLING_LINES), ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
 }
