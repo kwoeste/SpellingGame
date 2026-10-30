@@ -89,3 +89,38 @@ export function shouldBreathe(quick: boolean, helpLevel: "none" | "hint" | "reve
 export function blankWord(sentence: string, word: string): string {
   return sentence.replace(new RegExp(word, "gi"), "_____");
 }
+
+/** Keeps the locked hint letters at the front of her answer (she can't delete them). */
+export function lockPrefix(prefix: string, value: string): string {
+  if (!prefix) return value;
+  return value.toLowerCase().startsWith(prefix) ? prefix + value.slice(prefix.length) : prefix;
+}
+
+/** Tile indexes the locked letters use up, so those tiles start pressed. */
+export function tilesForPrefix(tiles: string[], prefix: string): number[] {
+  const used: number[] = [];
+  for (const ch of prefix) {
+    const i = tiles.findIndex((t, j) => t === ch && !used.includes(j));
+    if (i >= 0) used.push(i);
+  }
+  return used;
+}
+
+/** Words that needed help come back once, at least REQUEUE_GAP words later (or at the end if the round is short). */
+export const REQUEUE_GAP = 3;
+export function requeue(queue: string[], idx: number, word: string, gap = REQUEUE_GAP): string[] {
+  const at = Math.min(idx + gap, queue.length);
+  return [...queue.slice(0, at), word, ...queue.slice(at)];
+}
+
+/**
+ * Where a word is on the help ladder. "try": guessing (with hints by miss count); "copy": the whole
+ * word is shown and she copies it; "memory": one more try with the word hidden; "done": move on.
+ * After the word is shown she always reaches "done": a wrong copy or memory try never loops forever.
+ */
+export type LadderPhase = "try" | "copy" | "memory" | "done";
+export function ladderNext(phase: LadderPhase, correct: boolean, copyTries: number, maxCopyTries = 2): LadderPhase {
+  if (phase === "copy") return correct ? "memory" : copyTries >= maxCopyTries ? "done" : "copy";
+  if (phase === "memory") return "done";
+  return phase;
+}

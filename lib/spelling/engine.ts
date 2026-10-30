@@ -1,8 +1,8 @@
 import { etDateKey } from "@/lib/engine/scheduler";
-import { D2_WORDS, type SpellingWord } from "@/lib/spelling/list-d2";
+import { D2_WORDS, VOWEL_KEY, type SpellingWord } from "@/lib/spelling/list-d2";
 
 /** One graded spelling attempt, as stored in engine.interaction_event (type spelling_attempt). */
-export type SpellingAttempt = { word: string; correct: boolean; firstTry: boolean; mode: string; at: number };
+export type SpellingAttempt = { word: string; correct: boolean; firstTry: boolean; mode: string; at: number; neededHelp?: boolean };
 
 export const SPELLING_MODES = ["flash", "listen", "tiles", "fix", "mock", "sort"] as const;
 export type SpellingMode = (typeof SPELLING_MODES)[number];
@@ -13,9 +13,6 @@ export const MASTERY_STREAK = 3;
 export const MASTERY_OCCASIONS = 2;
 /** Attempts more than this far apart are separate practice occasions. */
 export const OCCASION_GAP_MS = 30 * 60_000;
-export const HINT_AT_MISS = 4;
-export const REVEAL_AT_MISS = 5;
-
 export type WordStat = {
   word: string;
   attempts: number;
@@ -25,6 +22,8 @@ export type WordStat = {
   lastAt: number | null;
   lastMissAt: number | null;
   dueAt: number;
+  /** Times this word needed the help ladder (hints, letters or the shown answer). */
+  neededHelp: number;
 };
 
 export function normalizeSpelling(text: unknown): string {
@@ -35,11 +34,35 @@ export function gradeSpelling(word: SpellingWord, typed: unknown): boolean {
   return normalizeSpelling(typed) === word.word;
 }
 
-/** Help ladder by miss count on this word in this round: nothing early, then a hint, then the answer. */
-export function spellingHelp(word: SpellingWord, misses: number): { level: "none" | "hint" | "reveal"; hint?: string; answer?: string } {
-  if (misses >= REVEAL_AT_MISS) return { level: "reveal", hint: word.trick, answer: word.word };
-  if (misses >= HINT_AT_MISS) return { level: "hint", hint: `${word.trick} It starts with "${word.word[0]}" and has ${word.word.length} letters.` };
+/** Help ladder thresholds (misses on one word in one round). Tune here. */
+/** Misses before HINT_LETTER_START: encouragement, slow replay, sentence and a sound hint. */
+export const HINT_LETTER_START = 3;
+/** From HINT_LETTER_START on, one more locked letter per miss, at most this many (and never the whole word). */
+export const MAX_LETTER_HINTS = 3;
+/** At this miss the whole word is shown; she copies it, then always moves on. */
+export const REVEAL_WORD_AT = 6;
+
+export type SpellingHelp = { level: "none" | "hint" | "letters" | "reveal"; hint?: string; letters?: number; answer?: string };
+
+/** How many first letters are locked in after `misses` misses (0 before HINT_LETTER_START; always leaves one hidden). */
+export function revealedLetters(word: string, misses: number): number {
+  if (misses < HINT_LETTER_START) return 0;
+  const n = Math.min(misses - HINT_LETTER_START + 1, MAX_LETTER_HINTS);
+  return Math.max(0, Math.min(n, word.length - 1));
+}
+
+/** Help ladder by miss count on this word in this round. */
+export function spellingHelp(word: SpellingWord, misses: number): SpellingHelp {
+  if (misses >= REVEAL_WORD_AT) return { level: "reveal", hint: word.trick, answer: word.word };
+  const sound = `Listen for the ${VOWEL_KEY[word.vowel].label} sound.`;
+  if (misses >= HINT_LETTER_START) return { level: "letters", hint: sound, letters: revealedLetters(word.word, misses) };
+  if (misses >= 1) return { level: "hint", hint: sound };
   return { level: "none" };
+}
+
+/** Rough help level stored with an attempt (0 none, 1 sound hint, 2 letters, 3 whole word). */
+export function helpLevelNumber(misses: number): number {
+  return misses >= REVEAL_WORD_AT ? 3 : misses >= HINT_LETTER_START ? 2 : misses >= 1 ? 1 : 0;
 }
 
 /** Groups attempt times into occasions (gaps longer than OCCASION_GAP_MS, or a new ET day). */
@@ -67,7 +90,7 @@ export function wordStats(attempts: SpellingAttempt[], words: SpellingWord[] = D
     let streak = 0;
     const streakOcc: number[] = [];
     for (const a of mine) {
-      if (a.correct && a.firstTry) {
+      if (a.correct && a.firstTry && !a.neededHelp) {
         streak += 1;
         streakOcc.push(occOf.get(a)!);
       } else {
@@ -78,7 +101,7 @@ export function wordStats(attempts: SpellingAttempt[], words: SpellingWord[] = D
     const lastOccasions = new Set(streakOcc.slice(-MASTERY_STREAK));
     const mastered = streak >= MASTERY_STREAK && lastOccasions.size >= MASTERY_OCCASIONS;
     const last = mine.at(-1) ?? null;
-    const lastMiss = [...mine].reverse().find((a) => !(a.correct && a.firstTry)) ?? null;
+    const lastMiss = [...mine].reverse().find((a) => !(a.correct && a.firstTry) || a.neededHelp) ?? null;
     // Spaced repetition: missed → due now; then 10 min, next occasion, a day, and 2 days once mastered.
     const gap = mastered ? 2 * 86_400_000 : [0, 10 * 60_000, OCCASION_GAP_MS, 86_400_000][Math.min(streak, 3)];
     return {
@@ -90,6 +113,7 @@ export function wordStats(attempts: SpellingAttempt[], words: SpellingWord[] = D
       lastAt: last?.at ?? null,
       lastMissAt: lastMiss?.at ?? null,
       dueAt: last ? last.at + gap : 0,
+      neededHelp: mine.filter((a) => a.neededHelp).length,
     };
   });
 }
