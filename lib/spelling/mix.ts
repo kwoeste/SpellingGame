@@ -116,7 +116,7 @@ export function mixPayload(stats: ModeStat[], words: WordStat[]) {
     floor: FLOOR,
     cap: CAP,
     modes: stats.map(({ mode, attempts, in_game_accuracy, later_n, later_accuracy }) => ({ mode, attempts, in_game_accuracy, later_n, later_accuracy })),
-    words: words.filter((w) => w.attempts > 0).map((w) => ({ word: w.word, attempts: w.attempts, correct: w.correct, streak: w.streak, mastered: w.mastered })),
+    words: words.filter((w) => w.attempts > 0).map((w) => ({ word: w.word, attempts: w.attempts, correct: w.correct, streak: w.streak, mastered: w.mastered, needed_help: w.neededHelp })),
   };
 }
 

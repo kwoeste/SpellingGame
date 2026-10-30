@@ -80,7 +80,7 @@ export default async function SpellingAdminPage() {
       <section className="pd-card">
         <h2>Per word</h2>
         <table className="pd-table">
-          <thead><tr><th>Word</th><th>Group</th><th>Status</th><th>Streak</th><th>Right / wrong / tries</th><th>Last practiced</th></tr></thead>
+          <thead><tr><th>Word</th><th>Group</th><th>Status</th><th>Streak</th><th>Needed help</th><th>Right / wrong / tries</th><th>Last practiced</th></tr></thead>
           <tbody>
             {D2_WORDS.map((w) => {
               const s = stats.find((x) => x.word === w.word);
@@ -88,8 +88,9 @@ export default async function SpellingAdminPage() {
                 <tr key={w.word}>
                   <td><b>{w.word}</b></td>
                   <td>{w.group}</td>
-                  <td>{s?.mastered ? "⭐ mastered" : s?.attempts ? "learning" : "not started"}</td>
+                  <td>{s?.mastered ? "⭐ mastered" : s?.neededHelp ? "weak (needed help)" : s?.attempts ? "learning" : "not started"}</td>
                   <td>{s?.streak ?? 0}</td>
+                  <td>{s?.neededHelp ? `🆘 ${s.neededHelp}` : "—"}</td>
                   <td>{s ? `${s.correct} / ${s.attempts - s.correct} / ${s.attempts}` : "0 / 0 / 0"}</td>
                   <td>{fmt(s?.lastAt ?? null)}</td>
                 </tr>

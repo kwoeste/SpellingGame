@@ -43,12 +43,13 @@ describe("grading and help", () => {
     expect(gradeSpelling(W("kitchen"), "kichen")).toBe(false);
     expect(gradeSpelling(W("kitchen"), 42)).toBe(false);
   });
-  it("gives no hint on early misses, a hint at 4, the answer at 5", () => {
-    expect(spellingHelp(W("swift"), 3).level).toBe("none");
-    const hint = spellingHelp(W("swift"), 4);
+  it("gives a sound hint at misses 1-2, letters at 3-5, the answer at 6", () => {
+    expect(spellingHelp(W("swift"), 0).level).toBe("none");
+    const hint = spellingHelp(W("swift"), 2);
     expect(hint.level).toBe("hint");
     expect(hint.answer).toBeUndefined();
-    expect(spellingHelp(W("swift"), 5)).toMatchObject({ level: "reveal", answer: "swift" });
+    expect(spellingHelp(W("swift"), 3)).toMatchObject({ level: "letters", letters: 1 });
+    expect(spellingHelp(W("swift"), 6)).toMatchObject({ level: "reveal", answer: "swift" });
   });
 });
 
@@ -81,11 +82,11 @@ describe("mastery and spacing", () => {
 });
 
 describe("server grading stores attempts per word in the DB", () => {
-  it("grades on the server, reveals only at 5 misses, and logs spelling_attempt events", async () => {
+  it("grades on the server, reveals only at 6 misses, and logs spelling_attempt events", async () => {
     const now = at("2026-10-29T20:00:00Z");
     const miss = await checkSpelling(memoryEngineRepo, mae, { word: "cousin", typed: "cuzin", mode: "listen", misses: 0 }, now);
-    expect(miss).toMatchObject({ correct: false, help: { level: "none" } });
-    const fifth = await checkSpelling(memoryEngineRepo, mae, { word: "cousin", typed: "cuzen", mode: "listen", misses: 4 }, now + 1000);
+    expect(miss).toMatchObject({ correct: false, help: { level: "hint" } });
+    const fifth = await checkSpelling(memoryEngineRepo, mae, { word: "cousin", typed: "cuzen", mode: "listen", misses: 5 }, now + 1000);
     expect(fifth?.help).toMatchObject({ level: "reveal", answer: "cousin" });
     const ok = await checkSpelling(memoryEngineRepo, mae, { word: "cousin", typed: "cousin", mode: "listen", misses: 0 }, now + 2000);
     expect(ok?.correct).toBe(true);

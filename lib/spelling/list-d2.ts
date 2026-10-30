@@ -82,6 +82,14 @@ export const SPELLING_LINES = {
 export const SPELLING_YAYS = ["Yes! Spelled just right.", "You got it!", "Awesome spelling!", "Perfect!", "Nailed it!"];
 export const SPELLING_SO_CLOSE = "So close! Just one letter is off.";
 export const SPELLING_BREATHE = "Take a breath and look at each letter.";
+/** Help ladder lines (spoken; all prewarmed). */
+export const SPELLING_HELP = {
+  slow: "Good try! Let's listen slowly.",
+  letter: "Here's a letter to help you.",
+  copy: "Here's the word. Copy it one letter at a time.",
+  memory: "Great copying! Now spell it without looking.",
+  later: "Good practice! We'll try it again soon.",
+};
 
 /** Guided session lines ("Next up" per game, start and end), all prewarmed. */
 export const SESSION_NEXT_UP: Record<string, string> = {
@@ -102,5 +110,5 @@ export const SESSION_LINES = {
 };
 
 export function allSpellingClips(): string[] {
-  return [...new Set([...Object.values(SPELLING_LINES), ...Object.values(SESSION_NEXT_UP), ...Object.values(SESSION_LINES), ...Object.values(SORT_RIGHT), SPELLING_GOT_IT, ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
+  return [...new Set([...Object.values(SPELLING_LINES), ...Object.values(SESSION_NEXT_UP), ...Object.values(SESSION_LINES), ...Object.values(SORT_RIGHT), SPELLING_GOT_IT, ...SPELLING_YAYS, SPELLING_SO_CLOSE, SPELLING_BREATHE, ...Object.values(SPELLING_HELP)]), ...D2_WORDS.flatMap((x) => [wordClip(x), trickClip(x), revealClip(x)])];
 }

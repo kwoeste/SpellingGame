@@ -12,7 +12,7 @@ import {
 import { grokVoiceFromName } from "@/lib/tts/core";
 import { fetchGrokClip, playGrokClip, reportTtsFallback, stopGrokAudio, unlockGrokAudio } from "@/lib/tts/client";
 
-type SpeakOpts = { onend?: () => void; onboundary?: (charIndex: number) => void };
+type SpeakOpts = { rate?: number; onend?: () => void; onboundary?: (charIndex: number) => void };
 
 type KidPrefsValue = VoicePrefs & {
   /** True when the server has Grok voices turned on (an xAI key is configured). */
@@ -80,7 +80,9 @@ export function KidPrefsProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     }
     function speak(text: string, opts?: SpeakOpts) {
-      const current = readVoicePrefs();
+      const saved = readVoicePrefs();
+      // A one-off slower read (e.g. a spelling hint) overrides her saved rate for this clip only.
+      const current = opts?.rate ? { ...saved, rate: opts.rate } : saved;
       const pending = !grokEnabled && grokReady.current;
       // A device voice the kid picked by hand wins; otherwise Grok (default luna) is used when enabled.
       if (!grokEnabled && !pending) {

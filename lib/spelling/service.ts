@@ -2,7 +2,7 @@ import type { EngineRepo, LearnerTx, StoredEvent } from "@/lib/engine/repo";
 import { awardMinute, currentSession, type EngineActor } from "@/lib/engine/service";
 import { D2_WORDS, LIST_ID, VOWEL_KEY, findWord, type Vowel } from "@/lib/spelling/list-d2";
 import { buildMix, parseMix, planSession, type SessionRound, type SpellingMix } from "@/lib/spelling/mix";
-import { SPELLING_MODES, gradeSpelling, masteredCount, practiceQueue, spellingHelp, wordStats, type SpellingAttempt, type WordStat } from "@/lib/spelling/engine";
+import { SPELLING_MODES, gradeSpelling, helpLevelNumber, masteredCount, practiceQueue, spellingHelp, wordStats, type SpellingAttempt, type WordStat } from "@/lib/spelling/engine";
 
 export const SPELLING_EVENT = "spelling_attempt";
 
@@ -15,6 +15,7 @@ export function attemptsFromEvents(events: Pick<StoredEvent, "type" | "isCorrect
       firstTry: e.payload?.first_try === true,
       mode: String(e.payload?.mode ?? ""),
       at: e.serverTs,
+      neededHelp: e.payload?.needed_help === true,
     }));
 }
 
@@ -32,7 +33,7 @@ export async function spellingSummary(repo: EngineRepo, actor: EngineActor, now 
   });
 }
 
-export type CheckInput = { word: unknown; typed?: unknown; vowel?: unknown; mode: unknown; misses: unknown; retry?: unknown; sessionId?: string | null };
+export type CheckInput = { word: unknown; typed?: unknown; vowel?: unknown; mode: unknown; misses: unknown; retry?: unknown; phase?: unknown; sessionId?: string | null };
 export type CheckResult = {
   correct: boolean;
   help: ReturnType<typeof spellingHelp>;
@@ -47,7 +48,9 @@ export async function checkSpelling(repo: EngineRepo, actor: EngineActor, input:
   if (!word || !mode) return null;
   const misses = typeof input.misses === "number" && Number.isFinite(input.misses) ? Math.max(0, Math.min(20, Math.floor(input.misses))) : 0;
   const correct = mode === "sort" ? input.vowel === word.vowel : gradeSpelling(word, input.typed);
-  const help = correct ? { level: "none" as const } : mode === "sort" ? { level: "reveal" as const, hint: VOWEL_KEY[word.vowel].example } : spellingHelp(word, misses + 1);
+  const phase = input.phase === "copy" || input.phase === "memory" ? input.phase : "try";
+  const neededHelp = misses > 0 || phase !== "try";
+  const help = phase !== "try" ? { level: "none" as const } : correct ? { level: "none" as const } : mode === "sort" ? { level: "reveal" as const, hint: VOWEL_KEY[word.vowel].example } : spellingHelp(word, misses + 1);
   const vowel = mode === "sort" ? { answer: word.vowel, label: VOWEL_KEY[word.vowel].label } : null;
   if (!actor.learnerId) return { correct, help, stat: null, vowel };
   return repo.withLearner(actor.learnerId, async (tx) => {
@@ -66,8 +69,8 @@ export async function checkSpelling(repo: EngineRepo, actor: EngineActor, input:
       response: mode === "sort" ? String(input.vowel ?? "").slice(0, 2) : String(input.typed ?? "").slice(0, 40),
       isCorrect: correct,
       latencyMs: null,
-      hintLevel: misses + 1 >= 5 ? 3 : misses + 1 >= 4 ? 1 : 0,
-      payload: { word: word.word, mode, first_try: misses === 0 && input.retry !== true, list: LIST_ID },
+      hintLevel: phase !== "try" ? 3 : helpLevelNumber(misses),
+      payload: { word: word.word, mode, first_try: misses === 0 && phase === "try" && input.retry !== true, needed_help: neededHelp, ...(phase !== "try" ? { phase } : {}), list: LIST_ID },
       isPreview: false,
     });
     await awardMinute(tx, session.id, now, false);

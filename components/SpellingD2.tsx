@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
-import { D2_WORDS, LIST_TITLE, SPELLING_BREATHE, SPELLING_LINES, SESSION_LINES, SESSION_NEXT_UP, SPELLING_SO_CLOSE, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
-import type { SpellingMode, WordStat } from "@/lib/spelling/engine";
+import { D2_WORDS, LIST_TITLE, SPELLING_LINES, SESSION_LINES, SESSION_NEXT_UP, SPELLING_HELP, SPELLING_GOT_IT, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
+import { normalizeSpelling, type SpellingHelp, type SpellingMode, type WordStat } from "@/lib/spelling/engine";
 import type { SessionRound } from "@/lib/spelling/mix";
-import { COOLDOWN_MS, FLASH_STUDY_MS, answerAfterMiss, blankWord, canCover, isFirstTry, markLetters, missMessage, mockStep, praiseFor, shouldBreathe, tooQuick, type MockState } from "@/lib/spelling/feedback";
+import { COOLDOWN_MS, FLASH_STUDY_MS, answerAfterMiss, blankWord, canCover, isFirstTry, ladderNext, lockPrefix, markLetters, missMessage, mockStep, praiseFor, requeue, tilesForPrefix, type LadderPhase, type MockState } from "@/lib/spelling/feedback";
 
 type Summary = { stats: WordStat[]; mastered: number; total: number; queue: string[] };
-type Help = { level: "none" | "hint" | "reveal"; hint?: string; answer?: string };
+type Help = SpellingHelp;
+/** Hint audio is replayed slower than her normal reading speed. */
+const SLOW_RATE = 0.7;
 type CheckResult = { correct: boolean; help: Help; stat: WordStat | null; vowel?: { answer: Vowel; label: string } | null };
 
 const MODES: { id: SpellingMode; icon: string; title: string; blurb: string }[] = [
@@ -327,8 +329,10 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [burst, setBurst] = useState(0);
   const [score, setScore] = useState({ firstTry: 0, streak: 0, best: 0, missed: new Set<string>() });
-  const wrongTimes = useRef<number[]>([]);
-  const afterBreath = useRef<string | null>(null);
+  const [phase, setPhase] = useState<LadderPhase>("try");
+  const [prefix, setPrefix] = useState("");
+  const [shownLetters, setShownLetters] = useState(0);
+  const [copyTries, setCopyTries] = useState(0);
   const requeued = useRef(new Set<string>());
   const inputRef = useRef<HTMLInputElement>(null);
   const word = findWord(queue[idx]);
@@ -346,7 +350,10 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     setHeard(false);
     setShownAt(Date.now());
     setMisses(0);
-    wrongTimes.current = [];
+    setPhase("try");
+    setPrefix("");
+    setShownLetters(0);
+    setCopyTries(0);
     if (mode === "listen" || mode === "sort") prefs.speak(wordClip(word));
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [idx, queue]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -359,13 +366,13 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     return () => clearInterval(t);
   }, [waiting]);
 
-  const locked = now < cooldownUntil;
+  // Hint letters (and the shown word) appear one at a time so she slows down and looks.
+  const letterTarget = phase === "copy" ? (word?.word.length ?? 0) : prefix.length;
   useEffect(() => {
-    if (!locked && afterBreath.current !== null) {
-      setFeedback(afterBreath.current);
-      afterBreath.current = null;
-    }
-  }, [locked]);
+    if (shownLetters >= letterTarget) return;
+    const t = setTimeout(() => setShownLetters((n) => n + 1), 450);
+    return () => clearTimeout(t);
+  }, [shownLetters, letterTarget]);
 
   const finished = !word;
   const reported = useRef(false);
@@ -392,7 +399,17 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
   }
 
   function next() {
+    // A word that needed help comes back once, a few words later.
+    if (word && misses > 0 && mode !== "sort" && !requeued.current.has(word.word)) {
+      requeued.current.add(word.word);
+      setQueue((q) => requeue(q, idx, word.word));
+    }
     setIdx((i) => i + 1);
+  }
+  function speakSlow(line: string) {
+    if (!word) return;
+    const w = word;
+    prefs.speak(line, { onend: () => prefs.speak(wordClip(w), { rate: SLOW_RATE }) });
   }
   function hear() {
     if (!word) return;
@@ -402,10 +419,42 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
 
   const coolingDown = now < cooldownUntil;
 
+  async function submitCopy(text: string) {
+    if (!word || busy) return;
+    if (!text.trim()) return;
+    setBusy(true);
+    const result = await postCheck({ word: word.word, mode, misses, typed: text, phase });
+    setBusy(false);
+    const correct = result ? result.correct : normalizeSpelling(text) === word.word;
+    const tries = phase === "copy" ? copyTries + 1 : copyTries;
+    setCopyTries(tries);
+    const nextPhase = ladderNext(phase, correct, tries);
+    setTyped("");
+    setTilesUsed([]);
+    if (nextPhase === "memory") {
+      setLastTry(null);
+      setFeedback(`✅ ${SPELLING_HELP.memory}`);
+      prefs.speak(SPELLING_HELP.memory);
+    } else if (nextPhase === "copy") {
+      setLastTry(text);
+      setFeedback("Look at each letter and copy it.");
+    } else if (phase === "memory" && correct) {
+      setLastTry(null);
+      setFeedback(`${SPELLING_GOT_IT} 🎉`);
+      prefs.speak(SPELLING_GOT_IT);
+    } else {
+      setLastTry(null);
+      setFeedback(SPELLING_HELP.later);
+      prefs.speak(SPELLING_HELP.later);
+    }
+    setPhase(nextPhase);
+  }
+
   async function submit(answer: { typed?: string; vowel?: Vowel }) {
-    if (!word || busy || right) return;
+    if (!word || busy || right || phase === "done") return;
     if (Date.now() < cooldownUntil) return;
     if (answer.typed !== undefined && !answer.typed.trim()) return;
+    if (phase === "copy" || phase === "memory") return submitCopy(answer.typed ?? "");
     setBusy(true);
     const first = isFirstTry(word.word, misses, score.missed);
     const result = await postCheck({ word: word.word, mode, misses, retry: !first && misses === 0, ...answer });
@@ -438,42 +487,47 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
       return;
     }
     const t = Date.now();
-    wrongTimes.current = [...wrongTimes.current, t];
-    const slow = shouldBreathe(tooQuick(wrongTimes.current, t), result.help.level);
+    // Every miss pauses Check briefly so she listens instead of guessing fast.
+    setCooldownUntil(t + COOLDOWN_MS);
+    setNow(t);
+    const tryText = answer.typed ?? "";
     if (result.help.level === "reveal") {
-      setFeedback(null);
+      setPhase("copy");
+      setPrefix("");
+      setShownLetters(0);
       setLastTry(null);
-      prefs.speak(revealClip(word));
-      if (!requeued.current.has(word.word)) {
-        requeued.current.add(word.word);
-        setQueue((q) => [...q, word.word]);
-      }
-    } else {
-      const tryText = answer.typed ?? "";
-      setLastTry(tryText);
-      const msg = missMessage(word.word, tryText, m);
-      const after = result.help.level === "hint" ? `${msg} Here's a hint.` : msg;
-      setFeedback(slow ? SPELLING_BREATHE : after);
-      afterBreath.current = slow ? after : null;
-      if (slow) {
-        wrongTimes.current = [];
-        setCooldownUntil(t + COOLDOWN_MS);
-        setNow(t);
-        prefs.speak(SPELLING_BREATHE);
-      } else if (msg.startsWith(SPELLING_SO_CLOSE)) {
-        prefs.speak(SPELLING_SO_CLOSE);
-      }
+      setTyped("");
+      setTilesUsed([]);
+      setFeedback(SPELLING_HELP.copy);
+      prefs.speak(SPELLING_HELP.copy, { onend: () => prefs.speak(revealClip(word), { rate: SLOW_RATE }) });
+      return;
     }
-    setTilesUsed([]);
-    setTyped(answerAfterMiss(mode, answer.typed ?? ""));
+    setLastTry(tryText);
+    const msg = missMessage(word.word, tryText, m);
+    if (result.help.level === "letters" && result.help.letters) {
+      const p = word.word.slice(0, result.help.letters);
+      setPrefix(p);
+      setTyped(mode === "fix" ? lockPrefix(p, tryText) : p);
+      setTilesUsed(mode === "tiles" ? tilesForPrefix(tiles, p) : []);
+      setFeedback(`${msg} ${SPELLING_HELP.letter}`);
+      speakSlow(SPELLING_HELP.letter);
+    } else {
+      setTilesUsed([]);
+      setTyped(answerAfterMiss(mode, tryText));
+      setFeedback(`${msg} Let's listen slowly. 🐢`);
+      speakSlow(SPELLING_HELP.slow);
+    }
   }
 
-  const revealed = help.level === "reveal";
+  const copying = phase === "copy";
+  const done = phase === "done";
+  const isRepeat = queue.slice(0, idx).includes(queue[idx]);
   const flashReady = canCover(shownAt, heard, now);
   return (
     <section className="card" style={{ padding: 20, position: "relative" }}>
       {burst ? <Burst key={burst} /> : null}
-      {idx < words.length ? <Progress at={idx + 1} total={words.length} streak={score.streak} stars={score.firstTry} /> : <><Progress at={words.length + 1} total={words.length} streak={score.streak} stars={score.firstTry} /><p style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 8px" }}>🔁 One more time! ({queue.length - idx} left)</p></>}
+      <Progress at={idx + 1} total={queue.length} streak={score.streak} stars={score.firstTry} />
+      {isRepeat ? <p style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 8px" }}>🔁 One more time with this word!</p> : null}
 
       {mode === "flash" && !covered ? (
         <div>
@@ -503,7 +557,21 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
           {mode === "listen" || mode === "flash" || mode === "tiles" ? (
             <div className="sp-row"><button className="btn secondary" style={big} onClick={hear}>🔊 Hear it again</button></div>
           ) : null}
-          {mode === "tiles" || mode === "listen" ? <p style={{ fontSize: "1.15rem", margin: "4px 0" }}>📖 {blankWord(word.sentence, word.word)}</p> : null}
+          {mode === "tiles" || mode === "listen" || misses > 0 ? <p style={{ fontSize: "1.15rem", margin: "4px 0" }}>📖 {blankWord(word.sentence, word.word)}</p> : null}
+          {copying ? (
+            <div className="story-hook" style={{ textAlign: "center" }}>
+              <p style={{ margin: 0 }}>Here&apos;s the word. Copy it:</p>
+              <p aria-label={`The word is ${word.word}`} style={{ fontSize: "2.4rem", fontWeight: 700, margin: "8px 0", letterSpacing: "0.15em" }}>
+                {word.word.split("").map((ch, i) => <span key={i} style={{ opacity: i < shownLetters ? 1 : 0, transition: "opacity 0.3s" }}>{ch}</span>)}
+              </p>
+            </div>
+          ) : null}
+          {phase === "memory" ? <p style={{ fontSize: "1.3rem", fontWeight: 700 }}>🙈 Now spell it without looking!</p> : null}
+          {prefix && phase === "try" && !right ? (
+            <p aria-label={`Starts with ${prefix.slice(0, shownLetters)}`} style={{ fontSize: "2rem", fontWeight: 700, letterSpacing: "0.2em", margin: "6px 0" }}>
+              {word.word.split("").map((ch, i) => <span key={i} className={i < prefix.length && i < shownLetters ? "sp-letter ok" : undefined}>{i < prefix.length && i < shownLetters ? ch : "_"}</span>)}
+            </p>
+          ) : null}
           {mode === "fix" && right ? (
             <p style={{ fontSize: "1.3rem" }}>✅ Fixed it! The right spelling is <b style={{ fontSize: "1.6rem" }}><Highlight w={word} /></b></p>
           ) : mode === "fix" ? (
@@ -514,10 +582,10 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
             {mode === "tiles" ? (
               <div className="sp-input" role="status" aria-label={`Your word so far: ${typed || "empty"}`} style={{ minHeight: 60, letterSpacing: "0.12em", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{typed || <span style={{ opacity: 0.35 }}>tap the letters</span>}</div>
             ) : (
-              <input ref={inputRef} className="sp-input" value={typed} onChange={(e) => setTyped(e.target.value)} disabled={right || revealed}
+              <input ref={inputRef} className="sp-input" value={typed} onChange={(e) => setTyped(phase === "try" ? lockPrefix(prefix, e.target.value) : e.target.value)} disabled={right || done || (copying && shownLetters < word.word.length)}
                 autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Type the word" />
             )}
-            {mode === "tiles" && !right && !revealed ? (
+            {mode === "tiles" && !right && !done ? (
               <>
                 <div className="sp-row" style={{ margin: "4px 0" }}>
                   {tiles.map((ch, i) => (
@@ -526,29 +594,28 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
                   ))}
                 </div>
                 <div className="sp-row" style={{ margin: 0 }}>
-                  <button type="button" className="btn secondary" style={big} disabled={!tilesUsed.length} onClick={() => { setTilesUsed((u) => u.slice(0, -1)); setTyped((t) => t.slice(0, -1)); }}>⌫ Undo</button>
-                  <button type="button" className="btn secondary" style={big} disabled={!tilesUsed.length} onClick={() => { setTilesUsed([]); setTyped(""); }}>Clear</button>
+                  <button type="button" className="btn secondary" style={big} disabled={tilesUsed.length <= (phase === "try" ? prefix.length : 0)} onClick={() => { setTilesUsed((u) => u.slice(0, -1)); setTyped((t) => t.slice(0, -1)); }}>⌫ Undo</button>
+                  <button type="button" className="btn secondary" style={big} disabled={tilesUsed.length <= (phase === "try" ? prefix.length : 0)} onClick={() => { const keep = (phase === "try" ? prefix.length : 0); setTilesUsed((u) => u.slice(0, keep)); setTyped((t) => t.slice(0, keep)); }}>Clear</button>
                 </div>
               </>
             ) : null}
-            {!right && !revealed ? (
-              <button type="submit" className="btn" style={{ ...big, minWidth: 200 }} disabled={busy || coolingDown}>{coolingDown ? "Take a breath…" : "Check ✓"}</button>
+            {!right && !done ? (
+              <button type="submit" className="btn" style={{ ...big, minWidth: 200 }} disabled={busy || coolingDown}>{coolingDown ? "Listen first… 👂" : copying ? "Copy it ✓" : "Check ✓"}</button>
             ) : null}
           </form>
         </div>
       )}
 
-      {lastTry && !right && !revealed && !coolingDown ? <Letters target={word.word} typed={lastTry} /> : null}
+      {lastTry && !right && !done ? <Letters target={word.word} typed={lastTry} /> : null}
       {feedback ? <p aria-live="polite" style={{ fontSize: "1.25rem" }}>{feedback}</p> : null}
-      {help.level === "hint" && help.hint && !coolingDown ? <p className="story-hook">💡 {help.hint}</p> : null}
-      {revealed && mode !== "sort" ? (
+      {(help.level === "hint" || help.level === "letters") && help.hint && phase === "try" && !right ? <p className="story-hook">💡 {help.hint}</p> : null}
+      {done && mode !== "sort" ? (
         <div className="story-hook">
-          <p style={{ margin: 0 }}>Here&apos;s how to spell it:</p>
           <p style={{ fontSize: "2.2rem", fontWeight: 700, margin: "8px 0" }}><Highlight w={word} /></p>
-          <p style={{ margin: 0 }}>{word.trick} We&apos;ll try it again later.</p>
+          <p style={{ margin: 0 }}>{word.trick} We&apos;ll try it again soon.</p>
         </div>
       ) : null}
-      {right || revealed ? (
+      {right || done ? (
         <div className="sp-row">
           <button className="btn" style={{ ...big, minWidth: 200 }} onClick={next} autoFocus>Next word →</button>
         </div>
@@ -617,9 +684,10 @@ export function MockTest({ words, onRetry, onDone, title = "Mock test 📝" }: {
     setBusy(true);
     const result = await postCheck({ word: word.word, mode: "mock", misses: 0, typed });
     setBusy(false);
-    if (!result) return;
+    // One try per word, no hints: even if the check can't reach the server, grade here and move on.
+    const correct = result ? result.correct : normalizeSpelling(typed) === word.word;
     setTyped("");
-    setState((s) => mockStep(s, { type: "answer", word: word.word, correct: result.correct }));
+    setState((s) => mockStep(s, { type: "answer", word: word.word, correct }));
   }
 
   return (
