@@ -13,14 +13,18 @@ import c9 from "@/lib/content/flashcards/col.ch1.json";
 import c10 from "@/lib/content/flashcards/col.ch2.json";
 import c11 from "@/lib/content/flashcards/col.ch3.json";
 import c12 from "@/lib/content/flashcards/col.ch4.json";
-import c13 from "@/lib/content/flashcards/savvas.ch1.json";
-import c14 from "@/lib/content/flashcards/savvas.ch2.json";
-import c15 from "@/lib/content/flashcards/savvas.ch3.json";
-import c16 from "@/lib/content/flashcards/savvas.ch4.json";
-import c17 from "@/lib/content/flashcards/savvas.ch5.json";
-import c18 from "@/lib/content/flashcards/savvas.ch6.json";
-import c19 from "@/lib/content/flashcards/savvas.ch7.json";
-import c20 from "@/lib/content/flashcards/savvas.ch8.json";
+import c13 from "@/lib/content/flashcards/col.ch5.json";
+import c14 from "@/lib/content/flashcards/col.ch6.json";
+import c15 from "@/lib/content/flashcards/col.ch7.json";
+import c16 from "@/lib/content/flashcards/col.ch8.json";
+import c17 from "@/lib/content/flashcards/savvas.ch1.json";
+import c18 from "@/lib/content/flashcards/savvas.ch2.json";
+import c19 from "@/lib/content/flashcards/savvas.ch3.json";
+import c20 from "@/lib/content/flashcards/savvas.ch4.json";
+import c21 from "@/lib/content/flashcards/savvas.ch5.json";
+import c22 from "@/lib/content/flashcards/savvas.ch6.json";
+import c23 from "@/lib/content/flashcards/savvas.ch7.json";
+import c24 from "@/lib/content/flashcards/savvas.ch8.json";
 
 export const FLASHCARDS: Record<string, Flashcard[]> = {
   "ckla.u2.ch1": c0,
@@ -36,12 +40,16 @@ export const FLASHCARDS: Record<string, Flashcard[]> = {
   "col.ch2": c10,
   "col.ch3": c11,
   "col.ch4": c12,
-  "savvas.ch1": c13,
-  "savvas.ch2": c14,
-  "savvas.ch3": c15,
-  "savvas.ch4": c16,
-  "savvas.ch5": c17,
-  "savvas.ch6": c18,
-  "savvas.ch7": c19,
-  "savvas.ch8": c20,
+  "col.ch5": c13,
+  "col.ch6": c14,
+  "col.ch7": c15,
+  "col.ch8": c16,
+  "savvas.ch1": c17,
+  "savvas.ch2": c18,
+  "savvas.ch3": c19,
+  "savvas.ch4": c20,
+  "savvas.ch5": c21,
+  "savvas.ch6": c22,
+  "savvas.ch7": c23,
+  "savvas.ch8": c24,
 };
