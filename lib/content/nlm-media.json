@@ -133,6 +133,62 @@
       "sha256": "74a63a3b160f2e091291877daf534e32a8938feb63b8f65767cea91abf79f99f"
     }
   },
+  "col.ch10": {
+    "audio": {
+      "pathname": "nlm/col.ch10/audio-11c778bd3c7c.m4a",
+      "contentType": "audio/mp4",
+      "size": 3111286,
+      "sha256": "11c778bd3c7cbd8b893fd7cf73f855fe293237ed3f4122fdafdc3cdbdd3cebb2"
+    }
+  },
+  "col.ch11": {
+    "audio": {
+      "pathname": "nlm/col.ch11/audio-c3284379eb69.m4a",
+      "contentType": "audio/mp4",
+      "size": 2885564,
+      "sha256": "c3284379eb6997260bd1e76bd044dc3f0f52867658b6961e48a619012f312ad2"
+    }
+  },
+  "col.ch12": {
+    "audio": {
+      "pathname": "nlm/col.ch12/audio-a38d0b1c6470.m4a",
+      "contentType": "audio/mp4",
+      "size": 2847465,
+      "sha256": "a38d0b1c647040dc77af9c623828fe3ac3a671ee85c26c707247cc156e2cf3ea"
+    }
+  },
+  "col.ch13": {
+    "audio": {
+      "pathname": "nlm/col.ch13/audio-365555db949b.m4a",
+      "contentType": "audio/mp4",
+      "size": 2628583,
+      "sha256": "365555db949bb39a83b614b542eb2f9d77071fb39107b2149ec6b6bbdab22353"
+    }
+  },
+  "col.ch14": {
+    "audio": {
+      "pathname": "nlm/col.ch14/audio-d4f5bdecbf6c.m4a",
+      "contentType": "audio/mp4",
+      "size": 3460269,
+      "sha256": "d4f5bdecbf6caffb631e62747c642c94e024fccbabef771cc642ca3260ed2602"
+    }
+  },
+  "col.ch15": {
+    "audio": {
+      "pathname": "nlm/col.ch15/audio-431a64d80b23.m4a",
+      "contentType": "audio/mp4",
+      "size": 2863900,
+      "sha256": "431a64d80b2334517e5a153bc11ffa4ba266ba76f2b9582d45503eb69af5ecaa"
+    }
+  },
+  "col.ch16": {
+    "audio": {
+      "pathname": "nlm/col.ch16/audio-5d60ff8def90.m4a",
+      "contentType": "audio/mp4",
+      "size": 3139674,
+      "sha256": "5d60ff8def902c65251e23b3b02f5abf67d51aff7005ed67005039497bac7042"
+    }
+  },
   "col.ch2": {
     "audio": {
       "pathname": "nlm/col.ch2/audio-9c5641f1817e.m4a",
@@ -193,6 +249,14 @@
       "contentType": "audio/mp4",
       "size": 2614389,
       "sha256": "77d8c5f9a84562db6ece5a425793be30ebda4f67282f7604534b9e244b4674c4"
+    }
+  },
+  "col.ch9": {
+    "audio": {
+      "pathname": "nlm/col.ch9/audio-8b8f8c448f4e.m4a",
+      "contentType": "audio/mp4",
+      "size": 2683864,
+      "sha256": "8b8f8c448f4edee42392d70e0b720af9c31bcb8e26e0062d450951961ed6e358"
     }
   },
   "savvas.ch1": {
