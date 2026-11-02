@@ -1,0 +1,82 @@
+[
+  {
+    "front": "Every product of 10 ends in which digit?",
+    "back": "0"
+  },
+  {
+    "front": "What is place value?",
+    "back": "The value of a digit because of where it sits in a number."
+  },
+  {
+    "front": "Which place is the second digit from the right?",
+    "back": "The tens place."
+  },
+  {
+    "front": "What does it mean to multiply?",
+    "back": "To add equal groups together."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "When you multiply a number by 10, which way does each digit move?",
+    "back": "One place to the left."
+  },
+  {
+    "front": "When you multiply by 10, what digit fills the ones place?",
+    "back": "0"
+  },
+  {
+    "front": "10 × 7 is not 7 + 0. Why?",
+    "back": "Multiplying by 10 moves the 7 to the tens place, so 10 × 7 = 70."
+  },
+  {
+    "front": "Which property says swapping the order of the factors doesn't change the product?",
+    "back": "The commutative property."
+  },
+  {
+    "front": "10 × 2 = ?",
+    "back": "20"
+  },
+  {
+    "front": "10 × 3 = ?",
+    "back": "30"
+  },
+  {
+    "front": "10 × 4 = ?",
+    "back": "40"
+  },
+  {
+    "front": "10 × 6 = ?",
+    "back": "60"
+  },
+  {
+    "front": "10 × 7 = ?",
+    "back": "70"
+  },
+  {
+    "front": "10 × 9 = ?",
+    "back": "90"
+  },
+  {
+    "front": "10 × 10 = ?",
+    "back": "100"
+  },
+  {
+    "front": "How many cents are 7 dimes worth?",
+    "back": "70 cents (7 × 10 = 70)."
+  },
+  {
+    "front": "3 people each have 10 toes. How many toes in all?",
+    "back": "30 toes (3 × 10 = 30)."
+  },
+  {
+    "front": "Each pack has 10 pencils. How many pencils are in 4 packs?",
+    "back": "40 pencils (4 × 10 = 40)."
+  },
+  {
+    "front": "Skip-count by 10s: 10, 20, 30, ...",
+    "back": "40, 50"
+  }
+]

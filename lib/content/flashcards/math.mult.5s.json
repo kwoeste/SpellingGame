@@ -1,0 +1,90 @@
+[
+  {
+    "front": "What is skip-counting?",
+    "back": "Counting by jumps of the same size."
+  },
+  {
+    "front": "What is a multiple?",
+    "back": "A number you land on when you skip-count."
+  },
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is a pattern?",
+    "back": "Something that repeats in a way you can predict."
+  },
+  {
+    "front": "Every product of 5 ends in which two digits?",
+    "back": "0 or 5."
+  },
+  {
+    "front": "5 times an even number ends in which digit?",
+    "back": "0"
+  },
+  {
+    "front": "5 times an odd number ends in which digit?",
+    "back": "5"
+  },
+  {
+    "front": "Which property says swapping the order of the factors doesn't change the product?",
+    "back": "The commutative property."
+  },
+  {
+    "front": "5 × 4 can mean 5 groups of 4. What else can it mean?",
+    "back": "4 groups of 5."
+  },
+  {
+    "front": "5 × 3 = ?",
+    "back": "15"
+  },
+  {
+    "front": "5 × 4 = ?",
+    "back": "20"
+  },
+  {
+    "front": "5 × 5 = ?",
+    "back": "25"
+  },
+  {
+    "front": "5 × 6 = ?",
+    "back": "30"
+  },
+  {
+    "front": "5 × 7 = ?",
+    "back": "35"
+  },
+  {
+    "front": "5 × 8 = ?",
+    "back": "40"
+  },
+  {
+    "front": "5 × 9 = ?",
+    "back": "45"
+  },
+  {
+    "front": "How many cents is 1 nickel worth?",
+    "back": "5 cents."
+  },
+  {
+    "front": "How many cents are in 6 nickels?",
+    "back": "30 cents (6 × 5 = 30)."
+  },
+  {
+    "front": "How many fingers are on 4 hands?",
+    "back": "20 fingers (4 × 5 = 20)."
+  },
+  {
+    "front": "On a clock, the minute hand points to 7. How many minutes past the hour is it?",
+    "back": "35 minutes (7 × 5 = 35)."
+  },
+  {
+    "front": "Skip-count by 5s: 5, 10, 15, ...",
+    "back": "20, 25, 30"
+  }
+]
