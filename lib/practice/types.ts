@@ -1,4 +1,4 @@
-export type PracticeKind = "blank" | "list" | "match";
+export type PracticeKind = "blank" | "list" | "match" | "choice";
 
 export type PracticeFact = {
   id: string;
@@ -9,8 +9,12 @@ export type PracticeFact = {
   phrasings: string[];
   /** Blanks may be filled in either order. */
   anyOrder?: boolean;
-  /** Offer a tap-to-fill word bank on some attempts. */
-  wordBank?: boolean;
+  /** Offer a tap-to-fill word bank on some attempts ("always" = every attempt). */
+  wordBank?: boolean | "always";
+  /** Multiple choice options (kind "choice"); answers[0][0] is the right one. */
+  options?: string[];
+  /** Short kind explanation shown after she answers (or after Show me). */
+  why?: string;
   /** Match rows (definitions); answers[i][0] is the word for row i. */
   prompts?: string[];
 };
@@ -27,6 +31,8 @@ export type StudentQuestion = {
   prompts?: string[];
   choices?: string[];
 };
+
+export type PracticeBankIntro = { heading: string; body: string };
 
 export type SlotResult = { correct: boolean; exact: boolean; expected: string };
 

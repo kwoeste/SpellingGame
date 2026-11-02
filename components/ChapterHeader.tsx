@@ -4,6 +4,7 @@ const SUBJECT_CONFIG: Record<SubjectId, { emoji: string; bg: string; label: stri
   science: { emoji: "🔬🧪🌿🦎", bg: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)", label: "Science" },
   math: { emoji: "🔢✨📐🧮", bg: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)", label: "Math" },
   ela: { emoji: "📚✏️📖🦉", bg: "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)", label: "Reading" },
+  social: { emoji: "🗺️🏞️🛶🌽", bg: "linear-gradient(135deg, #fffde7 0%, #fff59d 100%)", label: "Social Studies" },
   religion: { emoji: "✝️🕊️🌟📿", bg: "linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)", label: "Religion" },
 };
 

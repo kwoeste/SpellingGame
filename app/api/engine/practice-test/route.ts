@@ -1,7 +1,7 @@
 import { getChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
 import { engineActor, engineJson, readJson } from "@/lib/engine/http";
-import { buildAttempt, gradeQuestion, hasPracticeTest, parseQid, practiceHelp } from "@/lib/practice/bank";
+import { buildAttempt, gradeQuestion, hasPracticeTest, parseQid, practiceHelp, practiceWhy } from "@/lib/practice/bank";
 
 /**
  * Practice test (signed-in student/admin only; /api/engine is gated in middleware too).
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const graded = gradeQuestion(check.qid, check.responses)!;
     // Only reveal expected spellings once she's right (spelling note) — never on a miss before Show me.
     const result = graded.correct ? graded : { correct: false, exact: false, slots: graded.slots.map((s) => ({ correct: false, exact: false, expected: "" })) };
-    return engineJson({ result, help: graded.correct ? null : practiceHelp(check.qid, misses + 1) });
+    return engineJson({ result, why: graded.correct ? practiceWhy(check.qid) : null, help: graded.correct ? null : practiceHelp(check.qid, misses + 1) });
   }
   return engineJson({ error: "bad_request" }, 400);
 }

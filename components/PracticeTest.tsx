@@ -27,12 +27,20 @@ function logPractice(chapterId: string, detail: string, extra: Record<string, un
   }).catch(() => undefined);
 }
 
-function readable(q: StudentQuestion): string {
-  if (q.kind === "match") return `${q.text} ${(q.prompts ?? []).join(". ")}.`;
-  return q.text.replace(/___/g, "blank");
+/** Mirrored in scripts/tts-prewarm.ts (keep in sync so read-aloud clips are cached). */
+export function readable(q: Pick<StudentQuestion, "kind" | "text" | "prompts" | "choices">): string {
+  const text = q.text.replace(/\*\*/g, "");
+  if (q.kind === "match") return `${text} ${(q.prompts ?? []).join(". ")}.`;
+  if (q.kind === "choice") return text;
+  return text.replace(/___/g, "blank");
 }
 
-export function PracticeTest({ chapterId, lessons, startMode, bankSize }: { chapterId: string; lessons: Lesson[]; startMode: "full" | "retry"; bankSize: number }) {
+/** Renders **bold** key words. */
+function Rich({ text }: { text: string }) {
+  return <>{text.split(/\*\*/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : <span key={i}>{part}</span>))}</>;
+}
+
+export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }: { chapterId: string; lessons: Lesson[]; startMode: "full" | "retry"; bankSize: number; intro?: { heading: string; body: string } }) {
   const prefs = useKidPrefs();
   const [phase, setPhase] = useState<Phase>("intro");
   const [lessonIdx, setLessonIdx] = useState(0);
@@ -145,8 +153,8 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize }: { chap
   if (phase === "intro") {
     return (
       <div className="card">
-        <h2>Get ready for your science test</h2>
-        <p>This works like the Guided Notes at school. Read each sentence and type the missing word. Spelling counts, so type carefully!</p>
+        <h2>{intro?.heading ?? "Get ready for your test"}</h2>
+        <p>{intro?.body ?? "Read each sentence and type the missing word. Spelling counts, so type carefully!"}</p>
         <p className="kid-kicker">{bankSize} practice questions in the bank. Each test mixes them up.</p>
         {error ? <p role="alert">{error}</p> : null}
         <p>
@@ -234,7 +242,7 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize }: { chap
           <ul>
             {missed.map((o) => (
               <li key={o.q.factId}>
-                {o.q.kind === "match" ? o.q.text : o.q.text.replace(/___/g, "_____")} <br />
+                <Rich text={o.q.kind === "blank" ? o.q.text.replace(/___/g, "_____") : o.q.text} /> <br />
                 <strong>Answer: {o.expected.join(", ")}</strong>
               </li>
             ))}
@@ -285,6 +293,7 @@ function QuestionCard({
   const [revealed, setRevealed] = useState(false);
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<GradeResult | null>(null);
+  const [why, setWhy] = useState("");
   const [sending, setSending] = useState(false);
   const [locked, setLocked] = useState(true);
   const [lockRound, setLockRound] = useState(0);
@@ -317,13 +326,14 @@ function QuestionCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ check: { qid: q.qid, responses: values, misses } }),
       });
-      const json = (await res.json()) as { result: GradeResult; help: StuckHelp | null };
+      const json = (await res.json()) as { result: GradeResult; help: StuckHelp | null; why?: string | null };
       if (json.result.correct) {
         setResult(json.result);
         playSound("pair", soundOn);
-        const note = json.result.exact ? "Yes! Spelled just right." : `Right! Spelling check: it's spelled ${json.result.slots.filter((s) => !s.exact).map((s) => `"${s.expected}"`).join(", ")}.`;
+        const note = q.kind === "choice" ? "Yes! That's right." : json.result.exact ? "Yes! Spelled just right." : `Right! Spelling check: it's spelled ${json.result.slots.filter((s) => !s.exact).map((s) => `"${s.expected}"`).join(", ")}.`;
         setMessage(note);
-        speak(note);
+        setWhy(json.why ?? "");
+        speak(json.why ? `${note} ${json.why}` : note);
         return;
       }
       const n = misses + 1;
@@ -358,6 +368,11 @@ function QuestionCard({
   }
 
   const parts = q.text.split("___");
+  const choose = (c: string) => {
+    if (locked || result) return;
+    setValues([c]);
+    setMessage("");
+  };
   const canCheck = !locked && !sending && !result && values.every((v) => v.trim());
   const input = (i: number) => (
     <input
@@ -386,7 +401,7 @@ function QuestionCard({
         <p style={{ fontSize: "1.25em", lineHeight: 2 }}>
           {parts.map((p, i) => (
             <span key={i}>
-              {p}
+              <Rich text={p} />
               {i < parts.length - 1 ? input(i) : null}
             </span>
           ))}
@@ -394,7 +409,7 @@ function QuestionCard({
       ) : null}
       {q.kind === "list" ? (
         <>
-          <p style={{ fontSize: "1.25em" }}>{q.text}</p>
+          <p style={{ fontSize: "1.25em" }}><Rich text={q.text} /></p>
           <ol type="a">
             {values.map((_, i) => (
               <li key={i}>{input(i)}</li>
@@ -404,7 +419,7 @@ function QuestionCard({
       ) : null}
       {q.kind === "match" ? (
         <>
-          <p style={{ fontSize: "1.25em" }}>{q.text}</p>
+          <p style={{ fontSize: "1.25em" }}><Rich text={q.text} /></p>
           {(q.prompts ?? []).map((p, i) => (
             <p key={i}>
               <select aria-label={p} value={values[i]} disabled={Boolean(result)} onChange={(e) => set(i, e.target.value)} style={{ fontSize: "1.05em", marginRight: 8 }}>
@@ -416,6 +431,27 @@ function QuestionCard({
               {p}
             </p>
           ))}
+        </>
+      ) : null}
+      {q.kind === "choice" ? (
+        <>
+          <p style={{ fontSize: "1.25em" }}><Rich text={q.text} /></p>
+          <div role="radiogroup" aria-label="Choices">
+            {(q.choices ?? []).map((c) => (
+              <p key={c}>
+                <button
+                  role="radio"
+                  aria-checked={values[0] === c}
+                  className={values[0] === c ? "btn" : "btn secondary"}
+                  disabled={locked || Boolean(result)}
+                  onClick={() => choose(c)}
+                  style={{ fontSize: "1.1em", textAlign: "left" }}
+                >
+                  {values[0] === c ? "✅ " : ""}{c}
+                </button>
+              </p>
+            ))}
+          </div>
         </>
       ) : null}
       {q.wordBank && !result ? (
@@ -430,6 +466,7 @@ function QuestionCard({
       ) : null}
       {locked && !result ? <p className="kid-kicker">Read every word first…</p> : null}
       {message ? <p role="status" aria-live="polite">{message}</p> : null}
+      {why ? <p className="story-hook">💡 {why}</p> : null}
       {!result ? <StuckHelpPanel help={help} revealed={revealed} onShowMe={showMe} onSkip={skip} /> : null}
       <p>
         {!result ? (

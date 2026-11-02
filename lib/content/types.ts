@@ -1,4 +1,4 @@
-export type SubjectId = "math" | "science" | "ela" | "religion";
+export type SubjectId = "math" | "science" | "ela" | "religion" | "social";
 
 export type ReviewStatus = "draft" | "kevin_approved" | "pending_religion_review";
 
@@ -32,7 +32,7 @@ export type ChapterItem = {
 
 export type ChapterPack = {
   id: string;
-  book: "savvas" | "ckla" | "col" | "math";
+  book: "savvas" | "ckla" | "col" | "math" | "ss";
   number: number;
   titleKid: string;
   unit?: string;

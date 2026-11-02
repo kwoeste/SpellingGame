@@ -8,7 +8,7 @@
 import { allSpellingClips } from "@/lib/spelling/list-d2";
 import { listChapters } from "@/lib/content/catalog";
 import { listRecaps } from "@/lib/content/recaps";
-import { bankSize, practiceBank, practiceHelp } from "@/lib/practice/bank";
+import { bankSize, practiceBank, practiceBankIds, practiceHelp } from "@/lib/practice/bank";
 import { DEFAULT_GROK_VOICE, TTS_MAX_CHARS, isGrokVoiceId, normalizeTtsText, rateToSpeed } from "@/lib/tts/core";
 import { synthesize, ttsCacheKey } from "@/lib/tts/server";
 
@@ -16,14 +16,17 @@ type Area = { name: string; texts: () => string[] };
 
 /** Mirrors components/PracticeTest.tsx readable(), the Learn-it CarefulRead join, Show me and the clue panel. */
 function practiceTexts(): string[] {
-  const out: string[] = ["Yes! Spelled just right."];
-  for (const chapterId of ["savvas.ch3"]) {
+  const out: string[] = ["Yes! Spelled just right.", "Yes! That's right."];
+  const only = arg("bank")?.split(",");
+  for (const chapterId of practiceBankIds().filter((id) => !only || only.includes(id))) {
     const bank = practiceBank(chapterId);
     if (!bank || !bankSize(chapterId)) continue;
     for (const lesson of bank.lessons) out.push(lesson.learn.map((k) => k.explain).join(" "));
     for (const fact of bank.facts) {
       fact.phrasings.forEach((text, p) => {
-        out.push(fact.kind === "match" ? `${text} ${(fact.prompts ?? []).join(". ")}.` : text.replace(/___/g, "blank"));
+        const plain = text.replace(/\*\*/g, "");
+        out.push(fact.kind === "match" ? `${plain} ${(fact.prompts ?? []).join(". ")}.` : fact.kind === "choice" ? plain : plain.replace(/___/g, "blank"));
+        if (fact.why) out.push(`${fact.kind === "choice" ? "Yes! That's right." : "Yes! Spelled just right."} ${fact.why}`);
         const help = practiceHelp(`${fact.id}~${p}~b`, 99);
         if (help) {
           out.push(help.hint);
