@@ -331,6 +331,38 @@
       "sha256": "8b8f8c448f4edee42392d70e0b720af9c31bcb8e26e0062d450951961ed6e358"
     }
   },
+  "math.mult.10s": {
+    "audio": {
+      "pathname": "nlm/math.mult.10s/audio-b4545030a09a.m4a",
+      "contentType": "audio/mp4",
+      "size": 3381830,
+      "sha256": "b4545030a09a9fd97088edd24ddbf9e30e6e32be9d4b2b575c42a0defc47643f"
+    }
+  },
+  "math.mult.2s": {
+    "audio": {
+      "pathname": "nlm/math.mult.2s/audio-005b5a35dea2.m4a",
+      "contentType": "audio/mp4",
+      "size": 2607666,
+      "sha256": "005b5a35dea21c158c66cd48acebe4b10c1c8059844a712c8761a6dee6275098"
+    }
+  },
+  "math.mult.3s": {
+    "audio": {
+      "pathname": "nlm/math.mult.3s/audio-713fe1a7b762.m4a",
+      "contentType": "audio/mp4",
+      "size": 2681623,
+      "sha256": "713fe1a7b7624b0ee347994fcea1d4de2c47a2e40f905c9730e3a7fb1d01f963"
+    }
+  },
+  "math.mult.5s": {
+    "audio": {
+      "pathname": "nlm/math.mult.5s/audio-c2340f451434.m4a",
+      "contentType": "audio/mp4",
+      "size": 3434123,
+      "sha256": "c2340f45143408d3996cc269e5230054655d2784bc21b5bbefd6db63c0c83cb0"
+    }
+  },
   "savvas.ch1": {
     "video": {
       "pathname": "nlm/savvas.ch1/video-cbb6a7944c65.mp4",

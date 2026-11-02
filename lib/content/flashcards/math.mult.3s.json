@@ -1,0 +1,86 @@
+[
+  {
+    "front": "What does it mean to triple a number?",
+    "back": "Multiply it by 3."
+  },
+  {
+    "front": "What's a quick way to multiply a number by 3?",
+    "back": "Double the number, then add one more group of it."
+  },
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is a group?",
+    "back": "A set of things counted together."
+  },
+  {
+    "front": "What is an array?",
+    "back": "Objects arranged in rows and columns."
+  },
+  {
+    "front": "The commutative property says 3 × 7 is the same as _____.",
+    "back": "7 × 3"
+  },
+  {
+    "front": "3 × 4 can mean 3 groups of 4. What else can it mean?",
+    "back": "4 groups of 3."
+  },
+  {
+    "front": "Why isn't 3 × 4 the same as 3 + 4?",
+    "back": "3 + 4 = 7, but 3 × 4 means three groups of 4, which is 12."
+  },
+  {
+    "front": "Use doubling to solve 3 × 4.",
+    "back": "Double 4 is 8, then add 4 more: 8 + 4 = 12."
+  },
+  {
+    "front": "Use doubling to solve 3 × 6.",
+    "back": "Double 6 is 12, then add 6 more: 12 + 6 = 18."
+  },
+  {
+    "front": "3 × 3 = ?",
+    "back": "9"
+  },
+  {
+    "front": "3 × 4 = ?",
+    "back": "12"
+  },
+  {
+    "front": "3 × 6 = ?",
+    "back": "18"
+  },
+  {
+    "front": "3 × 7 = ?",
+    "back": "21"
+  },
+  {
+    "front": "3 × 8 = ?",
+    "back": "24"
+  },
+  {
+    "front": "3 × 9 = ?",
+    "back": "27"
+  },
+  {
+    "front": "How many sides do 5 triangles have?",
+    "back": "15 sides (5 × 3 = 15)."
+  },
+  {
+    "front": "How many wheels do 4 tricycles have?",
+    "back": "12 wheels (4 × 3 = 12)."
+  },
+  {
+    "front": "How many leaves are on 6 three-leaf clovers?",
+    "back": "18 leaves (6 × 3 = 18)."
+  },
+  {
+    "front": "Skip-count by 3s: 3, 6, 9, ...",
+    "back": "12, 15"
+  }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "front": "What does it mean to double a number?",
+    "back": "Add the number to itself. Double 4 is 4 + 4 = 8."
+  },
+  {
+    "front": "In multiplication, what is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is the answer to a multiplication problem called?",
+    "back": "The product."
+  },
+  {
+    "front": "Multiplication means adding _____ groups.",
+    "back": "equal"
+  },
+  {
+    "front": "What digits do even numbers always end in?",
+    "back": "0, 2, 4, 6, or 8."
+  },
+  {
+    "front": "Write 2 × 3 as an addition problem.",
+    "back": "3 + 3 = 6"
+  },
+  {
+    "front": "Is every product of 2 even or odd?",
+    "back": "Even."
+  },
+  {
+    "front": "The commutative property says you can swap the order of the factors. So 3 × 7 is the same as _____.",
+    "back": "7 × 3"
+  },
+  {
+    "front": "2 × 4 can mean 2 groups of 4. What else can it mean?",
+    "back": "4 groups of 2."
+  },
+  {
+    "front": "2 × 4 = ?",
+    "back": "8"
+  },
+  {
+    "front": "2 × 5 = ?",
+    "back": "10"
+  },
+  {
+    "front": "2 × 6 = ?",
+    "back": "12"
+  },
+  {
+    "front": "2 × 7 = ?",
+    "back": "14"
+  },
+  {
+    "front": "2 × 8 = ?",
+    "back": "16"
+  },
+  {
+    "front": "2 × 9 = ?",
+    "back": "18"
+  },
+  {
+    "front": "Skip-count by 2s: 2, 4, 6, ...",
+    "back": "8, 10, 12"
+  },
+  {
+    "front": "5 people each have 2 eyes. How many eyes in all?",
+    "back": "10 eyes (5 × 2 = 10)."
+  },
+  {
+    "front": "How many wheels are on 4 bikes?",
+    "back": "8 wheels (4 × 2 = 8)."
+  },
+  {
+    "front": "How many socks are in 6 pairs?",
+    "back": "12 socks (6 × 2 = 12)."
+  },
+  {
+    "front": "How many shoes are in 9 pairs?",
+    "back": "18 shoes (9 × 2 = 18)."
+  },
+  {
+    "front": "You put 7 beans in each of 2 cups. How many beans in all?",
+    "back": "14 beans (2 × 7 = 14)."
+  }
+]
