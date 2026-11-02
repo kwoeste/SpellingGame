@@ -13,13 +13,13 @@ export type DashChapter = {
   id: string;
   number: number;
   titleKid: string;
-  subject: "science" | "ela" | "religion" | "math";
+  subject: "science" | "ela" | "religion" | "math" | "social";
 };
 
 export type TryAgainItem = { href: string; chapterTitle: string; stepNumber: number; startWith: "watch_recap" | "careful_read" };
 
-const SUBJECT_LABEL = { science: "Science", ela: "Reading", religion: "Religion", math: "Math" } as const;
-const SUBJECT_EMOJI = { science: "🔬", ela: "📚", religion: "✝️", math: "🔢" } as const;
+const SUBJECT_LABEL = { science: "Science", ela: "Reading", religion: "Religion", math: "Math", social: "Social Studies" } as const;
+const SUBJECT_EMOJI = { science: "🔬", ela: "📚", religion: "✝️", math: "🔢", social: "🗺️" } as const;
 
 export function StudentDashboard({
   displayName,

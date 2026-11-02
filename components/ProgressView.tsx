@@ -17,9 +17,10 @@ const SUBJECT_LABEL: Record<string, string> = {
   ela: "📚 Reading",
   religion: "✝️ Religion",
   math: "🔢 Math",
+  social: "🗺️ Social Studies",
 };
 
-const SUBJECT_ORDER = ["science", "math", "ela", "religion"];
+const SUBJECT_ORDER = ["science", "math", "ela", "religion", "social"];
 const COLLAPSED_LIMIT = 6;
 
 export function ProgressView({ displayName, progress, allChapters }: Props) {

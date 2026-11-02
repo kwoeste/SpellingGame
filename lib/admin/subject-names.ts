@@ -3,7 +3,7 @@
  * client admin components and lib/admin/types.ts pull it into the browser bundle.
  */
 
-export const SUBJECT_NAMES: Record<string, string> = { math: "Math", science: "Science", ela: "Reading", religion: "Religion" };
+export const SUBJECT_NAMES: Record<string, string> = { math: "Math", science: "Science", ela: "Reading", religion: "Religion", social: "Social Studies" };
 
 /** One consistent subject name everywhere ("ela" reads "Reading"). */
 export function subjectName(subject: string | null | undefined): string {

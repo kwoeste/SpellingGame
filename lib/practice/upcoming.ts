@@ -23,6 +23,7 @@ export const SPELLING_D2_TEST_DATE = "2026-11-06";
 
 export const DEFAULT_UPCOMING: UpcomingTest[] = [
   { id: "savvas.ch3-2026-10-28", kind: "practice-test", refId: "savvas.ch3", title: "Science test: Living things and adaptations", testDate: "2026-10-28", startDate: "2026-10-26" },
+  { id: "ss.ohio-tribes-2026-11-03", kind: "practice-test", refId: "ss.ohio-tribes", title: "Social Studies: Ohio's Native American Tribes", testDate: "2026-11-03", startDate: "2026-11-02" },
   { id: "spelling-d2", kind: "spelling", refId: "spelling-d2", title: "Spelling List D-2", testDate: SPELLING_D2_TEST_DATE, startDate: "2026-10-29" },
 ];
 /** Back-compat alias. */

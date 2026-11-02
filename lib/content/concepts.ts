@@ -1,6 +1,6 @@
 export type ConceptNode = {
   id: string;
-  subject: "math" | "science" | "ela" | "religion";
+  subject: "math" | "science" | "ela" | "religion" | "social";
   titleKid: string;
   titleAdmin: string;
   standardCodes: string[];

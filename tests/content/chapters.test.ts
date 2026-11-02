@@ -4,7 +4,7 @@ import { chapterCount, listChapters, NAMED_GAMES } from "@/lib/content/catalog";
 describe("chapter packs", () => {
   it("includes all original chapters plus math", () => {
     const counts = chapterCount();
-    expect(counts).toEqual({ total: 51, savvas: 8, ckla: 9, col: 25, math: 9 });
+    expect(counts).toEqual({ total: 52, savvas: 8, ckla: 9, col: 25, math: 9, ss: 1 });
     const nonMathChapters = listChapters().filter((c) => c.subject !== "math");
     const mathChapters = listChapters().filter((c) => c.subject === "math");
     for (const chapter of nonMathChapters) {

@@ -35,7 +35,7 @@ export default async function PracticeTestPage({
       <p className="kid-kicker">Practice test</p>
       <ChapterHeader subject={chapter.subject} title={chapter.titleKid} />
       {testNote ? <p className="story-hook">{testNote}</p> : null}
-      <PracticeTest chapterId={chapter.id} lessons={bank.lessons} startMode={mode} bankSize={bankSize(chapter.id)} />
+      <PracticeTest chapterId={chapter.id} lessons={bank.lessons} intro={bank.intro} startMode={mode} bankSize={bankSize(chapter.id)} />
     </div>
   );
 }
