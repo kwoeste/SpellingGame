@@ -1,0 +1,86 @@
+[
+  {
+    "front": "What does it mean to double a number?",
+    "back": "Add the number to itself."
+  },
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is a strategy?",
+    "back": "A plan or trick to solve a problem."
+  },
+  {
+    "front": "How can you multiply a number by 8 with doubling?",
+    "back": "Double it three times in a row."
+  },
+  {
+    "front": "Why does doubling three times multiply by 8?",
+    "back": "Because 2 × 2 × 2 = 8."
+  },
+  {
+    "front": "Double 7 three times to solve 8 × 7.",
+    "back": "7, then 14, then 28, then 56."
+  },
+  {
+    "front": "Double 6 three times to solve 8 × 6.",
+    "back": "6, then 12, then 24, then 48."
+  },
+  {
+    "front": "What is another way to find 8 times a number?",
+    "back": "Do 10 times the number, then take away 2 times the number."
+  },
+  {
+    "front": "Solve 8 × 4 with the 10s trick.",
+    "back": "10 × 4 = 40, take away 2 × 4 = 8, so 40 − 8 = 32."
+  },
+  {
+    "front": "8 × 6 is NOT 46. What is it?",
+    "back": "48."
+  },
+  {
+    "front": "8 × 4 can mean 8 groups of 4. What else can it mean?",
+    "back": "4 groups of 8."
+  },
+  {
+    "front": "The commutative property says 3 × 8 is the same as _____.",
+    "back": "8 × 3"
+  },
+  {
+    "front": "8 × 7 = ?",
+    "back": "56"
+  },
+  {
+    "front": "8 × 9 = ?",
+    "back": "72"
+  },
+  {
+    "front": "Skip-count by 8s: 8, 16, 24, ...",
+    "back": "32, 40"
+  },
+  {
+    "front": "A spider has 8 legs. How many legs do 3 spiders have?",
+    "back": "24 legs (8 × 3 = 24)."
+  },
+  {
+    "front": "A spider has 8 legs. How many legs do 6 spiders have?",
+    "back": "48 legs (8 × 6 = 48)."
+  },
+  {
+    "front": "An octopus has 8 arms. How many arms do 4 octopuses have?",
+    "back": "32 arms (8 × 4 = 32)."
+  },
+  {
+    "front": "An octopus has 8 arms. How many arms do 9 octopuses have?",
+    "back": "72 arms (8 × 9 = 72)."
+  },
+  {
+    "front": "A crayon box holds 8 crayons. How many crayons are in 5 boxes?",
+    "back": "40 crayons (8 × 5 = 40)."
+  }
+]

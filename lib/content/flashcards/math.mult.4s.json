@@ -1,0 +1,90 @@
+[
+  {
+    "front": "What is a quick way to multiply a number by 4?",
+    "back": "Double the number, then double it again."
+  },
+  {
+    "front": "What does quadruple mean?",
+    "back": "Multiply a number by 4."
+  },
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is an even number?",
+    "back": "A number you can split into two equal groups."
+  },
+  {
+    "front": "What does it mean to double a number?",
+    "back": "Add the number to itself."
+  },
+  {
+    "front": "Is every product of 4 even or odd?",
+    "back": "Even."
+  },
+  {
+    "front": "Use double-double to solve 4 × 6. What is the first step?",
+    "back": "Double 6 to get 12."
+  },
+  {
+    "front": "Use double-double to solve 4 × 6. What is the second step?",
+    "back": "Double 12 to get 24."
+  },
+  {
+    "front": "Why isn't 4 × 7 the same as 4 + 7?",
+    "back": "4 + 7 = 11, but 4 × 7 means doubling 7 twice: 14, then 28."
+  },
+  {
+    "front": "4 × 3 = ?",
+    "back": "12"
+  },
+  {
+    "front": "4 × 4 = ?",
+    "back": "16"
+  },
+  {
+    "front": "4 × 5 = ?",
+    "back": "20"
+  },
+  {
+    "front": "4 × 7 = ?",
+    "back": "28"
+  },
+  {
+    "front": "4 × 8 = ?",
+    "back": "32"
+  },
+  {
+    "front": "4 × 9 = ?",
+    "back": "36"
+  },
+  {
+    "front": "The commutative property says 3 × 4 is the same as _____.",
+    "back": "4 × 3"
+  },
+  {
+    "front": "Skip-count by 4s: 4, 8, 12, ...",
+    "back": "16, 20"
+  },
+  {
+    "front": "How many wheels are on 7 cars?",
+    "back": "28 wheels (4 × 7 = 28)."
+  },
+  {
+    "front": "How many legs do 5 dogs have?",
+    "back": "20 legs (4 × 5 = 20)."
+  },
+  {
+    "front": "How many wheels are on 6 cars?",
+    "back": "24 wheels (4 × 6 = 24)."
+  },
+  {
+    "front": "How many quarters make 1 dollar?",
+    "back": "4 quarters."
+  }
+]

@@ -37,15 +37,20 @@ import c33 from "@/lib/content/flashcards/col.ch9.json";
 import c34 from "@/lib/content/flashcards/math.mult.10s.json";
 import c35 from "@/lib/content/flashcards/math.mult.2s.json";
 import c36 from "@/lib/content/flashcards/math.mult.3s.json";
-import c37 from "@/lib/content/flashcards/math.mult.5s.json";
-import c38 from "@/lib/content/flashcards/savvas.ch1.json";
-import c39 from "@/lib/content/flashcards/savvas.ch2.json";
-import c40 from "@/lib/content/flashcards/savvas.ch3.json";
-import c41 from "@/lib/content/flashcards/savvas.ch4.json";
-import c42 from "@/lib/content/flashcards/savvas.ch5.json";
-import c43 from "@/lib/content/flashcards/savvas.ch6.json";
-import c44 from "@/lib/content/flashcards/savvas.ch7.json";
-import c45 from "@/lib/content/flashcards/savvas.ch8.json";
+import c37 from "@/lib/content/flashcards/math.mult.4s.json";
+import c38 from "@/lib/content/flashcards/math.mult.5s.json";
+import c39 from "@/lib/content/flashcards/math.mult.6s.json";
+import c40 from "@/lib/content/flashcards/math.mult.7s.json";
+import c41 from "@/lib/content/flashcards/math.mult.8s.json";
+import c42 from "@/lib/content/flashcards/math.mult.9s.json";
+import c43 from "@/lib/content/flashcards/savvas.ch1.json";
+import c44 from "@/lib/content/flashcards/savvas.ch2.json";
+import c45 from "@/lib/content/flashcards/savvas.ch3.json";
+import c46 from "@/lib/content/flashcards/savvas.ch4.json";
+import c47 from "@/lib/content/flashcards/savvas.ch5.json";
+import c48 from "@/lib/content/flashcards/savvas.ch6.json";
+import c49 from "@/lib/content/flashcards/savvas.ch7.json";
+import c50 from "@/lib/content/flashcards/savvas.ch8.json";
 
 export const FLASHCARDS: Record<string, Flashcard[]> = {
   "ckla.u2.ch1": c0,
@@ -85,13 +90,18 @@ export const FLASHCARDS: Record<string, Flashcard[]> = {
   "math.mult.10s": c34,
   "math.mult.2s": c35,
   "math.mult.3s": c36,
-  "math.mult.5s": c37,
-  "savvas.ch1": c38,
-  "savvas.ch2": c39,
-  "savvas.ch3": c40,
-  "savvas.ch4": c41,
-  "savvas.ch5": c42,
-  "savvas.ch6": c43,
-  "savvas.ch7": c44,
-  "savvas.ch8": c45,
+  "math.mult.4s": c37,
+  "math.mult.5s": c38,
+  "math.mult.6s": c39,
+  "math.mult.7s": c40,
+  "math.mult.8s": c41,
+  "math.mult.9s": c42,
+  "savvas.ch1": c43,
+  "savvas.ch2": c44,
+  "savvas.ch3": c45,
+  "savvas.ch4": c46,
+  "savvas.ch5": c47,
+  "savvas.ch6": c48,
+  "savvas.ch7": c49,
+  "savvas.ch8": c50,
 };
