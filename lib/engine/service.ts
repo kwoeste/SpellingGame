@@ -14,6 +14,9 @@ import { HINT_AT_MISS, SHOW_ME_AT_MISS, type StuckHelp } from "@/lib/help/ladder
 import { classifyGuess } from "@/lib/engine/strategy";
 import { accuracyWeightedXp, ringPercent, truncateMinute, xpForMinute } from "@/lib/engine/xp";
 import { ewma, targetSuccess, zoneAction } from "@/lib/engine/zone";
+import { practiceReviewStates, solidShare } from "@/lib/practice/review";
+import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
+import type { UpcomingTest } from "@/lib/practice/upcoming";
 
 export const SESSION_IDLE_MS = 30 * 60 * 1000;
 export const ZONE_MIN_SCORED = 5;
@@ -726,11 +729,14 @@ function streakDays(dayKeys: Set<string>, now: Date): number {
   return streak;
 }
 
-export async function progressSummary(repo: EngineRepo, actor: EngineActor, nowMs = Date.now()): Promise<ProgressSummary> {
+export async function progressSummary(repo: EngineRepo, actor: EngineActor, nowMs = Date.now(), upcoming?: UpcomingTest[]): Promise<ProgressSummary> {
   const chapters = listChapters().filter((chapter) => chapterVisibleTo(chapter, actor.role));
   if (!actor.learnerId) return { rings: [], xp_total: 0, xp_today: 0, streak_days: 0, badges: [] };
   const now = new Date(nowMs);
+  const tests = upcoming ?? (await loadUpcomingTests());
   return repo.withLearner(actor.learnerId, async (tx) => {
+    // Past-test chapters in spaced review count by how much of the test bank she has solid.
+    const reviewShare = new Map((await practiceReviewStates(tx, nowMs, tests)).map((s) => [s.test.chapterId, solidShare(s.reviews)]));
     const passed = new Set(await tx.passedGateScopeIds("chapter"));
     const everCorrect = await tx.correctItemsSince(
       chapters.flatMap((chapter) => chapter.items.map((item) => item.id)),
@@ -738,12 +744,12 @@ export async function progressSummary(repo: EngineRepo, actor: EngineActor, nowM
     );
     const rings = chapters.map((chapter) => {
       const done = chapter.items.filter((item) => everCorrect.has(item.id)).length;
-      const pct = passed.has(chapter.id) ? 100 : Math.min(95, ringPercent(done, chapter.items.length));
+      const pct = passed.has(chapter.id) ? 100 : Math.min(95, Math.max(ringPercent(done, chapter.items.length), ringPercent(reviewShare.get(chapter.id) ?? 0, 1)));
       return { id: chapter.id, label: chapter.titleKid, pct };
     });
     for (const subject of [...new Set(chapters.map((chapter) => chapter.subject))]) {
       const group = chapters.filter((chapter) => chapter.subject === subject);
-      rings.push({ id: `subject:${subject}`, label: subject, pct: ringPercent(group.filter((c) => passed.has(c.id)).length, group.length) });
+      rings.push({ id: `subject:${subject}`, label: subject, pct: ringPercent(group.reduce((sum, c) => sum + (passed.has(c.id) ? 1 : (reviewShare.get(c.id) ?? 0)), 0), group.length) });
     }
     const xp = await tx.xpRows();
     const todayKey = etDateKey(now);

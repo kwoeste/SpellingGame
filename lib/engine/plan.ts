@@ -10,6 +10,7 @@ import { warmupQueue } from "@/lib/engine/warmup";
 import { preferredBySubject } from "@/lib/engine/learning-insight";
 import { eligibleArms } from "@/lib/engine/modality";
 import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
+import { practiceReviewStates, REVIEW_BLOCK_SIZE } from "@/lib/practice/review";
 import { DEFAULT_UPCOMING, activeUpcomingTests, practiceTestHref, upcomingHref, type UpcomingTest } from "@/lib/practice/upcoming";
 import { daysUntil, masteredCount } from "@/lib/spelling/engine";
 import { D2_WORDS, LIST_ID, LIST_SHORT_TITLE } from "@/lib/spelling/list-d2";
@@ -63,7 +64,7 @@ function chapterForConcept(conceptId: string, role: AppRole): ChapterPack | null
 
 /** Deterministic candidate blocks with live done flags. Never calls the network. */
 /** Subjects in the order they rotate when she's never touched any (reading first). */
-export const SUBJECT_ROTATION: SubjectId[] = ["ela", "science", "religion", "math"];
+export const SUBJECT_ROTATION: SubjectId[] = ["ela", "science", "religion", "math", "social"];
 export const ROTATION_SLOTS = 2;
 const ROTATION_LOOKBACK_MS = 60 * 86_400_000;
 
@@ -236,6 +237,31 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
         // The least-recent subject is pinned right after dated items; the rest stay orderable by the AI planner.
         locked: first,
         conceptIds: [...new Set(pick.items.map((i) => i.conceptId))],
+      });
+    }
+  }
+
+  // 4b. Past-test review: once a practice test's class date passes, a few of its questions come back
+  //     in spaced review (missed first). One small block a day, never during a test crunch.
+  if (!crunch) {
+    const states = (await practiceReviewStates(tx, nowMs, upcoming)).filter((s) => {
+      const ch = getChapter(s.test.chapterId);
+      return ch && chapterVisibleTo(ch, role) && !coveredChapters.has(ch.id);
+    });
+    const pick = states.find((s) => s.reviewedToday) ?? [...states].filter((s) => s.due.length).sort((a, b) => b.due.length - a.due.length || b.test.testDate.localeCompare(a.test.testDate))[0];
+    const ch = pick ? getChapter(pick.test.chapterId) : null;
+    if (pick && ch) {
+      const n = pick.due.length;
+      blocks.push({
+        id: `review:${ch.id}`,
+        kind: "chapter",
+        title: `Quick review: ${ch.titleKid}`,
+        href: practiceTestHref(ch.id, "review"),
+        minutes: 3,
+        done: pick.reviewedToday,
+        locked: false,
+        conceptIds: [...new Set(ch.items.map((i) => i.conceptId))].slice(0, 6),
+        detail: pick.reviewedToday ? "Reviewed today" : `${Math.min(n, REVIEW_BLOCK_SIZE)} question${Math.min(n, REVIEW_BLOCK_SIZE) === 1 ? "" : "s"} to keep it fresh`,
       });
     }
   }

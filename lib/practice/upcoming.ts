@@ -45,7 +45,7 @@ export function activeUpcomingTest(nowMs: number, tests: UpcomingTest[] = DEFAUL
   return activeUpcomingTests(nowMs, tests).find((t) => t.kind === "practice-test") ?? null;
 }
 
-export function practiceTestHref(chapterId: string, mode?: "retry"): string {
+export function practiceTestHref(chapterId: string, mode?: "retry" | "review"): string {
   return `/study/${encodeURIComponent(chapterId)}/practice-test${mode ? `?mode=${mode}` : ""}`;
 }
 

@@ -76,9 +76,11 @@ export type DashboardSnapshot = {
   gatedChapterIds: string[];
   /** Chapter star checks, oldest first. Optional so older fixtures still load. */
   chapterGates?: ChapterGateRecord[];
+  /** Past practice tests in spaced review (chapter id + share of the bank solid, 0..100). Optional for older fixtures. */
+  pastTests?: { chapterId: string; solidPct: number }[];
 };
 
-const SUBJECTS: SubjectId[] = ["math", "science", "ela", "religion"];
+const SUBJECTS: SubjectId[] = ["math", "science", "ela", "religion", "social"];
 
 function forLearner<T extends { learnerId: string }>(rows: T[], learnerId: string): T[] {
   return rows.filter((row) => row.learnerId === learnerId);
@@ -480,6 +482,11 @@ export function buildProgress(snap: DashboardSnapshot): ProgressView {
       toward90: pct(mastered, group.length),
       chaptersTotal: catalogChapters().filter((chapter) => chapter.subject === subject).length,
       chaptersStarred: catalogChapters().filter((chapter) => chapter.subject === subject && gated.has(chapter.id)).length,
+      chaptersInReview: (snap.pastTests ?? []).filter((t) => catalogChapters().some((c) => c.id === t.chapterId && c.subject === subject)).length,
+      reviewSolidPct: (() => {
+        const rows = (snap.pastTests ?? []).filter((t) => catalogChapters().some((c) => c.id === t.chapterId && c.subject === subject));
+        return rows.length ? Math.round(rows.reduce((sum, t) => sum + t.solidPct, 0) / rows.length) : null;
+      })(),
       avgMilestone: group.length ? group.reduce((sum, node) => sum + node.milestoneLevel, 0) / group.length : null,
       frontier: milestoneFrontier(group),
       gradeSpread: gradeBands(group),

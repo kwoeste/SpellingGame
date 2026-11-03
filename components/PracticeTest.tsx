@@ -40,18 +40,19 @@ function Rich({ text }: { text: string }) {
   return <>{text.split(/\*\*/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : <span key={i}>{part}</span>))}</>;
 }
 
-export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }: { chapterId: string; lessons: Lesson[]; startMode: "full" | "retry"; bankSize: number; intro?: { heading: string; body: string } }) {
+export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }: { chapterId: string; lessons: Lesson[]; startMode: "full" | "retry" | "review"; bankSize: number; intro?: { heading: string; body: string } }) {
   const prefs = useKidPrefs();
   const [phase, setPhase] = useState<Phase>("intro");
   const [lessonIdx, setLessonIdx] = useState(0);
   const [learnReady, setLearnReady] = useState(false);
   const [learnedBefore, setLearnedBefore] = useState(false);
   const [savedMissed, setSavedMissed] = useState<string[]>([]);
-  const [mode, setMode] = useState<"full" | "retry">(startMode);
+  const [mode, setMode] = useState<"full" | "retry" | "review">(startMode);
   const [queue, setQueue] = useState<StudentQuestion[]>([]);
   const [idx, setIdx] = useState(0);
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({});
   const [error, setError] = useState("");
+  const [caughtUp, setCaughtUp] = useState(false);
   const startedAt = useRef(Date.now());
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }:
   }, [chapterId]);
 
   const start = useCallback(
-    async (m: "full" | "retry", factIds?: string[]) => {
+    async (m: "full" | "retry" | "review", factIds?: string[]) => {
       setPhase("loading");
       setError("");
       setMode(m);
@@ -72,9 +73,14 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }:
         const res = await fetch("/api/engine/practice-test", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ attempt: { chapterId, factIds: m === "retry" ? factIds : undefined } }),
+          body: JSON.stringify({ attempt: { chapterId, factIds: m === "retry" ? factIds : undefined, review: m === "review" ? true : undefined } }),
         });
-        const json = (await res.json()) as { questions?: StudentQuestion[] };
+        const json = (await res.json()) as { questions?: StudentQuestion[]; none?: boolean };
+        if (res.ok && json.none) {
+          setCaughtUp(true);
+          setPhase("intro");
+          return;
+        }
         if (!res.ok || !json.questions?.length) throw new Error("load");
         setQueue(json.questions);
         setIdx(0);
@@ -131,7 +137,14 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }:
     });
     const missed = list.filter((o) => !o.firstTry).map((o) => o.q.factId);
     const spelling = list.filter((o) => o.firstTry && !o.exact).map((o) => o.q.factId);
-    try {
+    if (mode === "review") {
+      // Spaced review: first try right moves a question to a longer wait; a miss brings it back soon.
+      void fetch("/api/engine/practice-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ review: { chapterId, results: list.map((o) => ({ factId: o.q.factId, correct: o.firstTry })) } }),
+      }).catch(() => undefined);
+    } else try {
       window.localStorage.setItem(missedKey(chapterId), JSON.stringify([...new Set([...missed, ...spelling])]));
     } catch {
       /* ignore */
@@ -148,6 +161,26 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }:
       minutes: Math.round((Date.now() - startedAt.current) / 60000),
     });
     setPhase("results");
+  }
+
+  if (phase === "intro" && startMode === "review") {
+    return (
+      <div className="card">
+        <h2>Quick review</h2>
+        {caughtUp ? (
+          <>
+            <p>You&apos;re all caught up on this one. Nice work! These questions will come back in a few days.</p>
+            <p><a className="btn" href="/study">Back to Today</a></p>
+          </>
+        ) : (
+          <>
+            <p>Your test is done, but your brain keeps learning! Here are a few questions from it to keep it fresh.</p>
+            {error ? <p role="alert">{error}</p> : null}
+            <p><button className="btn" onClick={() => void start("review")}>🧠 Start the quick review</button></p>
+          </>
+        )}
+      </div>
+    );
   }
 
   if (phase === "intro") {
@@ -218,7 +251,7 @@ export function PracticeTest({ chapterId, lessons, startMode, bankSize, intro }:
   const misspelled = list.filter((o) => o.firstTry && !o.exact);
   return (
     <div className="card" role="status">
-      <h2>{mode === "retry" ? "Retry done!" : "Practice test done!"}</h2>
+      <h2>{mode === "review" ? "Review done!" : mode === "retry" ? "Retry done!" : "Practice test done!"}</h2>
       <p>
         <strong>{right} of {list.length}</strong> right on the first try.
       </p>

@@ -93,6 +93,9 @@ export type SubjectProgress = {
   toward90: number;
   chaptersTotal: number;
   chaptersStarred: number;
+  /** Past-test chapters in spaced review, and how solid they are on average (0..100). */
+  chaptersInReview?: number;
+  reviewSolidPct?: number | null;
   avgMilestone: number | null;
   frontier: number | null;
   gradeSpread: { band: string; count: number; mastered: number }[];
