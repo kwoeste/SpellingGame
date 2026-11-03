@@ -1,0 +1,86 @@
+[
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is a digit sum?",
+    "back": "What you get when you add up the digits of a number."
+  },
+  {
+    "front": "What is a pattern?",
+    "back": "Something that repeats in a way you can predict."
+  },
+  {
+    "front": "What is a quick way to multiply a number by 9?",
+    "back": "Do 10 times the number, then take away the number once."
+  },
+  {
+    "front": "Use the 10s trick to solve 9 × 7.",
+    "back": "10 × 7 = 70, then 70 − 7 = 63."
+  },
+  {
+    "front": "Use the 10s trick to solve 9 × 6.",
+    "back": "10 × 6 = 60, then 60 − 6 = 54."
+  },
+  {
+    "front": "For 9 × 1 through 9 × 10, what do the digits of the product add up to?",
+    "back": "9."
+  },
+  {
+    "front": "What is the digit sum of 45 (9 × 5)?",
+    "back": "9, because 4 + 5 = 9."
+  },
+  {
+    "front": "9 × 6 is NOT 56. What is it, and how can you check?",
+    "back": "54. Check: 5 + 4 = 9."
+  },
+  {
+    "front": "In the 9s finger trick for 9 × 4, which finger do you fold down?",
+    "back": "The 4th finger, counting from your left pinky."
+  },
+  {
+    "front": "In the 9s finger trick, what do the fingers left of the folded finger show?",
+    "back": "The tens digit."
+  },
+  {
+    "front": "In the 9s finger trick, what do the fingers right of the folded finger show?",
+    "back": "The ones digit."
+  },
+  {
+    "front": "9 × 4 can mean 9 groups of 4. What else can it mean?",
+    "back": "4 groups of 9."
+  },
+  {
+    "front": "The commutative property says 3 × 9 is the same as _____.",
+    "back": "9 × 3"
+  },
+  {
+    "front": "9 × 2 = ?",
+    "back": "18"
+  },
+  {
+    "front": "9 × 3 = ?",
+    "back": "27"
+  },
+  {
+    "front": "9 × 5 = ?",
+    "back": "45"
+  },
+  {
+    "front": "9 × 8 = ?",
+    "back": "72"
+  },
+  {
+    "front": "Skip-count by 9s: 9, 18, 27, ...",
+    "back": "36, 45"
+  },
+  {
+    "front": "A baseball team has 9 players on the field. How many players are on 2 teams?",
+    "back": "18 players (9 × 2 = 18)."
+  }
+]

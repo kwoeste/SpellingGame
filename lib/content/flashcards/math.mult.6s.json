@@ -1,0 +1,90 @@
+[
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is an array?",
+    "back": "Objects arranged in equal rows and columns."
+  },
+  {
+    "front": "What is a strategy?",
+    "back": "A plan or trick to solve a problem."
+  },
+  {
+    "front": "The commutative property says 3 × 6 is the same as _____.",
+    "back": "6 × 3"
+  },
+  {
+    "front": "How can a 5s fact help you find 6 × a number?",
+    "back": "Do 5 times the number, then add one more group of it."
+  },
+  {
+    "front": "Use the 5s fact to solve 6 × 7.",
+    "back": "5 × 7 = 35, then add 7: 35 + 7 = 42."
+  },
+  {
+    "front": "Use the 5s fact to solve 6 × 8.",
+    "back": "5 × 8 = 40, then add 8: 40 + 8 = 48."
+  },
+  {
+    "front": "How can a 3s fact help you find a 6s fact?",
+    "back": "Find the 3s fact, then double it, because 6 is double 3."
+  },
+  {
+    "front": "6 × 4 can mean 6 groups of 4. What else can it mean?",
+    "back": "4 groups of 6."
+  },
+  {
+    "front": "Why does 6 × 6 make a square?",
+    "back": "6 rows of 6 objects make a square array."
+  },
+  {
+    "front": "Why is 6 × 7 equal to 42 and not 36?",
+    "back": "6 × 7 is one more group of 6 than 6 × 6, so 36 + 6 = 42."
+  },
+  {
+    "front": "6 × 3 = ?",
+    "back": "18"
+  },
+  {
+    "front": "6 × 4 = ?",
+    "back": "24"
+  },
+  {
+    "front": "6 × 7 = ?",
+    "back": "42"
+  },
+  {
+    "front": "6 × 8 = ?",
+    "back": "48"
+  },
+  {
+    "front": "6 × 9 = ?",
+    "back": "54"
+  },
+  {
+    "front": "Skip-count by 6s: 6, 12, 18, ...",
+    "back": "24, 30"
+  },
+  {
+    "front": "An insect has 6 legs. How many legs do 8 bugs have?",
+    "back": "48 legs (6 × 8 = 48)."
+  },
+  {
+    "front": "An ant has 6 legs. How many legs do 5 ants have?",
+    "back": "30 legs (6 × 5 = 30)."
+  },
+  {
+    "front": "Juice comes in 6-packs. How many juice boxes are in 3 packs?",
+    "back": "18 juice boxes (6 × 3 = 18)."
+  },
+  {
+    "front": "A half-carton holds 6 eggs. How many eggs are in 4 half-cartons?",
+    "back": "24 eggs (6 × 4 = 24)."
+  }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "front": "What does decompose mean?",
+    "back": "Break a number into smaller parts."
+  },
+  {
+    "front": "What is a factor?",
+    "back": "A number that you multiply."
+  },
+  {
+    "front": "What is a product?",
+    "back": "The answer when you multiply."
+  },
+  {
+    "front": "What is a strategy?",
+    "back": "A plan or trick to solve a problem."
+  },
+  {
+    "front": "How can you break apart 7 to make 7s easier?",
+    "back": "7 = 5 + 2, so 7 × a number = 5 times it plus 2 times it."
+  },
+  {
+    "front": "Use 5s + 2s to solve 7 × 8.",
+    "back": "5 × 8 = 40 and 2 × 8 = 16. 40 + 16 = 56."
+  },
+  {
+    "front": "Use 5s + 2s to solve 7 × 6.",
+    "back": "5 × 6 = 30 and 2 × 6 = 12. 30 + 12 = 42."
+  },
+  {
+    "front": "7 × 4 can mean 7 groups of 4. What else can it mean?",
+    "back": "4 groups of 7."
+  },
+  {
+    "front": "The commutative property says 3 × 7 is the same as _____.",
+    "back": "7 × 3"
+  },
+  {
+    "front": "Why do you already know many 7s facts?",
+    "back": "They show up in the 2s, 5s, and 10s you learned before, like 2 × 7 and 5 × 7."
+  },
+  {
+    "front": "7 × 2 = ?",
+    "back": "14"
+  },
+  {
+    "front": "7 × 3 = ?",
+    "back": "21"
+  },
+  {
+    "front": "7 × 4 = ?",
+    "back": "28"
+  },
+  {
+    "front": "7 × 7 = ?",
+    "back": "49"
+  },
+  {
+    "front": "7 × 8 = ?",
+    "back": "56"
+  },
+  {
+    "front": "7 × 9 = ?",
+    "back": "63"
+  },
+  {
+    "front": "Skip-count by 7s: 7, 14, 21, ...",
+    "back": "28, 35"
+  },
+  {
+    "front": "How many days are in 2 weeks?",
+    "back": "14 days (7 × 2 = 14)."
+  },
+  {
+    "front": "How many days are in 3 weeks?",
+    "back": "21 days (7 × 3 = 21)."
+  },
+  {
+    "front": "How many days are in 4 weeks?",
+    "back": "28 days (7 × 4 = 28)."
+  },
+  {
+    "front": "How many days are in 6 weeks?",
+    "back": "42 days (7 × 6 = 42)."
+  }
+]
