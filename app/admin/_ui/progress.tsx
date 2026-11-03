@@ -51,6 +51,7 @@ export function ProgressViewPanel({ data }: { data: ProgressView }) {
           <section className="pd-card" key={subject.subject}>
             <h2>
               {subject.label} · {subject.chaptersStarred} of {subject.chaptersTotal} chapter stars
+              {subject.chaptersInReview ? ` · ${subject.chaptersInReview} past test${subject.chaptersInReview === 1 ? "" : "s"} in review (${subject.reviewSolidPct ?? 0}% solid)` : ""}
             </h2>
             <p className="pd-lead" style={{ marginBottom: 10 }}>
               Skills: {subject.tried ?? subject.mastered + subject.inProgress} of {subject.concepts} tried · {subject.mastered} mastered ·{" "}

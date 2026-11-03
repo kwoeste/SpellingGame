@@ -20,6 +20,10 @@ export async function loadSnapshot(now = Date.now(), learnerId = DEFAULT_LEARNER
     repo.gatedChapterIds(learnerId),
     repo.chapterGateAttempts(learnerId).catch(() => []),
   ]);
+  const pastTests = await import("@/lib/admin/practice-review")
+    .then((m) => m.loadPastTestRows(learnerId, now))
+    .then((rows) => rows.map((r) => ({ chapterId: r.chapterId, solidPct: r.solidPct })))
+    .catch(() => []);
   const goalRow = goals.find((row) => row.learnerId === learnerId) ?? null;
   const goal: LearnerGoal | null = goalRow
     ? {
@@ -44,6 +48,7 @@ export async function loadSnapshot(now = Date.now(), learnerId = DEFAULT_LEARNER
     goal,
     gatedChapterIds,
     chapterGates,
+    pastTests,
   };
 }
 

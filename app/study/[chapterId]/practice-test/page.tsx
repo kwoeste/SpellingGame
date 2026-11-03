@@ -21,7 +21,8 @@ export default async function PracticeTestPage({
 }) {
   const { chapterId } = await params;
   const query = (await searchParams) ?? {};
-  const mode = (Array.isArray(query.mode) ? query.mode[0] : query.mode) === "retry" ? "retry" : "full";
+  const rawMode = Array.isArray(query.mode) ? query.mode[0] : query.mode;
+  const mode = rawMode === "retry" ? "retry" : rawMode === "review" ? "review" : "full";
   const user = await requirePageUser(["student", "admin"], `/study/${chapterId}/practice-test`);
   if (!user) return <NotAllowed />;
   const chapter = getChapter(chapterId);
@@ -32,7 +33,7 @@ export default async function PracticeTestPage({
   const testNote = upcoming ? (upcoming.isTestDay ? "Your test is today. You've got this!" : `Your class test is on ${weekday}.`) : null;
   return (
     <div className="kid-shell">
-      <p className="kid-kicker">Practice test</p>
+      <p className="kid-kicker">{mode === "review" ? "Quick review" : "Practice test"}</p>
       <ChapterHeader subject={chapter.subject} title={chapter.titleKid} />
       {testNote ? <p className="story-hook">{testNote}</p> : null}
       <PracticeTest chapterId={chapter.id} lessons={bank.lessons} intro={bank.intro} startMode={mode} bankSize={bankSize(chapter.id)} />
