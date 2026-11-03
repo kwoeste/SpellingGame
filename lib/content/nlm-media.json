@@ -287,6 +287,12 @@
       "contentType": "audio/mp4",
       "size": 3335514,
       "sha256": "e6de36e4d35b97868001911c4c3ce13be7716f13962ee112a246f42afdca0975"
+    },
+    "video": {
+      "pathname": "nlm/col.ch3/video-352663fe6972.mp4",
+      "contentType": "video/mp4",
+      "size": 9972088,
+      "sha256": "352663fe697251c1e1d8ed0f70acc36b152cd40ac8e7e807178036cab3d97d52"
     }
   },
   "col.ch4": {

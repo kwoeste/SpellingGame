@@ -4,8 +4,8 @@ import { watchListenFor } from "@/lib/content/nlm";
 import { firstTeachStart, reteachStart } from "@/components/ChapterPlayer";
 
 // Real manifest: chapters imported with --skip-video (audio + flashcards only).
-// savvas.ch8 and col.ch1 got their videos on Nov 3 2026, so they are no longer listed here.
-const NO_VIDEO = ["col.ch3", "col.ch4", "col.ch5", "col.ch6", "col.ch7", "col.ch8", "col.ch9", "col.ch10", "col.ch11", "col.ch12", "col.ch13", "col.ch14", "col.ch15", "col.ch16"];
+// savvas.ch8, col.ch1 and col.ch3 got their videos on Nov 3 2026, so they are no longer listed here.
+const NO_VIDEO = ["col.ch4", "col.ch5", "col.ch6", "col.ch7", "col.ch8", "col.ch9", "col.ch10", "col.ch11", "col.ch12", "col.ch13", "col.ch14", "col.ch15", "col.ch16"];
 
 describe("NotebookLM modalities without a video", () => {
   it.each(NO_VIDEO)("%s offers podcast + flashcards arms, never video", (id) => {
