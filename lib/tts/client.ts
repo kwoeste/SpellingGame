@@ -1,6 +1,6 @@
 "use client";
 
-import { claimPlayback, registerPlayer } from "@/lib/media/onePlayer";
+import { READ_ALOUD, claimPlayback, registerPlayer } from "@/lib/media/onePlayer";
 import { ttsClientTimeoutMs, wordAtTime, type GrokVoiceId, type TtsWord } from "@/lib/tts/core";
 
 type Clip = { src: string; words: TtsWord[] };
@@ -39,7 +39,7 @@ function silentWav(): string {
 function audio(): HTMLAudioElement {
   if (!audioEl) {
     audioEl = new Audio();
-    registerPlayer(() => stopGrokAudio(), audioEl);
+    registerPlayer(() => stopGrokAudio(), READ_ALOUD);
   }
   return audioEl;
 }
@@ -109,7 +109,7 @@ export function reportTtsFallback(reason: string, chars: number): void {
 export function playGrokClip(clip: Clip, opts: { onend?: () => void; onboundary?: (charIndex: number) => void }): Promise<void> {
   stopGrokAudio();
   const el = audio();
-  claimPlayback(el, { keepSpeech: true });
+  claimPlayback(READ_ALOUD, { keepSpeech: true });
   let raf = 0;
   let lastWord = -1;
   let done = false;
