@@ -1,3 +1,4 @@
+import recapVideos from "@/lib/content/recap-video-media.json";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -72,7 +73,9 @@ describe("Watch & listen without video", () => {
       if (entry.video) continue;
       const data = watchListenFor(id);
       expect(data).not.toBeNull();
-      expect(data?.video).toBeNull();
+      // Our own recap video fills the slot when NotebookLM has none.
+      const recap = (recapVideos as Record<string, unknown>)[id];
+      expect(data?.video).toBe(recap ? `/api/engine/media/${id}/video` : null);
     }
     const flashOnly = Object.keys(FLASHCARDS).find((id) => !(manifest as Record<string, unknown>)[id]);
     if (flashOnly) expect(watchListenFor(flashOnly)?.flashcards.length).toBeGreaterThan(0);
