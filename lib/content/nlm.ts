@@ -5,6 +5,7 @@
  * scripts/nlm-import.ts uploads media and rewrites both.
  */
 import manifest from "@/lib/content/nlm-media.json";
+import recapVideos from "@/lib/content/recap-video-media.json";
 import { FLASHCARDS } from "@/lib/content/flashcards";
 
 export type Flashcard = { front: string; back: string };
@@ -13,6 +14,11 @@ export type MediaEntry = { pathname: string; contentType: string; size: number }
 export type ChapterMedia = { video?: MediaEntry; audio?: MediaEntry };
 
 const MEDIA = manifest as Record<string, ChapterMedia>;
+/**
+ * Our own narrated slide recap videos (scripts/recap-video.ts), same private Blob store and same
+ * signed-in media route. Used when a chapter has no NotebookLM video (religion and math).
+ */
+const RECAP_VIDEOS = recapVideos as Record<string, ChapterMedia>;
 
 export function isMediaKind(value: string): value is MediaKind {
   return value === "video" || value === "audio";
@@ -27,7 +33,7 @@ export function isFlashcardList(value: unknown): value is Flashcard[] {
 }
 
 export function mediaEntry(chapterId: string, kind: MediaKind): MediaEntry | null {
-  return MEDIA[chapterId]?.[kind] ?? null;
+  return MEDIA[chapterId]?.[kind] ?? (kind === "video" ? RECAP_VIDEOS[chapterId]?.video : undefined) ?? null;
 }
 
 export function flashcardsFor(chapterId: string): Flashcard[] {
