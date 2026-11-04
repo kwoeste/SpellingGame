@@ -9,6 +9,7 @@ import {
   writeVoicePrefs,
   type VoicePrefs,
 } from "@/lib/ui/voice";
+import { claimPlayback } from "@/lib/media/onePlayer";
 import { grokVoiceFromName } from "@/lib/tts/core";
 import { fetchGrokClip, playGrokClip, reportTtsFallback, stopGrokAudio, unlockGrokAudio } from "@/lib/tts/client";
 
@@ -34,6 +35,7 @@ function speakWithBrowser(text: string, prefs: VoicePrefs, opts?: SpeakOpts) {
     return;
   }
   window.speechSynthesis.cancel();
+  claimPlayback(null, { keepSpeech: true });
   const utterance = new SpeechSynthesisUtterance(text);
   applyVoice(utterance, prefs, window.speechSynthesis.getVoices());
   if (opts?.onboundary) {
