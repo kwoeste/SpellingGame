@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { claimPlayback } from "@/lib/media/onePlayer";
 import { answerUnlockMs } from "@/lib/ui/careful-read";
 import type { WatchListen as WatchListenData } from "@/lib/content/nlm";
 
@@ -103,10 +104,10 @@ export function WatchListen({ data }: { data: WatchListenData }) {
       </div>
       <div style={{ marginTop: 12 }}>
         {tab === "video" && data.video ? (
-          <video controls preload="metadata" playsInline controlsList="nodownload" style={{ width: "100%", borderRadius: 12 }} src={data.video} onPlay={video.onPlay} onEnded={video.onEnded} />
+          <video controls preload="metadata" playsInline controlsList="nodownload" style={{ width: "100%", borderRadius: 12 }} src={data.video} onPlay={(e) => { claimPlayback(e.currentTarget); video.onPlay(); }} onEnded={video.onEnded} />
         ) : null}
         {tab === "podcast" && data.audio ? (
-          <audio controls preload="metadata" controlsList="nodownload" style={{ width: "100%" }} src={data.audio} onPlay={audio.onPlay} onEnded={audio.onEnded} />
+          <audio controls preload="metadata" controlsList="nodownload" style={{ width: "100%" }} src={data.audio} onPlay={(e) => { claimPlayback(e.currentTarget); audio.onPlay(); }} onEnded={audio.onEnded} />
         ) : null}
         {tab === "flashcards" && data.flashcards.length > 0 ? <Flashcards chapterId={data.chapterId} cards={data.flashcards} /> : null}
       </div>
@@ -135,10 +136,10 @@ export function MediaStart({
     <div className="media-start">
       <p className="kid-kicker">{label}, then practice</p>
       {modality === "nlm_video" && data.video ? (
-        <video controls preload="metadata" playsInline controlsList="nodownload" style={{ width: "100%", borderRadius: 12 }} src={data.video} onPlay={video.onPlay} onEnded={video.onEnded} />
+        <video controls preload="metadata" playsInline controlsList="nodownload" style={{ width: "100%", borderRadius: 12 }} src={data.video} onPlay={(e) => { claimPlayback(e.currentTarget); video.onPlay(); }} onEnded={video.onEnded} />
       ) : null}
       {modality === "nlm_podcast" && data.audio ? (
-        <audio controls preload="metadata" controlsList="nodownload" style={{ width: "100%" }} src={data.audio} onPlay={audio.onPlay} onEnded={audio.onEnded} />
+        <audio controls preload="metadata" controlsList="nodownload" style={{ width: "100%" }} src={data.audio} onPlay={(e) => { claimPlayback(e.currentTarget); audio.onPlay(); }} onEnded={audio.onEnded} />
       ) : null}
       {modality === "nlm_flashcards" && data.flashcards.length > 0 ? <Flashcards chapterId={data.chapterId} cards={data.flashcards} extra={extra} onFlip={() => setStarted(true)} /> : null}
       <button type="button" className="btn" onClick={onDone} disabled={!started} style={{ marginTop: 12 }}>
