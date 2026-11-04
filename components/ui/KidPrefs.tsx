@@ -9,7 +9,7 @@ import {
   writeVoicePrefs,
   type VoicePrefs,
 } from "@/lib/ui/voice";
-import { claimPlayback } from "@/lib/media/onePlayer";
+import { READ_ALOUD, claimPlayback, registerPlayer } from "@/lib/media/onePlayer";
 import { grokVoiceFromName } from "@/lib/tts/core";
 import { fetchGrokClip, playGrokClip, reportTtsFallback, stopGrokAudio, unlockGrokAudio } from "@/lib/tts/client";
 
@@ -35,7 +35,7 @@ function speakWithBrowser(text: string, prefs: VoicePrefs, opts?: SpeakOpts) {
     return;
   }
   window.speechSynthesis.cancel();
-  claimPlayback(null, { keepSpeech: true });
+  claimPlayback(READ_ALOUD, { keepSpeech: true });
   const utterance = new SpeechSynthesisUtterance(text);
   applyVoice(utterance, prefs, window.speechSynthesis.getVoices());
   if (opts?.onboundary) {
@@ -55,6 +55,11 @@ export function KidPrefsProvider({ children }: { children: React.ReactNode }) {
   const speakToken = useRef(0);
   // Resolves once we know whether Grok is on, so a tap right after page load doesn't use the browser voice.
   const grokReady = useRef<Promise<boolean> | null>(null);
+
+  // Another player (e.g. a recap video) started: drop any in-flight Grok fetch so it can't start talking later.
+  useEffect(() => registerPlayer(() => {
+    speakToken.current += 1;
+  }, READ_ALOUD), []);
 
   useEffect(() => {
     setPrefs(readVoicePrefs());

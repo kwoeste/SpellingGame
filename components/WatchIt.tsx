@@ -6,6 +6,7 @@ import { useKidPrefs } from "@/components/ui/KidPrefs";
 import type { StudentRecap } from "@/lib/content/recaps";
 import { StuckHelpPanel } from "@/components/ui/StuckHelpPanel";
 import type { StuckHelp } from "@/lib/help/ladder";
+import { createNarrator } from "@/lib/watch/narrator";
 
 /** Pause after narration ends before Next unlocks / the slide auto-advances. */
 export const WATCH_NEXT_UNLOCK_MS = 1500;
@@ -48,43 +49,48 @@ export function WatchIt({
   const [help, setHelp] = useState<StuckHelp | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [skipped, setSkipped] = useState(false);
-  const timer = useRef<number | null>(null);
-  const runId = useRef(0);
+  const [paused, setPaused] = useState(false);
+  const wordsRef = useRef<string[]>([]);
+  const narratorRef = useRef<ReturnType<typeof createNarrator> | null>(null);
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
-  const clearTimer = () => {
-    if (timer.current !== null) window.clearTimeout(timer.current);
-    timer.current = null;
-  };
+  function narrator() {
+    if (!narratorRef.current) {
+      narratorRef.current = createNarrator({
+        speak: (text, opts) => prefsRef.current.speak(text, opts),
+        stopSpeak: () => prefsRef.current.stopSpeak(),
+        unlockMs: WATCH_NEXT_UNLOCK_MS,
+        slideCount: () => recap.slides.length,
+        onBoundary: (charIndex) => {
+          const w = wordIndexAt(wordsRef.current, charIndex);
+          setActive(w);
+          setSpoken(w - 1);
+        },
+        onEnd: () => {
+          setActive(null);
+          setSpoken(wordsRef.current.length);
+        },
+        onUnlock: (index) => {
+          setUnlocked(true);
+          // Auto-advance after the pause, but never past the last slide on its own.
+          if (index < recap.slides.length - 1) setPhase({ kind: "slides", index: index + 1 });
+        },
+        onPausedChange: setPaused,
+      });
+    }
+    return narratorRef.current;
+  }
 
   const narrate = useCallback(
     (index: number) => {
       const slide = recap.slides[index];
       if (!slide) return;
-      clearTimer();
-      const id = ++runId.current;
-      const words = slide.text.split(/\s+/);
+      wordsRef.current = slide.text.split(/\s+/);
       setUnlocked(false);
       setActive(0);
       setSpoken(-1);
-      prefs.speak(slide.text, {
-        onboundary: (charIndex) => {
-          if (runId.current !== id) return;
-          const w = wordIndexAt(words, charIndex);
-          setActive(w);
-          setSpoken(w - 1);
-        },
-        onend: () => {
-          if (runId.current !== id) return;
-          setActive(null);
-          setSpoken(words.length);
-          timer.current = window.setTimeout(() => {
-            if (runId.current !== id) return;
-            setUnlocked(true);
-            // Auto-advance after the pause, but never past the last slide on its own.
-            if (index < recap.slides.length - 1) setPhase({ kind: "slides", index: index + 1 });
-          }, WATCH_NEXT_UNLOCK_MS);
-        },
-      });
+      narrator().narrate(index, slide.text);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [recap.slides],
@@ -98,18 +104,14 @@ export function WatchIt({
 
   useEffect(
     () => () => {
-      runId.current += 1;
-      clearTimer();
-      prefs.stopSpeak();
+      narratorRef.current?.dispose();
+      narratorRef.current = null;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
   function go(next: Phase) {
-    runId.current += 1;
-    clearTimer();
-    prefs.stopSpeak();
+    narrator().cancel();
     setPhase(next);
     if (next.kind === "check") prefs.speak(recap.check.prompt);
   }
@@ -177,6 +179,14 @@ export function WatchIt({
           <VoicePicker />
         </div>
         <img className="watch-img" src={slide.image} alt={slide.alt} width={800} height={600} />
+        {paused ? (
+          <div className="watch-paused" role="status" data-testid="watch-paused">
+            <p className="watch-paused-label">⏸ Paused</p>
+            <button className="btn big watch-resume" onClick={() => narrate(phase.index)} autoFocus>
+              ▶ Play
+            </button>
+          </div>
+        ) : null}
         <p className="watch-caption" aria-live="polite">
           {words.map((w, i) => (
             <span key={i} className={i === active ? "watch-word active" : i <= spoken ? "watch-word said" : "watch-word"}>
