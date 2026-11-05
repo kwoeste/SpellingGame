@@ -7,10 +7,10 @@
       "sha256": "dac53265a8e128327604ead8fa8853467c252af56e376f944bd37e3fd1a03de0"
     },
     "video": {
-      "pathname": "nlm/ckla.u2.ch1/video-b32d3d52626d.mp4",
+      "pathname": "nlm/ckla.u2.ch1/video-c3acebfab970.mp4",
       "contentType": "video/mp4",
-      "size": 30522448,
-      "sha256": "b32d3d52626dc17afe1acd8d448e3d83bf666e76f82cb16b32b5b23b23cee608"
+      "size": 10096152,
+      "sha256": "c3acebfab9701f2cbb46edd327d7ffa83daa4aa57accc3098dd8c17c1bddc137"
     }
   },
   "ckla.u2.ch2": {
@@ -63,10 +63,10 @@
       "sha256": "41565d47eadafe644226b115ae68f656495503a44bf9bbad846dc0318a9b74aa"
     },
     "video": {
-      "pathname": "nlm/ckla.u2.ch5/video-27322ec4f953.mp4",
+      "pathname": "nlm/ckla.u2.ch5/video-fc4fc429859c.mp4",
       "contentType": "video/mp4",
-      "size": 27098513,
-      "sha256": "27322ec4f953db67aeb126e8a26cdbb3f9241f646a8ad9db24fb0d6a8c165778"
+      "size": 9748812,
+      "sha256": "fc4fc429859c30a24039e4ac4b3e733a116e7d768dfd453a656fbe65bce8e5b4"
     }
   },
   "ckla.u2.ch6": {
@@ -493,10 +493,10 @@
       "sha256": "3909292fdaf553438c62d97724f8187a79b21322d5616ddcb20cfceabc5f75ba"
     },
     "video": {
-      "pathname": "nlm/savvas.ch6/video-4f788b07816c.mp4",
+      "pathname": "nlm/savvas.ch6/video-6dfb62adc79a.mp4",
       "contentType": "video/mp4",
-      "size": 21665496,
-      "sha256": "4f788b07816c19e0adcb589684ce0da86222855134ea4f46b805873f1b67b45f"
+      "size": 8978521,
+      "sha256": "6dfb62adc79abbf3269825cfd8ba3fe62541123a757a75221f3d39f9cd6b7b3d"
     }
   },
   "savvas.ch7": {
@@ -507,10 +507,10 @@
       "sha256": "ac900e1dcf77dcfa1128cba94e98a50cd66727a8d5e793c9729ca6eb6d9936de"
     },
     "video": {
-      "pathname": "nlm/savvas.ch7/video-6c8a3f7966ce.mp4",
+      "pathname": "nlm/savvas.ch7/video-608d9704f1b6.mp4",
       "contentType": "video/mp4",
-      "size": 22010135,
-      "sha256": "6c8a3f7966ce2059b89ea61f2a17cdb1d744933762eff5d80846cc954ee238d0"
+      "size": 10132896,
+      "sha256": "608d9704f1b600fbe4cda4b690b6c57a9a21fabe25b09ba4e8a82cbbe4d05dba"
     }
   },
   "savvas.ch8": {
