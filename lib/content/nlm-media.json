@@ -75,12 +75,6 @@
       "contentType": "audio/mp4",
       "size": 2700299,
       "sha256": "36fcc52a96c54152a2695cc6e9373e34cce492bff0e81333c824daa34f534ca7"
-    },
-    "video": {
-      "pathname": "nlm/ckla.u2.ch6/video-ee904fb3d7ec.mp4",
-      "contentType": "video/mp4",
-      "size": 24212648,
-      "sha256": "ee904fb3d7ec77f95087a3e43501b7bc81dff2b3504230b2f3c238193987d41a"
     }
   },
   "ckla.u2.ch7": {
@@ -449,12 +443,6 @@
       "contentType": "audio/mp4",
       "size": 2530605,
       "sha256": "53ba4fdf5134149153449dbe2b7a75374d5318eb74f3a34f13c131385304e648"
-    },
-    "video": {
-      "pathname": "nlm/savvas.ch3/video-19a039ea4a19.mp4",
-      "contentType": "video/mp4",
-      "size": 28637633,
-      "sha256": "19a039ea4a1962e20bd22dea7cb76f7b9c8185d47ea027bde96483a3f593ca4a"
     }
   },
   "savvas.ch4": {
@@ -477,12 +465,6 @@
       "contentType": "audio/mp4",
       "size": 3050776,
       "sha256": "8488f80e7320f30310c72390400c08dab9dde1bdb3b2b8c07542d3f6c3ef4964"
-    },
-    "video": {
-      "pathname": "nlm/savvas.ch5/video-d4cbfb86afad.mp4",
-      "contentType": "video/mp4",
-      "size": 34437179,
-      "sha256": "d4cbfb86afad21f580e3b253f78419eebfadff2af95a1ff0279f4a022998a451"
     }
   },
   "savvas.ch6": {

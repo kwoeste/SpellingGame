@@ -1,4 +1,12 @@
 {
+  "ckla.u2.ch6": {
+    "video": {
+      "pathname": "recap-video/ckla.u2.ch6/video-522bf7b68fc4.mp4",
+      "contentType": "video/mp4",
+      "size": 3150855,
+      "sha256": "522bf7b68fc407fd89505349e9e74f6398e45b69b09a04495b0b70afda840bea"
+    }
+  },
   "col.ch4": {
     "video": {
       "pathname": "recap-video/col.ch4/video-46d9c93c5fcf.mp4",
@@ -245,6 +253,22 @@
       "contentType": "video/mp4",
       "size": 4277814,
       "sha256": "4e1b330d04e7095d2d97a35d19597909cfe39b1b936b08412732a0082421bbc1"
+    }
+  },
+  "savvas.ch3": {
+    "video": {
+      "pathname": "recap-video/savvas.ch3/video-e336b503291b.mp4",
+      "contentType": "video/mp4",
+      "size": 3798351,
+      "sha256": "e336b503291b34ef06710dc1f134e1f2eabe1cee2eab63424b6bab362a68a0b7"
+    }
+  },
+  "savvas.ch5": {
+    "video": {
+      "pathname": "recap-video/savvas.ch5/video-ac7466ebb4fa.mp4",
+      "contentType": "video/mp4",
+      "size": 3638632,
+      "sha256": "ac7466ebb4fae7d808530ca509ee42f05f9d7b55d8daa38c91477e0e2628f56a"
     }
   }
 }
