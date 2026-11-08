@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { listChapters } from "@/lib/content/catalog";
-import { mediaEntry, watchListenFor } from "@/lib/content/nlm";
+import { flashcardsFor, mediaEntry, watchListenFor } from "@/lib/content/nlm";
+import nlmManifest from "@/lib/content/nlm-media.json";
 import recapManifest from "@/lib/content/recap-video-media.json";
 import { visualValue } from "@/lib/content/recaps-math";
 import { KEEP_NLM_VIDEO, mathFactor, recapVideoChapterIds, recapVideoPlan, slideNarration, slideScreenText, speakable, symbolFor } from "@/lib/video/recap-video";
@@ -60,9 +61,22 @@ describe("recap video plans", () => {
   });
 });
 
+/** Uploaded recap videos that take the video slot after the NotebookLM video entry is removed. */
+const RECAP_OVER_NLM: Record<string, string> = {
+  "savvas.ch3": "recap-video/savvas.ch3/video-e336b503291b.mp4",
+  "savvas.ch5": "recap-video/savvas.ch5/video-ac7466ebb4fa.mp4",
+  "ckla.u2.ch6": "recap-video/ckla.u2.ch6/video-522bf7b68fc4.mp4",
+};
+
+const REMOVED_NLM_VIDEO = [
+  "nlm/savvas.ch3/video-19a039ea4a19.mp4",
+  "nlm/savvas.ch5/video-d4cbfb86afad.mp4",
+  "nlm/ckla.u2.ch6/video-ee904fb3d7ec.mp4",
+];
+
 describe("recap video manifest", () => {
-  it.each(Object.entries(manifest))("%s is private, planned, and served by the signed-in media route", (id, entry) => {
-    expect(ids).toContain(id);
+  it.each(Object.entries(manifest))("%s is a private recap video served by the signed-in media route", (id, entry) => {
+    if (id.startsWith("col.") || id.startsWith("math.")) expect(ids).toContain(id);
     expect(entry.video.pathname).toMatch(new RegExp(`^recap-video/${id.replace(/\./g, "\\.")}/video-[0-9a-f]{12}\\.mp4$`));
     expect(entry.video.contentType).toBe("video/mp4");
     expect(entry.video.size).toBeGreaterThan(100_000);
@@ -75,6 +89,31 @@ describe("recap video manifest", () => {
     for (const id of KEEP_NLM_VIDEO) {
       expect(manifest[id]).toBeUndefined();
       expect(mediaEntry(id, "video")?.pathname).toMatch(/^nlm\//);
+    }
+  });
+});
+
+describe("recap videos replacing a NotebookLM video", () => {
+  it.each(Object.entries(RECAP_OVER_NLM))("%s resolves to the recap video and keeps NotebookLM audio and flashcards", (id, pathname) => {
+    expect(manifest[id]?.video.pathname).toBe(pathname);
+    expect(mediaEntry(id, "video")?.pathname).toBe(pathname);
+    expect(watchListenFor(id)?.video).toBe(`/api/engine/media/${id}/video`);
+
+    const nlm = (nlmManifest as Record<string, { video?: { pathname: string }; audio?: { pathname: string } }>)[id];
+    expect(nlm?.video).toBeUndefined();
+    expect(nlm?.audio?.pathname).toMatch(new RegExp(`^nlm/${id.replace(/\./g, "\\.")}/audio-[0-9a-f]{12}\\.m4a$`));
+    expect(mediaEntry(id, "audio")?.pathname).toBe(nlm?.audio?.pathname);
+    expect(watchListenFor(id)?.audio).toBe(`/api/engine/media/${id}/audio`);
+    expect(flashcardsFor(id).length).toBeGreaterThanOrEqual(18);
+  });
+
+  it("drops only the replaced NotebookLM video files", () => {
+    const pathnames = Object.values(nlmManifest as Record<string, { video?: { pathname: string }; audio?: { pathname: string } }>).flatMap((entry) =>
+      [entry.video?.pathname, entry.audio?.pathname].filter((p): p is string => Boolean(p)),
+    );
+    for (const oldPath of REMOVED_NLM_VIDEO) expect(pathnames).not.toContain(oldPath);
+    for (const id of Object.keys(RECAP_OVER_NLM)) {
+      expect((nlmManifest as Record<string, { audio?: unknown }>)[id]?.audio).toBeTruthy();
     }
   });
 });
