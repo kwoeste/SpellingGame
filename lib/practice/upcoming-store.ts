@@ -1,10 +1,10 @@
 import { hasDatabase, queryOnce } from "@/lib/db/client";
-import { DEFAULT_UPCOMING, type UpcomingTest } from "@/lib/practice/upcoming";
+import { DEFAULT_UPCOMING, ymdOrNull, type UpcomingTest } from "@/lib/practice/upcoming";
 
-type Row = { id: string; kind: UpcomingTest["kind"]; ref_id: string; title: string; start_date: string; test_date: string };
-const SELECT = "SELECT id, kind, ref_id, title, to_char(start_date, 'YYYY-MM-DD') AS start_date, to_char(test_date, 'YYYY-MM-DD') AS test_date FROM planner.upcoming_test ORDER BY test_date, id";
+type Row = { id: string; kind: UpcomingTest["kind"]; ref_id: string; title: string; start_date: string; test_date: string | null };
+const SELECT = "SELECT id, kind, ref_id, title, to_char(start_date, 'YYYY-MM-DD') AS start_date, to_char(test_date, 'YYYY-MM-DD') AS test_date FROM planner.upcoming_test ORDER BY test_date NULLS LAST, id";
 
-const toTest = (r: Row): UpcomingTest => ({ id: r.id, kind: r.kind, refId: r.ref_id, title: r.title, startDate: r.start_date, testDate: r.test_date });
+const toTest = (r: Row): UpcomingTest => ({ id: r.id, kind: r.kind, refId: r.ref_id, title: r.title, startDate: r.start_date, testDate: ymdOrNull(r.test_date) });
 
 /** Live dated items (planner.upcoming_test); falls back to DEFAULT_UPCOMING with no DB, no table, or no rows. */
 export async function loadUpcomingTests(role: "student" | "admin" = "student"): Promise<UpcomingTest[]> {
@@ -25,7 +25,7 @@ export async function saveUpcomingTest(t: UpcomingTest, by: string): Promise<voi
      VALUES ($1, $2, $3, $4, $5::date, $6::date, now(), $7)
      ON CONFLICT (id) DO UPDATE SET kind = excluded.kind, ref_id = excluded.ref_id, title = excluded.title,
        start_date = excluded.start_date, test_date = excluded.test_date, updated_at = now(), updated_by = excluded.updated_by`,
-    [t.id, t.kind, t.refId, t.title, t.startDate, t.testDate, by],
+    [t.id, t.kind, t.refId, t.title, t.startDate, ymdOrNull(t.testDate), by],
   );
 }
 

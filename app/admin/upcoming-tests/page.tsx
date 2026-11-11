@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { UpcomingTestsEditor } from "@/app/admin/upcoming-tests/editor";
 import { loadPastTestRows, type PastTestRow } from "@/lib/admin/practice-review";
 import { SEEDED_LEARNER_ID } from "@/lib/auth/users";
+import { pastSpellingLists } from "@/lib/practice/upcoming";
 import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
 
 export const metadata: Metadata = { title: "Admin · Test dates | Mae's Lab" };
@@ -16,12 +17,14 @@ function when(ms: number): string {
 }
 
 export default async function UpcomingTestsPage() {
+  const tests = await loadUpcomingTests("admin");
   const inReview: PastTestRow[] = await loadPastTestRows(SEEDED_LEARNER_ID).catch(() => []);
+  const spellingReview = pastSpellingLists(Date.now(), tests);
   return (
     <div>
       <h1>Test dates</h1>
-      <p>Dated items are pinned first on her Today plan from the start date through the test date, soonest test first. Within a day of a test they can fill the whole session. After a practice test&apos;s date passes, it moves to In review below.</p>
-      <UpcomingTestsEditor initial={await loadUpcomingTests("admin")} />
+      <p>Dated items are pinned first on her Today plan from the start date through the test date, soonest test first. Within a day of a test they can fill the whole session. A spelling list with no date yet stays pinned and shows &quot;no date yet&quot; until you set one here or on <a href="/admin/spelling">Spelling</a>. After a practice test&apos;s date passes, it moves to In review below. A spelling list does the same once its test date passes.</p>
+      <UpcomingTestsEditor initial={tests} />
       <section className="pd-card" style={{ marginTop: 16 }}>
         <h2>In review</h2>
         <p>Past practice tests keep coming back in short quick reviews (about 4 questions, one a day at most). Questions she missed come back first; ones she got right wait longer.</p>
@@ -45,6 +48,16 @@ export default async function UpcomingTestsPage() {
         ) : (
           <p>No past practice tests yet.</p>
         )}
+        {spellingReview.length ? (
+          <>
+            <h3>Spelling in review</h3>
+            <ul>
+              {spellingReview.map((t) => (
+                <li key={t.id}><a href={`/study/${encodeURIComponent(t.refId)}`}>{t.title}</a> — test {t.testDate ? showDate(t.testDate) : "no date yet"}</li>
+              ))}
+            </ul>
+          </>
+        ) : null}
       </section>
     </div>
   );

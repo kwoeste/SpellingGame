@@ -2,12 +2,13 @@ import { engineActor, engineFailure, engineJson, readJson } from "@/lib/engine/h
 import { engineRepo } from "@/lib/engine/repos";
 import { checkSpelling, finishSpellingRound, spellingSummary } from "@/lib/spelling/service";
 
-/** Spelling List D-2 (signed-in student/admin only; /api/engine is gated in middleware too). */
+/** Spelling lists (signed-in student/admin only; /api/engine is gated in middleware too). `?list=` picks the list; D-2 is the default. */
 export async function GET(req: Request) {
   const gate = await engineActor(req);
   if (!gate.ok) return gate.response;
+  const list = new URL(req.url).searchParams.get("list") ?? undefined;
   try {
-    return engineJson({ summary: await spellingSummary(engineRepo(), gate.actor) });
+    return engineJson({ summary: await spellingSummary(engineRepo(), gate.actor, Date.now(), list) });
   } catch (error) {
     return engineFailure(error);
   }
@@ -28,16 +29,19 @@ export async function POST(req: Request) {
         word: check.word,
         typed: check.typed,
         vowel: check.vowel,
+        sort: check.sort,
         mode: check.mode,
         misses: check.misses,
         retry: check.retry === true,
+        phase: check.phase,
+        list: check.list,
         sessionId: typeof check.sessionId === "string" ? check.sessionId : null,
       });
       return result ? engineJson({ result }) : engineJson({ error: "not_found" }, 404);
     }
     const finished = body.finished as Record<string, unknown> | undefined;
     if (finished && typeof finished === "object") {
-      await finishSpellingRound(engineRepo(), gate.actor, { mode: finished.mode, score: finished.score, total: finished.total, missed: finished.missed });
+      await finishSpellingRound(engineRepo(), gate.actor, { mode: finished.mode, score: finished.score, total: finished.total, missed: finished.missed, list: finished.list });
       return engineJson({ ok: true });
     }
     return engineJson({ error: "bad_request" }, 400);

@@ -11,12 +11,11 @@ import { preferredBySubject } from "@/lib/engine/learning-insight";
 import { eligibleArms } from "@/lib/engine/modality";
 import { loadUpcomingTests } from "@/lib/practice/upcoming-store";
 import { practiceReviewStates, REVIEW_BLOCK_SIZE } from "@/lib/practice/review";
-import { DEFAULT_UPCOMING, activeUpcomingTests, practiceTestHref, upcomingHref, type UpcomingTest } from "@/lib/practice/upcoming";
-import { daysUntil, masteredCount } from "@/lib/spelling/engine";
-import { D2_WORDS, LIST_ID, LIST_SHORT_TITLE } from "@/lib/spelling/list-d2";
+import { DEFAULT_UPCOMING, activeUpcomingTests, pastSpellingLists, practiceTestHref, upcomingHref, type UpcomingTest } from "@/lib/practice/upcoming";
+import { isSpellingListId, spellingList, spellingListFromHref } from "@/lib/spelling/catalog";
+import { daysUntil, masteredCount, wordStats } from "@/lib/spelling/engine";
 import { attemptsFromEvents, learnerSpellingStats, SPELLING_EVENT } from "@/lib/spelling/service";
 import { buildMix, grokMix, type MixAi, type SpellingMix } from "@/lib/spelling/mix";
-import { wordStats } from "@/lib/spelling/engine";
 import type { SubjectId } from "@/lib/content/types";
 import { aiOrderPlan, type PlannerFacts, type AiPlanResult } from "@/lib/engine/ai-planner";
 
@@ -106,29 +105,36 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
   let crunch = false;
   const coveredChapters = new Set<string>();
   for (const t of active) {
-    const days = daysUntil(t.testDate, nowMs);
-    const daysText = t.isTestDay ? "Test today!" : days === 1 ? "Test tomorrow!" : `${days} days left`;
     if (t.kind === "spelling") {
-      if (t.refId !== LIST_ID) continue;
-      const stats = await learnerSpellingStats(tx);
+      const list = spellingList(t.refId);
+      if (!list) continue;
+      const testDate = t.testDate;
+      const days = testDate ? daysUntil(testDate, nowMs) : null;
+      const undated = !testDate;
+      const daysText = undated ? "no date yet" : t.isTestDay ? "Test today!" : days === 1 ? "Test tomorrow!" : `${days} days left`;
+      const stats = await learnerSpellingStats(tx, list.id);
       const mastered = masteredCount(stats);
-      const today = todayDated.filter((e) => e.activityId === LIST_ID);
+      const today = todayDated.filter((e) => e.activityId === list.id);
       const firstTryRight = today.filter((e) => e.type === SPELLING_EVENT && e.isCorrect && e.payload?.first_try === true).length;
-      const mockDone = today.some((e) => e.type === "game_event" && e.payload?.game_id === LIST_ID && e.payload?.detail === "finished" && e.payload?.mode === "mock");
-      if (days <= 1) crunch = true;
+      const mockDone = today.some((e) => e.type === "game_event" && e.payload?.game_id === list.id && e.payload?.detail === "finished" && e.payload?.mode === "mock");
+      if (!undated && days !== null && days <= 1) crunch = true;
+      const total = list.words.length;
       blocks.push({
         id: `upcoming:${t.id}`,
         kind: "spelling",
-        title: t.isTestDay ? `${LIST_SHORT_TITLE}: test today! One last mock test` : LIST_SHORT_TITLE,
+        title: !undated && t.isTestDay ? `${list.shortTitle}: test today! One last mock test` : list.shortTitle,
         href: upcomingHref(t),
-        minutes: days <= 1 ? sessionGoal : 10,
-        done: mastered === D2_WORDS.length ? firstTryRight >= 5 || mockDone : firstTryRight >= 15 || (mockDone && firstTryRight >= 25),
+        minutes: !undated && days !== null && days <= 1 ? sessionGoal : 10,
+        done: mastered === total ? firstTryRight >= 5 || mockDone : firstTryRight >= 15 || (mockDone && firstTryRight >= total),
         locked: true,
         conceptIds: [],
-        detail: `${daysText} · ${mastered} of ${D2_WORDS.length} mastered`,
+        detail: `${daysText} · ${mastered} of ${total} mastered`,
       });
       continue;
     }
+    if (!t.testDate) continue;
+    const days = daysUntil(t.testDate, nowMs);
+    const daysText = t.isTestDay ? "Test today!" : days === 1 ? "Test tomorrow!" : `${days} days left`;
     const chapter = getChapter(t.refId);
     if (!chapter || !chapterVisibleTo(chapter, role)) continue;
     coveredChapters.add(chapter.id);
@@ -180,7 +186,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
   }
 
   // 2. Warm-up: due spaced reviews.
-  const today = await tx.eventsSince(dayStart - 1, ["answer_submitted", "game_event"]);
+  const today = await tx.eventsSince(dayStart - 1, ["answer_submitted", "game_event", SPELLING_EVENT]);
   const warm = await warmupQueue(tx, role, nowMs, random);
   const reviewedToday = today.some((e) => e.type === "answer_submitted" && e.payload?.mode === "review");
   if (warm.length || reviewedToday) {
@@ -266,6 +272,37 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
     }
   }
 
+  // 4c. Past spelling lists join the same daily review rotation once their test date passes.
+  //     One small block, missed and due words first (the spelling page's own queue). Not during a crunch.
+  if (!crunch) {
+    const past = pastSpellingLists(nowMs, upcoming);
+    const choices = [];
+    for (const t of past) {
+      const list = spellingList(t.refId);
+      if (!list) continue;
+      const stats = await learnerSpellingStats(tx, list.id);
+      const due = stats.filter((s) => s.dueAt <= nowMs).length;
+      const reviewedToday = today.some((e) => e.activityId === list.id && !e.isPreview && (e.type === SPELLING_EVENT || (e.type === "game_event" && e.payload?.detail === "finished")));
+      if (!due && !reviewedToday) continue;
+      choices.push({ list, due, reviewedToday });
+    }
+    const reviewPick = choices.find((c) => c.reviewedToday) ?? [...choices].sort((a, b) => b.due - a.due || a.list.id.localeCompare(b.list.id))[0];
+    if (reviewPick) {
+      const n = Math.min(reviewPick.due, 10);
+      blocks.push({
+        id: `spelling-review:${reviewPick.list.id}`,
+        kind: "spelling",
+        title: `Quick review: ${reviewPick.list.shortTitle}`,
+        href: reviewPick.list.href,
+        minutes: 3,
+        done: reviewPick.reviewedToday,
+        locked: false,
+        conceptIds: [],
+        detail: reviewPick.reviewedToday ? "Reviewed today" : `${n} word${n === 1 ? "" : "s"} to keep them fresh`,
+      });
+    }
+  }
+
   // 5. A game.
   blocks.push({
     id: "game",
@@ -273,7 +310,7 @@ export async function liveCandidates(tx: LearnerTx, role: AppRole, nowMs: number
     title: "Game time",
     href: "/games",
     minutes: 5,
-    done: today.some((e) => e.type === "game_event" && e.payload?.game_id !== "practice-test" && e.payload?.game_id !== LIST_ID),
+    done: today.some((e) => e.type === "game_event" && e.payload?.game_id !== "practice-test" && !isSpellingListId(e.payload?.game_id)),
     locked: false,
     conceptIds: [],
   });
@@ -408,11 +445,14 @@ export async function todayPlan(
     const blocks = applyCached({ order, whyKid: why, adminNote: note, snapshot: live.blocks }, live.blocks);
     // Spelling game mix: built once per sign-in with the plan (Grok only for Mae's own sign-in).
     let spellingMix: SpellingMix | null = null;
-    if (loginId && live.blocks.some((b) => b.kind === "spelling")) {
-      const attempts = attemptsFromEvents(await tx.eventsSince(0, [SPELLING_EVENT]));
+    const pinnedSpelling = live.blocks.find((b) => b.kind === "spelling" && b.locked);
+    const pinnedList = pinnedSpelling ? spellingListFromHref(pinnedSpelling.href) : null;
+    if (loginId && pinnedList) {
+      const attempts = attemptsFromEvents(await tx.eventsSince(0, [SPELLING_EVENT]), pinnedList.id);
       const useAi = actor.role === "student" && !loginId.startsWith(PREVIEW_LOGIN_PREFIX) && (attempted || (await tx.aiPlanAttempts(day)) < AI_PLAN_DAILY_CAP);
       if (useAi && attempts.length) attempted = true;
-      spellingMix = await buildMix(attempts, wordStats(attempts), nowMs, useAi ? (deps.spellingAi === undefined ? grokMix : deps.spellingAi) : null).catch(() => null);
+      const mix = await buildMix(attempts, wordStats(attempts, pinnedList.words), nowMs, useAi ? (deps.spellingAi === undefined ? grokMix : deps.spellingAi) : null).catch(() => null);
+      spellingMix = mix ? { ...mix, listId: pinnedList.id } : null;
     }
     if (loginId) {
       const row: SessionPlanRecord = {

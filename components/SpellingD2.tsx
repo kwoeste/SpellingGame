@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
-import { D2_WORDS, LIST_TITLE, SPELLING_LINES, SESSION_LINES, SESSION_NEXT_UP, SPELLING_HELP, SPELLING_GOT_IT, VOWEL_KEY, findWord, revealClip, trickClip, wordClip, type SpellingWord, type Vowel } from "@/lib/spelling/list-d2";
+import { D2_LIST, isVowelId, type SpellingList } from "@/lib/spelling/catalog";
+import { SPELLING_LINES, SESSION_LINES, SESSION_NEXT_UP, SPELLING_HELP, SPELLING_GOT_IT, VOWEL_KEY, revealClip, trickClip, wordClip, type SpellingWord } from "@/lib/spelling/list-d2";
 import { normalizeSpelling, type SpellingHelp, type SpellingMode, type WordStat } from "@/lib/spelling/engine";
 import type { SessionRound } from "@/lib/spelling/mix";
 import { COOLDOWN_MS, FLASH_STUDY_MS, answerAfterMiss, blankWord, canCover, isFirstTry, ladderNext, lockPrefix, markLetters, missMessage, mockStep, praiseFor, requeue, tilesForPrefix, type LadderPhase, type MockState } from "@/lib/spelling/feedback";
@@ -12,7 +13,23 @@ type Summary = { stats: WordStat[]; mastered: number; total: number; queue: stri
 type Help = SpellingHelp;
 /** Hint audio is replayed slower than her normal reading speed. */
 const SLOW_RATE = 0.7;
-type CheckResult = { correct: boolean; help: Help; stat: WordStat | null; vowel?: { answer: Vowel; label: string } | null };
+type CheckResult = { correct: boolean; help: Help; stat: WordStat | null; vowel?: { answer: string; label: string } | null; sort?: { answer: string; label: string } | null };
+
+const ListContext = createContext<SpellingList>(D2_LIST);
+function useList(): SpellingList {
+  return useContext(ListContext);
+}
+
+function SyllableLine({ syllables }: { syllables: string }) {
+  const parts = syllables.split("·");
+  return (
+    <p aria-label={`Syllables: ${parts.join(", ")}`} style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0" }}>
+      {parts.map((part, i) => (
+        <span key={`${part}-${i}`}>{i > 0 ? <span aria-hidden> · </span> : null}{part}</span>
+      ))}
+    </p>
+  );
+}
 
 const MODES: { id: SpellingMode; icon: string; title: string; blurb: string }[] = [
   { id: "listen", icon: "🎧", title: "Listen & spell", blurb: "Hear it, then type it." },
@@ -20,7 +37,7 @@ const MODES: { id: SpellingMode; icon: string; title: string; blurb: string }[] 
   { id: "tiles", icon: "🔤", title: "Letter tiles", blurb: "Unscramble the letters." },
   { id: "fix", icon: "🛠️", title: "Fix the misspelling", blurb: "Find the oops and fix it." },
   { id: "sort", icon: "🗂️", title: "Sort by sound", blurb: "Hear it. Short i, o, or u?" },
-  { id: "mock", icon: "📝", title: "Mock test", blurb: "All 25 words, like the real test." },
+  { id: "mock", icon: "📝", title: "Mock test", blurb: "Every word, like the real test." },
 ];
 
 const big: React.CSSProperties = { minHeight: 56, fontSize: "1.15rem", touchAction: "manipulation" };
@@ -44,9 +61,9 @@ function shuffle<T>(xs: T[]): T[] {
   return a;
 }
 
-async function postCheck(body: Record<string, unknown>): Promise<CheckResult | null> {
+async function postCheck(listId: string, body: Record<string, unknown>): Promise<CheckResult | null> {
   try {
-    const res = await fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ check: body }) });
+    const res = await fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ check: { ...body, list: listId } }) });
     if (!res.ok) return null;
     return ((await res.json()) as { result: CheckResult }).result;
   } catch {
@@ -54,11 +71,30 @@ async function postCheck(body: Record<string, unknown>): Promise<CheckResult | n
   }
 }
 
-function postFinished(mode: SpellingMode, score: number, total: number, missed: string[]) {
-  void fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ finished: { mode, score, total, missed } }) }).catch(() => undefined);
+function postFinished(listId: string, mode: SpellingMode, score: number, total: number, missed: string[]) {
+  void fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ finished: { mode, score, total, missed, list: listId } }) }).catch(() => undefined);
 }
 
-export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null }: { testDate: string; daysLeft: number; preview?: boolean; rounds?: SessionRound[] | null }) {
+type SpellingPageProps = { list?: SpellingList; testDate: string | null; daysLeft: number | null; preview?: boolean; rounds?: SessionRound[] | null };
+
+export function SpellingD2(props: SpellingPageProps) {
+  return (
+    <ListContext.Provider value={props.list ?? D2_LIST}>
+      <SpellingScreen {...props} />
+    </ListContext.Provider>
+  );
+}
+
+function dateLine(testDate: string | null, daysLeft: number | null): { headline: string; when: string } {
+  if (!testDate || daysLeft === null) return { headline: "no date yet", when: "We'll add the test date when it's set." };
+  const when = new Date(`${testDate}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+  if (daysLeft < 0) return { headline: "Keep these words fresh.", when: "The test day has passed." };
+  if (daysLeft === 0) return { headline: "Test day! You've got this.", when };
+  if (daysLeft === 1) return { headline: "Test tomorrow!", when };
+  return { headline: `${daysLeft} days until the test`, when };
+}
+
+function SpellingScreen({ list = D2_LIST, testDate, daysLeft, preview = false, rounds = null }: SpellingPageProps) {
   const [guided, setGuided] = useState<number | null>(null);
   const prefs = useKidPrefs();
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -68,22 +104,22 @@ export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null 
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/engine/spelling", { cache: "no-store" });
+      const res = await fetch(`/api/engine/spelling?list=${encodeURIComponent(list.id)}`, { cache: "no-store" });
       if (res.ok) setSummary(((await res.json()) as { summary: Summary | null }).summary);
     } catch {
       /* offline: keep the last numbers */
     }
-  }, []);
+  }, [list.id]);
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
   const statOf = (word: string) => summary?.stats.find((s) => s.word === word);
-  const when = new Date(`${testDate}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+  const when = dateLine(testDate, daysLeft);
 
   function start(m: SpellingMode, words?: string[]) {
-    const queue = summary?.queue?.length ? summary.queue : shuffle(D2_WORDS.map((w) => w.word)).slice(0, 10);
-    setRoundWords(words ?? (m === "mock" ? shuffle(D2_WORDS.map((w) => w.word)) : m === "sort" ? shuffle(D2_WORDS.map((w) => w.word)).slice(0, 12) : queue));
+    const queue = summary?.queue?.length ? summary.queue : shuffle(list.words.map((w) => w.word)).slice(0, 10);
+    setRoundWords(words ?? (m === "mock" ? shuffle(list.words.map((w) => w.word)) : m === "sort" ? shuffle(list.words.map((w) => w.word)).slice(0, 12) : queue));
     setMode(m);
     window.scrollTo?.({ top: 0 });
   }
@@ -91,7 +127,7 @@ export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null 
   if (guided !== null && rounds?.length) {
     return (
       <div className="kid-shell">
-        <p className="kid-kicker">{LIST_TITLE} · Today&apos;s spelling session{preview ? " · PREVIEW (not saved)" : ""}</p>
+        <p className="kid-kicker">{list.title} · Today&apos;s spelling session{preview ? " · PREVIEW (not saved)" : ""}</p>
         <button className="btn secondary" style={big} onClick={() => { setGuided(null); void refresh(); }}>← Back to the word list</button>
         <div className="sp-stage">
           <GuidedSession rounds={rounds} preview={preview} onRefresh={() => void refresh()} onExit={() => { setGuided(null); void refresh(); }} />
@@ -103,7 +139,7 @@ export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null 
   if (mode) {
     return (
       <div className="kid-shell">
-        <p className="kid-kicker">{LIST_TITLE}{preview ? " · PREVIEW (not saved)" : ""}</p>
+        <p className="kid-kicker">{list.title}{preview ? " · PREVIEW (not saved)" : ""}</p>
         <button className="btn secondary" style={big} onClick={() => { setMode(null); void refresh(); }}>← Back to the word list</button>
         <div className="sp-stage">
         {mode === "mock" ? (
@@ -119,17 +155,15 @@ export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null 
   return (
     <div className="kid-shell">
       <p className="kid-kicker">Spelling</p>
-      <h1 style={{ margin: "4px 0" }}>{LIST_TITLE}</h1>
-      <p className="story-hook" style={{ margin: "8px 0" }}>
-        Short <b>i</b> as in <i>inch</i> · short <b>o</b> as in <i>October</i> · short <b>u</b> as in <i>funny</i>
-      </p>
+      <h1 style={{ margin: "4px 0" }}>{list.title}</h1>
+      <p className="story-hook" style={{ margin: "8px 0" }}>{list.hook}</p>
       <section className="card" style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <strong style={{ fontSize: "1.3rem" }}>{daysLeft <= 0 ? "Test day! You've got this." : daysLeft === 1 ? "Test tomorrow!" : `${daysLeft} days until the test`}</strong>
-          <div>{when}</div>
+          <strong style={{ fontSize: "1.3rem" }}>{when.headline}</strong>
+          <div>{when.when}</div>
         </div>
         <div aria-live="polite" style={{ fontSize: "1.2rem" }}>
-          ⭐ <b>{summary ? summary.mastered : "…"}</b> of {D2_WORDS.length} mastered
+          ⭐ <b>{summary ? summary.mastered : "…"}</b> of {list.words.length} mastered
         </div>
       </section>
 
@@ -146,27 +180,35 @@ export function SpellingD2({ testDate, daysLeft, preview = false, rounds = null 
       ) : null}
       <h2>Pick my own game</h2>
       <div className="sp-modes">
-        {MODES.map((m) => (
-          <button key={m.id} className="kid-card" style={{ ...big, textAlign: "left", padding: 16, cursor: "pointer" }} onClick={() => start(m.id)}>
-            <div style={{ fontSize: "1.8rem" }} aria-hidden>{m.icon}</div>
-            <strong>{m.title}</strong>
-            <div style={{ fontSize: "0.95rem" }}>{m.blurb}</div>
-          </button>
-        ))}
+        {MODES.map((m) => {
+          const title = modeTitle(list, m.id);
+          const blurb = m.id === "mock" ? `All ${list.words.length} words, like the real test.` : m.id === "sort" ? list.sortPrompt : m.blurb;
+          return (
+            <button key={m.id} className="kid-card" style={{ ...big, textAlign: "left", padding: 16, cursor: "pointer" }} onClick={() => start(m.id)}>
+              <div style={{ fontSize: "1.8rem" }} aria-hidden>{m.icon}</div>
+              <strong>{title}</strong>
+              <div style={{ fontSize: "0.95rem" }}>{blurb}</div>
+            </button>
+          );
+        })}
       </div>
 
-      {(["spelling", "review", "challenge"] as const).map((group) => (
+      {(["spelling", "review", "challenge"] as const).filter((group) => list.words.some((w) => w.group === group)).map((group) => (
         <section key={group}>
           <h2 style={{ textTransform: "capitalize" }}>{group === "spelling" ? "Spelling words" : `${group} words`}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 12 }}>
-            {D2_WORDS.filter((w) => w.group === group).map((w) => {
+            {list.words.filter((w) => w.group === group).map((w) => {
               const s = statOf(w.word);
+              const beats = w.syllables ? w.syllables.split("·").length : 0;
+              const pattern = w.vowel ? VOWEL_KEY[w.vowel].label : beats === 1 ? "1 syllable" : `${beats} syllables`;
               return (
                 <div key={w.word} className="card" style={{ padding: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: "1.5rem", fontWeight: 700 }}><Highlight w={w} /></span>
-                    <span title={VOWEL_KEY[w.vowel].label} style={{ fontSize: "0.85rem" }}>{s?.mastered ? "⭐ mastered" : s && s.streak > 0 ? `${s.streak}/3 in a row` : VOWEL_KEY[w.vowel].label}</span>
+                    <span title={pattern} style={{ fontSize: "0.85rem" }}>{s?.mastered ? "⭐ mastered" : s && s.streak > 0 ? `${s.streak}/3 in a row` : pattern}</span>
                   </div>
+                  {w.syllables ? <SyllableLine syllables={w.syllables} /> : null}
+                  {w.definition ? <p style={{ margin: "4px 0 0" }}>{w.definition}</p> : null}
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button className="btn" style={big} aria-label={`Hear ${w.word}`} onClick={() => prefs.speak(wordClip(w))}>🔊 Hear it</button>
                     <button className="btn secondary" style={big} aria-expanded={openTrick === w.word} onClick={() => { setOpenTrick(openTrick === w.word ? null : w.word); if (openTrick !== w.word) prefs.speak(trickClip(w)); }}>💡 Trick</button>
@@ -198,7 +240,13 @@ export function checkOrder(words: string[], random = Math.random): string[] {
 export const NEXT_UP_MS = 4000;
 
 /** Plays the planned rounds in order with a short "Next up" break between games, ending with a mock check and a finish screen. */
+function modeTitle(list: SpellingList, mode: string): string {
+  if (mode === "sort" && list.sortPrompt.toLowerCase().includes("syllable")) return "Sort by syllables";
+  return MODES.find((m) => m.id === mode)?.title ?? mode;
+}
+
 function GuidedSession({ rounds, onRefresh, onExit, preview }: { rounds: SessionRound[]; onRefresh: () => void; onExit: () => void; preview: boolean }) {
+  const list = useList();
   const prefs = useKidPrefs();
   const [at, setAt] = useState(0);
   const [between, setBetween] = useState(true);
@@ -256,7 +304,7 @@ function GuidedSession({ rounds, onRefresh, onExit, preview }: { rounds: Session
         {dots}
         <p style={{ fontSize: "1.1rem", margin: 0 }}>{at === 0 ? "Here's today's spelling mix!" : "Great job! 🎉"}</p>
         <div style={{ fontSize: "3.2rem" }} aria-hidden>{info.icon}</div>
-        <h2 style={{ margin: "4px 0" }}>{round.mode === "mock" ? "Next up: Quick spelling check!" : `Next up: ${info.title}!`}</h2>
+        <h2 style={{ margin: "4px 0" }}>{round.mode === "mock" ? "Next up: Quick spelling check!" : `Next up: ${modeTitle(list, round.mode)}!`}</h2>
         <p style={{ fontSize: "1.1rem" }}>{round.mode === "mock" ? `${round.words.length} words, one try each. Type each word you hear.` : `${info.blurb} ${round.words.length} words.`}</p>
         <button className="btn" style={{ ...big, minWidth: 220 }} onClick={() => setBetween(false)} autoFocus>Let&apos;s go →</button>
       </section>
@@ -335,7 +383,8 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
   const [copyTries, setCopyTries] = useState(0);
   const requeued = useRef(new Set<string>());
   const inputRef = useRef<HTMLInputElement>(null);
-  const word = findWord(queue[idx]);
+  const list = useList();
+  const word = list.words.find((item) => item.word === queue[idx]) ?? null;
   const tiles = useMemo(() => (word ? shuffle(word.word.split("")) : []), [word, idx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -380,7 +429,7 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     if (finished && !reported.current) {
       reported.current = true;
       setBurst((b) => b + 1);
-      postFinished(mode, score.firstTry, words.length, [...score.missed]);
+      postFinished(list.id, mode, score.firstTry, words.length, [...score.missed]);
       onDone({ mode, right: score.firstTry, total: words.length, missed: [...score.missed] });
     }
   }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -423,7 +472,7 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     if (!word || busy) return;
     if (!text.trim()) return;
     setBusy(true);
-    const result = await postCheck({ word: word.word, mode, misses, typed: text, phase });
+    const result = await postCheck(list.id, { word: word.word, mode, misses, typed: text, phase });
     setBusy(false);
     const correct = result ? result.correct : normalizeSpelling(text) === word.word;
     const tries = phase === "copy" ? copyTries + 1 : copyTries;
@@ -450,14 +499,14 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     setPhase(nextPhase);
   }
 
-  async function submit(answer: { typed?: string; vowel?: Vowel }) {
+  async function submit(answer: { typed?: string; sort?: string }) {
     if (!word || busy || right || phase === "done") return;
     if (Date.now() < cooldownUntil) return;
     if (answer.typed !== undefined && !answer.typed.trim()) return;
     if (phase === "copy" || phase === "memory") return submitCopy(answer.typed ?? "");
     setBusy(true);
     const first = isFirstTry(word.word, misses, score.missed);
-    const result = await postCheck({ word: word.word, mode, misses, retry: !first && misses === 0, ...answer });
+    const result = await postCheck(list.id, { word: word.word, mode, misses, retry: !first && misses === 0, ...answer });
     setBusy(false);
     if (!result) {
       setFeedback("Hmm, I couldn't check that. Try again in a moment.");
@@ -466,7 +515,9 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     if (result.correct) {
       setRight(true);
       setLastTry(null);
-      const line = praiseFor(mode, first, score.firstTry + score.streak + idx, mode === "sort" ? answer.vowel : null);
+      const sortAnswer = mode === "sort" ? result.sort?.answer ?? answer.sort : null;
+      const vowel = isVowelId(sortAnswer) ? sortAnswer : null;
+      const line = praiseFor(mode, first, score.firstTry + score.streak + idx, vowel, vowel ? undefined : result.sort?.label);
       setFeedback(first ? `${line} ⭐` : line);
       prefs.speak(line);
       if (first) {
@@ -482,7 +533,7 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
     setScore((s) => ({ ...s, streak: 0, missed: new Set(s.missed).add(word.word) }));
     setHelp(result.help);
     if (mode === "sort") {
-      setFeedback(`It's ${result.vowel?.label ?? "a different sound"}: ${result.help.hint ?? ""}`);
+      setFeedback(`It's ${result.sort?.label ?? result.vowel?.label ?? "a different sound"}: ${result.help.hint ?? ""}`);
       setRight(true);
       return;
     }
@@ -532,6 +583,8 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
       {mode === "flash" && !covered ? (
         <div>
           <p style={{ fontSize: "2.6rem", fontWeight: 700, margin: "16px 0" }}><Highlight w={word} /></p>
+          {word.syllables ? <SyllableLine syllables={word.syllables} /> : null}
+          {word.definition ? <p style={{ fontSize: "1.15rem" }}>{word.definition}</p> : null}
           <p style={{ fontSize: "1.15rem" }}>{word.trick}</p>
           <div className="sp-row">
             <button className="btn secondary" style={big} onClick={hear}>🔊 Hear it</button>
@@ -542,15 +595,16 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
         <div>
           <button className="btn" aria-label="Hear the word" style={{ fontSize: "3rem", minWidth: 120, minHeight: 100, margin: "12px auto", borderRadius: 24 }} onClick={hear}>🔊</button>
           <p style={{ fontSize: "1.5rem", fontWeight: 700, margin: "4px 0" }}>{word.word}</p>
-          <p style={{ fontSize: "1.2rem" }}>Which sound?</p>
+          <p style={{ fontSize: "1.2rem" }}>{list.sortPrompt}</p>
           <div className="sp-row">
-            {(["i", "o", "u"] as Vowel[]).map((v) => (
-              <button key={v} className="btn" disabled={busy || right} style={{ ...big, minWidth: 140 }} onClick={() => void submit({ vowel: v })}>
-                short {v}<br /><small>{VOWEL_KEY[v].example}</small>
+            {list.sortChoices.map((choice) => (
+              <button key={choice.id} className="btn" disabled={busy || right} style={{ ...big, minWidth: 140 }} onClick={() => void submit({ sort: choice.id })}>
+                {choice.label}<br /><small>{choice.hint}</small>
               </button>
             ))}
           </div>
           {right ? <p style={{ fontSize: "1.6rem" }}><Highlight w={word} /></p> : null}
+          {right && word.syllables ? <SyllableLine syllables={word.syllables} /> : null}
         </div>
       ) : (
         <div>
@@ -612,6 +666,7 @@ function Round({ mode, words, onDone, onAgain, againLabel = "Another round" }: {
       {done && mode !== "sort" ? (
         <div className="story-hook">
           <p style={{ fontSize: "2.2rem", fontWeight: 700, margin: "8px 0" }}><Highlight w={word} /></p>
+          {word.syllables ? <SyllableLine syllables={word.syllables} /> : null}
           <p style={{ margin: 0 }}>{word.trick} We&apos;ll try it again soon.</p>
         </div>
       ) : null}
@@ -633,7 +688,8 @@ export function MockTest({ words, onRetry, onDone, title = "Mock test 📝" }: {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { started, idx, missed } = state;
-  const word = findWord(words[idx]);
+  const list = useList();
+  const word = list.words.find((item) => item.word === words[idx]) ?? null;
   useEffect(() => setHydrated(true), []);
 
   useEffect(() => {
@@ -645,7 +701,7 @@ export function MockTest({ words, onRetry, onDone, title = "Mock test 📝" }: {
     }
     if (started && !word) {
       prefs.speak(SPELLING_LINES.mockDone);
-      postFinished("mock", words.length - missed.length, words.length, missed);
+      postFinished(list.id, "mock", words.length - missed.length, words.length, missed);
       onDone({ mode: "mock", right: words.length - missed.length, total: words.length, missed });
     }
   }, [idx, started]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -670,7 +726,7 @@ export function MockTest({ words, onRetry, onDone, title = "Mock test 📝" }: {
           <>
             <p>Words to practice:</p>
             <ul style={{ listStyle: "none", padding: 0, fontSize: "1.4rem" }}>
-              {missed.map((m) => { const w = findWord(m)!; return <li key={m}><Highlight w={w} /></li>; })}
+              {missed.map((m) => { const w = list.words.find((item) => item.word === m); return w ? <li key={m}><Highlight w={w} />{w.syllables ? <SyllableLine syllables={w.syllables} /> : null}</li> : null; })}
             </ul>
             <button className="btn" style={big} onClick={() => onRetry(missed)}>Practice the missed words</button>
           </>
@@ -682,7 +738,7 @@ export function MockTest({ words, onRetry, onDone, title = "Mock test 📝" }: {
   async function submit() {
     if (!word || busy || !typed.trim()) return;
     setBusy(true);
-    const result = await postCheck({ word: word.word, mode: "mock", misses: 0, typed });
+    const result = await postCheck(list.id, { word: word.word, mode: "mock", misses: 0, typed });
     setBusy(false);
     // One try per word, no hints: even if the check can't reach the server, grade here and move on.
     const correct = result ? result.correct : normalizeSpelling(typed) === word.word;
