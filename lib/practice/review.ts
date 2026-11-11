@@ -1,7 +1,7 @@
 import type { LearnerTx, ReviewRow, StoredEvent } from "@/lib/engine/repo";
 import { dueAt, etDateKey, nextBoxOnPass, onFail, type ReviewBox } from "@/lib/engine/scheduler";
 import { practiceBank } from "@/lib/practice/bank";
-import { DEFAULT_UPCOMING, type UpcomingTest } from "@/lib/practice/upcoming";
+import { DEFAULT_UPCOMING, ymdOrNull, type UpcomingTest } from "@/lib/practice/upcoming";
 
 /**
  * After a practice test's class date passes, its question bank joins her spaced review (the same
@@ -15,16 +15,18 @@ export const REVIEW_BLOCK_SIZE = 4;
 /** Box a fact she got right on the practice test starts in (BOX_INTERVALS_DAYS[3] = 7 days). */
 export const RIGHT_START_BOX: ReviewBox = 3;
 
-export type PastPracticeTest = UpcomingTest & { chapterId: string };
+export type PastPracticeTest = UpcomingTest & { testDate: string; chapterId: string };
 
 /** Practice tests whose class date is before today (ET), newest first, one per chapter, bank required. */
 export function pastPracticeTests(nowMs: number, tests: UpcomingTest[] = DEFAULT_UPCOMING): PastPracticeTest[] {
   const today = etDateKey(new Date(nowMs));
   const seen = new Set<string>();
   const out: PastPracticeTest[] = [];
-  const sorted = tests.filter((t) => t.kind === "practice-test" && t.testDate < today && practiceBank(t.refId)).sort((a, b) => b.testDate.localeCompare(a.testDate) || a.id.localeCompare(b.id));
+  const sorted = tests
+    .filter((t): t is UpcomingTest & { testDate: string } => t.kind === "practice-test" && (ymdOrNull(t.testDate) ?? "9999") < today && Boolean(practiceBank(t.refId)))
+    .sort((a, b) => b.testDate.localeCompare(a.testDate) || a.id.localeCompare(b.id));
   // A chapter with a newer, still-active dated test isn't "in review" yet.
-  const activeRefs = new Set(tests.filter((t) => t.kind === "practice-test" && t.startDate <= today && today <= t.testDate).map((t) => t.refId));
+  const activeRefs = new Set(tests.filter((t) => t.kind === "practice-test" && t.startDate <= today && (ymdOrNull(t.testDate) ?? "") >= today).map((t) => t.refId));
   for (const t of sorted) {
     if (seen.has(t.refId) || activeRefs.has(t.refId)) continue;
     seen.add(t.refId);

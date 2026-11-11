@@ -29,7 +29,7 @@ export default async function PracticeTestPage({
   const bank = practiceBank(chapterId);
   if (!chapter || !bank || !chapterVisibleTo(chapter, user.role)) notFound();
   const upcoming = activeUpcomingTests(Date.now(), await loadUpcomingTests()).find((t) => t.kind !== "spelling" && t.refId === chapter.id);
-  const weekday = upcoming ? new Date(`${upcoming.testDate}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" }) : "";
+  const weekday = upcoming?.testDate ? new Date(`${upcoming.testDate}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" }) : "";
   const testNote = upcoming ? (upcoming.isTestDay ? "Your test is today. You've got this!" : `Your class test is on ${weekday}.`) : null;
   return (
     <div className="kid-shell">

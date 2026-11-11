@@ -10,7 +10,13 @@ export function todayNY(now = Date.now()): string {
   return new Date(now).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 }
 export function isPastTest(t: Pick<UpcomingTest, "testDate">, today: string): boolean {
-  return t.testDate < today;
+  const date = t.testDate;
+  return date !== null && date !== "" && date < today;
+}
+
+/** "no date yet" until an admin picks a day. */
+export function testDateLabel(d: string | null): string {
+  return d ? showDate(d) : "no date yet";
 }
 
 /** "Fri, Nov 6, 2026" from YYYY-MM-DD, as plain text so it shows without an input. */
@@ -61,7 +67,7 @@ export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
                   <td>{t.kind}</td>
                   <td>{t.refId}</td>
                   <td><input aria-label="Pin from" type="date" value={t.startDate} onChange={(e) => edit(i, { startDate: e.target.value })} /></td>
-                  <td><input aria-label="Test date" type="date" value={t.testDate} onChange={(e) => edit(i, { testDate: e.target.value })} /></td>
+                  <td><input aria-label="Test date" type="date" value={t.testDate ?? ""} onChange={(e) => edit(i, { testDate: e.target.value || null })} /></td>
                   <td><button onClick={() => void save(t).then(() => setEditing(null))}>Save</button> <button onClick={() => setEditing(null)}>Done</button></td>
                 </>
               ) : (
@@ -70,7 +76,7 @@ export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
                   <td>{t.kind}</td>
                   <td>{t.refId}</td>
                   <td>{showDate(t.startDate)}</td>
-                  <td><b>{showDate(t.testDate)}</b></td>
+                  <td><b>{testDateLabel(t.testDate)}</b></td>
                   <td><button onClick={() => setEditing(t.id)}>Edit</button> <button onClick={() => void remove(t.id)}>Remove</button></td>
                 </>
               )}
@@ -85,8 +91,8 @@ export function UpcomingTestsEditor({ initial }: { initial: UpcomingTest[] }) {
             </td>
             <td><input placeholder="e.g. savvas.ch4" value={draft.refId} onChange={(e) => setDraft({ ...draft, refId: e.target.value })} /></td>
             <td><input type="date" value={draft.startDate} onChange={(e) => setDraft({ ...draft, startDate: e.target.value })} /></td>
-            <td><input type="date" value={draft.testDate} onChange={(e) => setDraft({ ...draft, testDate: e.target.value })} /></td>
-            <td><button onClick={() => void save({ ...draft, id: `${draft.kind}:${draft.refId}:${draft.testDate}` }).then(() => setDraft(BLANK))}>Add</button></td>
+            <td><input type="date" value={draft.testDate ?? ""} onChange={(e) => setDraft({ ...draft, testDate: e.target.value || null })} /></td>
+            <td><button onClick={() => void save({ ...draft, id: `${draft.kind}:${draft.refId}:${draft.testDate || "open"}` }).then(() => setDraft(BLANK))}>Add</button></td>
           </tr>
         </tbody>
       </table>

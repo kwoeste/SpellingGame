@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminGate } from "@/lib/auth/admin-api";
-import { validUpcoming, type UpcomingTest } from "@/lib/practice/upcoming";
+import { validUpcoming, ymdOrNull, type UpcomingTest } from "@/lib/practice/upcoming";
 import { deleteUpcomingTest, loadUpcomingTests, saveUpcomingTest } from "@/lib/practice/upcoming-store";
 
 export async function GET(req: Request) {
@@ -16,8 +16,9 @@ export async function PUT(req: Request) {
   const body = (await req.json().catch(() => null)) as Partial<UpcomingTest> | null;
   const t = body ? { id: body.id, kind: body.kind, refId: body.refId, title: body.title?.trim(), startDate: body.startDate, testDate: body.testDate } : {};
   if (!validUpcoming(t)) return NextResponse.json({ error: "invalid" }, { status: 400, headers: gate.headers });
+  const saved: UpcomingTest = { ...t, title: t.title.trim(), testDate: ymdOrNull(t.testDate) };
   try {
-    await saveUpcomingTest(t, gate.actor.email);
+    await saveUpcomingTest(saved, gate.actor.email);
     return NextResponse.json({ ok: true, tests: await loadUpcomingTests("admin") }, { headers: gate.headers });
   } catch (error) {
     console.error("upcoming save failed", error instanceof Error ? error.message : "unknown");

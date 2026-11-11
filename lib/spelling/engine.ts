@@ -54,7 +54,7 @@ export function revealedLetters(word: string, misses: number): number {
 /** Help ladder by miss count on this word in this round. */
 export function spellingHelp(word: SpellingWord, misses: number): SpellingHelp {
   if (misses >= REVEAL_WORD_AT) return { level: "reveal", hint: word.trick, answer: word.word };
-  const sound = `Listen for the ${VOWEL_KEY[word.vowel].label} sound.`;
+  const sound = word.hint ?? (word.vowel ? `Listen for the ${VOWEL_KEY[word.vowel].label} sound.` : "Listen to each syllable.");
   if (misses >= HINT_LETTER_START) return { level: "letters", hint: sound, letters: revealedLetters(word.word, misses) };
   if (misses >= 1) return { level: "hint", hint: sound };
   return { level: "none" };

@@ -11,7 +11,6 @@
  * stats only; its answer is validated and clamped, and any problem falls back to the deterministic weights.
  */
 import { OCCASION_GAP_MS, practiceQueue, type SpellingAttempt, type WordStat } from "@/lib/spelling/engine";
-import { D2_WORDS } from "@/lib/spelling/list-d2";
 
 export const PRACTICE_MODES = ["listen", "flash", "tiles", "fix", "sort"] as const;
 export type PracticeMode = (typeof PRACTICE_MODES)[number];
@@ -31,7 +30,7 @@ export const MIX_MODEL = process.env.XAI_INSIGHT_MODEL || process.env.XAI_PLANNE
 
 export type Weights = Record<PracticeMode, number>;
 export type ModeStat = { mode: string; attempts: number; first_try_correct: number; in_game_accuracy: number | null; later_n: number; later_right: number; later_accuracy: number | null; score: number };
-export type SpellingMix = { weights: Weights; note: string; source: "ai" | "deterministic"; phase: "explore" | "exploit"; model: string | null; createdAt: number; stats: ModeStat[] };
+export type SpellingMix = { weights: Weights; note: string; source: "ai" | "deterministic"; phase: "explore" | "exploit"; model: string | null; createdAt: number; stats: ModeStat[]; listId?: string };
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 
@@ -111,7 +110,7 @@ export function deterministicNote(stats: ModeStat[], phase: "explore" | "exploit
 /** Aggregated stats sent to Grok: list words and counts only. No name, email, or anything she typed. */
 export function mixPayload(stats: ModeStat[], words: WordStat[]) {
   return {
-    student: "4th grader, list of 25 spelling words",
+    student: `4th grader, list of ${words.length} spelling words`,
     min_samples: MIN_SAMPLES,
     floor: FLOOR,
     cap: CAP,
@@ -122,7 +121,7 @@ export function mixPayload(stats: ModeStat[], words: WordStat[]) {
 
 const SYSTEM = [
   "You analyze aggregated spelling practice stats for one 4th-grade student (no identity is given).",
-  "Games: listen (hear and type), flash (look, cover, spell), tiles (unscramble letters), fix (correct a misspelling), sort (pick the vowel sound).",
+  "Games: listen (hear and type), flash (look, cover, spell), tiles (unscramble letters), fix (correct a misspelling), sort (group by the sound or syllable pattern).",
   "later_accuracy = share of words practiced in that game that were spelled right on the first try in a later test-like session; in_game_accuracy is easy to inflate, prefer later_accuracy. Be modest when later_n < min_samples.",
   "Return weights (0..1, one per game: listen, flash, tiles, fix, sort) for how much of the next session each game should get, and note: 1-3 plain sentences for the parent on which way of practicing connects best and which words are hardest. No names. Max 300 characters.",
 ].join(" ");
@@ -199,7 +198,8 @@ export function parseMix(value: unknown): SpellingMix | null {
   if (!value || typeof value !== "object") return null;
   const v = value as SpellingMix;
   if (!v.weights || typeof v.note !== "string") return null;
-  return { ...v, weights: clampWeights(v.weights) };
+  const listId = typeof (value as { listId?: unknown }).listId === "string" ? (value as { listId: string }).listId : undefined;
+  return { ...v, weights: clampWeights(v.weights), ...(listId ? { listId } : {}) };
 }
 
 export type SessionRound = { mode: PracticeMode | "mock"; words: string[] };
@@ -222,9 +222,9 @@ const ROUND_ORDER: PracticeMode[] = ["flash", "tiles", "sort", "fix", "listen"];
  * (round length = its share of the slots), cycling through the focus words, then a mock check on
  * the weakest words.
  */
-export function planSession(stats: WordStat[], weights: Weights, now: number): SessionRound[] {
+export function planSession(stats: WordStat[], weights: Weights, now: number, wordCount = stats.length): SessionRound[] {
   const byMiss = (a: WordStat, b: WordStat) => (b.attempts - b.correct) - (a.attempts - a.correct);
-  const queue = practiceQueue(stats, now, D2_WORDS.length);
+  const queue = practiceQueue(stats, now, wordCount);
   const rank = new Map(queue.map((w, i) => [w, i]));
   const unmastered = stats.filter((s) => !s.mastered).sort((a, b) => byMiss(a, b) || (rank.get(a.word) ?? 99) - (rank.get(b.word) ?? 99));
   const pool = (unmastered.length ? unmastered : [...stats].sort(byMiss)).map((s) => s.word);

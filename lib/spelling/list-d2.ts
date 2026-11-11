@@ -4,14 +4,21 @@ export type WordGroup = "spelling" | "review" | "challenge";
 export type SpellingWord = {
   word: string;
   group: WordGroup;
-  vowel: Vowel;
-  /** Start index and length of the letters that make the short vowel sound. */
+  /** Short-vowel lists use this for Sort by sound. Content lists leave it off. */
+  vowel?: Vowel;
+  /** Start index and length of the letters to mark (the short vowel, or a tricky spot). */
   at: number;
   len: number;
   sentence: string;
   trick: string;
   /** A common misspelling for "Fix the misspelling". */
   oops: string;
+  /** Kid-friendly meaning, shown on the word list and the flashcard front. */
+  definition?: string;
+  /** Syllable split with middle dots, e.g. "ac·quire". The letters must spell `word`. */
+  syllables?: string;
+  /** Early help-ladder hint. Must not contain the whole word. */
+  hint?: string;
 };
 
 export const LIST_ID = "spelling-d2";
@@ -58,9 +65,10 @@ export function findWord(word: unknown): SpellingWord | null {
   return typeof word === "string" ? D2_WORDS.find((x) => x.word === word.trim().toLowerCase()) ?? null : null;
 }
 
-/** The read-aloud clip for a word: the word, a sentence, then the word again. */
+/** The read-aloud clip for a word: the word, its syllables when it has more than one, a sentence, then the word again. */
 export function wordClip(x: SpellingWord): string {
-  return `${x.word}. ${x.sentence} ${x.word}.`;
+  const beats = x.syllables?.includes("·") ? ` ${x.syllables.replace(/·/g, "-")}.` : "";
+  return `${x.word}.${beats} ${x.sentence} ${x.word}.`;
 }
 export function trickClip(x: SpellingWord): string {
   return `${x.word}. ${x.trick}`;

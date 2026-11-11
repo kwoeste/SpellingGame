@@ -63,9 +63,13 @@ export function mockStep(s: MockState, a: { type: "start" } | { type: "answer"; 
 
 const FIRST_TRY_YAYS = SPELLING_YAYS.filter((y) => y !== SPELLING_GOT_IT);
 
-/** Mode-appropriate praise: vowel praise in Sort by sound, softer "You got it!" after misses. */
-export function praiseFor(mode: string, firstTry: boolean, n: number, vowel?: Vowel | null): string {
-  if (mode === "sort") return vowel ? SORT_RIGHT[vowel] : SPELLING_GOT_IT;
+/** Mode-appropriate praise: vowel praise in Sort by sound, syllable praise when a label is given, softer "You got it!" after misses. */
+export function praiseFor(mode: string, firstTry: boolean, n: number, vowel?: Vowel | null, sortLabel?: string): string {
+  if (mode === "sort") {
+    if (vowel) return SORT_RIGHT[vowel];
+    if (sortLabel) return `Yes! That's ${sortLabel}.`;
+    return SPELLING_GOT_IT;
+  }
   if (!firstTry) return SPELLING_GOT_IT;
   return FIRST_TRY_YAYS[n % FIRST_TRY_YAYS.length];
 }
