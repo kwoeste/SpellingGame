@@ -11,6 +11,7 @@
  * stats only; its answer is validated and clamped, and any problem falls back to the deterministic weights.
  */
 import { OCCASION_GAP_MS, practiceQueue, type SpellingAttempt, type WordStat } from "@/lib/spelling/engine";
+import { TEST_FORMATS } from "@/lib/spelling/formats";
 
 export const PRACTICE_MODES = ["listen", "flash", "tiles", "fix", "sort"] as const;
 export type PracticeMode = (typeof PRACTICE_MODES)[number];
@@ -34,10 +35,11 @@ export type SpellingMix = { weights: Weights; note: string; source: "ai" | "dete
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 
+const STAT_MODES = [...new Set<string>([...PRACTICE_MODES, "mock", ...TEST_FORMATS])];
+
 export function modeStats(attempts: SpellingAttempt[]): ModeStat[] {
   const all = [...attempts].sort((a, b) => a.at - b.at);
-  const modes = [...PRACTICE_MODES, "mock"];
-  return modes.map((mode) => {
+  return STAT_MODES.map((mode) => {
     const mine = all.filter((a) => a.mode === mode);
     const first = mine.filter((a) => a.firstTry);
     let n = 0;
@@ -95,7 +97,18 @@ export function deterministicWeights(stats: ModeStat[]): { weights: Weights; pha
   return { weights: clampWeights(raw), phase: "exploit" };
 }
 
-const LABEL: Record<string, string> = { listen: "Listen & spell", flash: "Flashcards", tiles: "Letter tiles", fix: "Fix the misspelling", sort: "Sort by sound", mock: "Mock test" };
+const LABEL: Record<string, string> = {
+  listen: "Listen & spell",
+  flash: "Flashcards",
+  tiles: "Letter tiles",
+  fix: "Fix the misspelling",
+  sort: "Sort by sound",
+  mock: "Mock test",
+  blanks: "Fill in the letters",
+  choice: "Pick the spelling",
+  sentence: "Finish the sentence",
+  scramble: "Unscramble",
+};
 export const modeLabel = (m: string) => LABEL[m] ?? m;
 
 export function deterministicNote(stats: ModeStat[], phase: "explore" | "exploit"): string {
@@ -103,7 +116,8 @@ export function deterministicNote(stats: ModeStat[], phase: "explore" | "exploit
     const total = stats.reduce((s, x) => s + x.later_n, 0);
     return `Still exploring: every game gets a fair share until each has ${MIN_SAMPLES} later checks (${total} so far).`;
   }
-  const best = [...stats].filter((s) => s.mode !== "mock").sort((a, b) => b.score - a.score)[0];
+  const best = [...stats].filter((s) => (PRACTICE_MODES as readonly string[]).includes(s.mode)).sort((a, b) => b.score - a.score)[0];
+  if (!best) return "Every game still gets a turn.";
   return `${modeLabel(best.mode)} leads: ${Math.round((best.later_accuracy ?? 0) * 100)}% of words practiced there were right later (${best.later_n} checks).`;
 }
 
@@ -122,6 +136,7 @@ export function mixPayload(stats: ModeStat[], words: WordStat[]) {
 const SYSTEM = [
   "You analyze aggregated spelling practice stats for one 4th-grade student (no identity is given).",
   "Games: listen (hear and type), flash (look, cover, spell), tiles (unscramble letters), fix (correct a misspelling), sort (group by the sound or syllable pattern).",
+  "Rows named blanks, choice, sentence, and scramble are practice-test question formats. Mention which of those she gets right when the counts are large enough. Do not give those formats a weight.",
   "later_accuracy = share of words practiced in that game that were spelled right on the first try in a later test-like session; in_game_accuracy is easy to inflate, prefer later_accuracy. Be modest when later_n < min_samples.",
   "Return weights (0..1, one per game: listen, flash, tiles, fix, sort) for how much of the next session each game should get, and note: 1-3 plain sentences for the parent on which way of practicing connects best and which words are hardest. No names. Max 300 characters.",
 ].join(" ");

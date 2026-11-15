@@ -1465,11 +1465,21 @@ body { padding-bottom: 64px; }
 .sp-stage { max-width: 680px; margin: 0 auto; text-align: center; position: relative; }
 .sp-stage .btn { min-height: 56px; font-size: 1.15rem; padding: 10px 22px; touch-action: manipulation; }
 .sp-input { font-size: 1.8rem; padding: 10px 14px; min-height: 60px; border-radius: 14px; border: 2px solid #d7c4ae; width: 100%; max-width: 420px; text-align: center; box-sizing: border-box; }
+.sp-input:disabled { background: #f3eadf; color: #9a8874; }
 .sp-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
 .sp-progress { height: 14px; background: #f1e4d3; border-radius: 999px; overflow: hidden; margin: 6px 0 12px; }
 .sp-progress > span { display: block; height: 100%; background: #6cc070; transition: width 0.3s; }
 .sp-tile { min-width: 60px; min-height: 64px; font-size: 1.8rem; font-weight: 700; border-radius: 12px; touch-action: manipulation; }
 .sp-tile:disabled { opacity: 0.25; }
+.sp-choices { display: grid; grid-template-columns: 1fr; gap: 12px; width: min(100%, 560px); margin: 12px auto 0; }
+@media (min-width: 700px) { .sp-choices { grid-template-columns: 1fr 1fr; } }
+.sp-choice { font-size: 1.5rem; font-weight: 800; min-height: 76px; letter-spacing: 0.03em; padding: 14px 16px; touch-action: manipulation; }
+.sp-blanks { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.14em; line-height: 1.5; margin: 8px 0; }
+.sp-sentence { text-align: left; font-size: 1.45rem; line-height: 2.15; font-weight: 800; margin: 8px 0 4px; }
+.sp-sentence .word-btn { min-height: 44px; padding: 4px 6px; touch-action: manipulation; }
+.sp-sentence .word-btn.blank-slot { min-width: 4.2rem; border-bottom: 4px solid #c47b3a; letter-spacing: 0.12em; }
+.sp-sentence button.word.tapped { background: #d7f5ea; color: #0d5a44; border-radius: 8px; }
+.sp-sentence button.word.hidden-word { color: transparent; background: #f3e2c8; border-radius: 6px; }
 .sp-letter { display: inline-block; min-width: 1.3em; padding: 2px 4px; margin: 0 2px; border-radius: 6px; font-size: 1.8rem; font-weight: 700; }
 .sp-letter.ok { background: #c9f0c4; color: #1f6b25; }
 .sp-letter.bad { background: #ffd2cc; color: #9b2c1f; text-decoration: underline wavy; }
