@@ -83,6 +83,17 @@ describe("Middle Ages spelling list", () => {
     expect(prefs).toContain("reportTtsFallback");
   });
 
+  it("study pages pass a list id, not the catalog object, into the client", () => {
+    for (const file of ["app/study/spelling-u2l10/page.tsx", "app/study/spelling-d2/page.tsx"]) {
+      const source = readFileSync(file, "utf8");
+      expect(source, file).toContain("listId={study.list.id}");
+      expect(source, file).not.toContain("list={study.list}");
+    }
+    const html = renderToStaticMarkup(createElement(SpellingD2, { listId: U2L10_LIST.id, testDate: null, daysLeft: null }));
+    expect(html).toContain(U2L10_LIST.title);
+    expect(html).toContain("Sort by syllables");
+  });
+
   it("shows syllable breaks and no date yet on the study page", () => {
     const html = renderToStaticMarkup(createElement(SpellingD2, { list: U2L10_LIST, testDate: null, daysLeft: null }));
     expect(html).toContain("no date yet");

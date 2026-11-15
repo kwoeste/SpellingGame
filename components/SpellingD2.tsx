@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useKidPrefs } from "@/components/ui/KidPrefs";
-import { D2_LIST, isVowelId, type SpellingList } from "@/lib/spelling/catalog";
+import { D2_LIST, isVowelId, spellingList, type SpellingList } from "@/lib/spelling/catalog";
 import { SPELLING_LINES, SESSION_LINES, SESSION_NEXT_UP, SPELLING_HELP, SPELLING_GOT_IT, VOWEL_KEY, revealClip, trickClip, wordClip, type SpellingWord } from "@/lib/spelling/list-d2";
 import { normalizeSpelling, type SpellingHelp, type SpellingMode, type WordStat } from "@/lib/spelling/engine";
 import type { SessionRound } from "@/lib/spelling/mix";
@@ -75,12 +75,13 @@ function postFinished(listId: string, mode: SpellingMode, score: number, total: 
   void fetch("/api/engine/spelling", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ finished: { mode, score, total, missed, list: listId } }) }).catch(() => undefined);
 }
 
-type SpellingPageProps = { list?: SpellingList; testDate: string | null; daysLeft: number | null; preview?: boolean; rounds?: SessionRound[] | null };
+type SpellingPageProps = { list?: SpellingList; listId?: string; testDate: string | null; daysLeft: number | null; preview?: boolean; rounds?: SessionRound[] | null };
 
-export function SpellingD2(props: SpellingPageProps) {
+export function SpellingD2({ list, listId, ...rest }: SpellingPageProps) {
+  const resolved = (listId ? spellingList(listId) : null) ?? list ?? D2_LIST;
   return (
-    <ListContext.Provider value={props.list ?? D2_LIST}>
-      <SpellingScreen {...props} />
+    <ListContext.Provider value={resolved}>
+      <SpellingScreen {...rest} list={resolved} />
     </ListContext.Provider>
   );
 }

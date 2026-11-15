@@ -10,5 +10,5 @@ export const dynamic = "force-dynamic";
 export default async function SpellingU2L10Page() {
   const study = await loadSpellingStudy(U2L10_LIST.id);
   if (!study || !study.user) return <NotAllowed />;
-  return <SpellingD2 list={study.list} testDate={study.testDate} daysLeft={study.daysLeft} preview={study.preview} rounds={study.rounds} />;
+  return <SpellingD2 listId={study.list.id} testDate={study.testDate} daysLeft={study.daysLeft} preview={study.preview} rounds={study.rounds} />;
 }
