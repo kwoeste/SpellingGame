@@ -144,7 +144,7 @@ function MixSection({ list, mix, stored }: { list: SpellingList; mix: SpellingMi
           {mix.stats.map((m) => (
             <tr key={m.mode}>
               <td><b>{modeLabel(m.mode)}</b></td>
-              <td>{(PRACTICE_MODES as readonly string[]).includes(m.mode) ? `${Math.round(mix.weights[m.mode as (typeof PRACTICE_MODES)[number]] * 100)}%` : "end-of-session check"}</td>
+              <td>{(PRACTICE_MODES as readonly string[]).includes(m.mode) ? `${Math.round(mix.weights[m.mode as (typeof PRACTICE_MODES)[number]] * 100)}%` : m.mode === "mock" ? "end-of-session check" : "practice test"}</td>
               <td>{m.attempts}</td>
               <td>{m.in_game_accuracy === null ? "—" : `${Math.round(m.in_game_accuracy * 100)}%`}</td>
               <td>{m.later_accuracy === null ? "— (0 checks)" : `${Math.round(m.later_accuracy * 100)}% of ${m.later_n}`}</td>

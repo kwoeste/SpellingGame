@@ -4,10 +4,16 @@ import { D2_WORDS, VOWEL_KEY, type SpellingWord } from "@/lib/spelling/list-d2";
 /** One graded spelling attempt, as stored in engine.interaction_event (type spelling_attempt). */
 export type SpellingAttempt = { word: string; correct: boolean; firstTry: boolean; mode: string; at: number; neededHelp?: boolean };
 
-export const SPELLING_MODES = ["flash", "listen", "tiles", "fix", "mock", "sort"] as const;
+export const SPELLING_MODES = ["flash", "listen", "tiles", "fix", "mock", "sort", "blanks", "choice", "sentence", "scramble"] as const;
 export type SpellingMode = (typeof SPELLING_MODES)[number];
 /** Sorting by vowel sound is practice, but it doesn't prove she can spell the word. */
-export const MASTERY_MODES: readonly string[] = ["flash", "listen", "tiles", "fix", "mock"];
+export const MASTERY_MODES: readonly string[] = ["flash", "listen", "tiles", "fix", "mock", "blanks", "sentence", "scramble"];
+/**
+ * Practice-test formats that update a word's due date.
+ * "choice" is included so a miss comes back, but a correct pick does not extend the mastery streak.
+ */
+export const RECOGNITION_MODES: readonly string[] = ["choice"];
+export const TRACKED_MODES: readonly string[] = [...MASTERY_MODES, ...RECOGNITION_MODES];
 
 export const MASTERY_STREAK = 3;
 export const MASTERY_OCCASIONS = 2;
@@ -82,7 +88,7 @@ function occasionIndex(times: number[]): number[] {
  * MASTERY_OCCASIONS separate occasions.
  */
 export function wordStats(attempts: SpellingAttempt[], words: SpellingWord[] = D2_WORDS): WordStat[] {
-  const all = attempts.filter((a) => MASTERY_MODES.includes(a.mode)).sort((a, b) => a.at - b.at);
+  const all = attempts.filter((a) => TRACKED_MODES.includes(a.mode)).sort((a, b) => a.at - b.at);
   const occ = occasionIndex(all.map((a) => a.at));
   const occOf = new Map(all.map((a, i) => [a, occ[i]]));
   return words.map((x) => {
@@ -90,10 +96,11 @@ export function wordStats(attempts: SpellingAttempt[], words: SpellingWord[] = D
     let streak = 0;
     const streakOcc: number[] = [];
     for (const a of mine) {
-      if (a.correct && a.firstTry && !a.neededHelp) {
+      const countsForStreak = !RECOGNITION_MODES.includes(a.mode);
+      if (countsForStreak && a.correct && a.firstTry && !a.neededHelp) {
         streak += 1;
         streakOcc.push(occOf.get(a)!);
-      } else {
+      } else if (!a.correct || a.neededHelp || !a.firstTry) {
         streak = 0;
         streakOcc.length = 0;
       }
