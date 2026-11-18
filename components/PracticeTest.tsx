@@ -31,7 +31,7 @@ function logPractice(chapterId: string, detail: string, extra: Record<string, un
 export function readable(q: Pick<StudentQuestion, "kind" | "text" | "prompts" | "choices">): string {
   const text = q.text.replace(/\*\*/g, "");
   if (q.kind === "match") return `${text} ${(q.prompts ?? []).join(". ")}.`;
-  if (q.kind === "choice") return text;
+  if (q.kind === "choice" || q.kind === "tap") return text;
   return text.replace(/___/g, "blank");
 }
 
@@ -466,6 +466,7 @@ function QuestionCard({
           ))}
         </>
       ) : null}
+      {q.kind === "tap" || q.kind === "spell" ? <p style={{ fontSize: "1.25em" }}><Rich text={q.text} /></p> : null}
       {q.kind === "choice" ? (
         <>
           <p style={{ fontSize: "1.25em" }}><Rich text={q.text} /></p>

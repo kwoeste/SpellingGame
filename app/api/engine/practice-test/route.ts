@@ -1,4 +1,5 @@
 import { getChapter } from "@/lib/content/catalog";
+import { COLONIES_CHAPTER_ID, coloniesMapPublic } from "@/lib/content/colonies";
 import { chapterVisibleTo } from "@/lib/content/student";
 import { engineActor, engineJson, readJson } from "@/lib/engine/http";
 import { engineRepo } from "@/lib/engine/repos";
@@ -35,10 +36,10 @@ export async function POST(req: Request) {
         due = dueFacts(factReviews(chapterId, past.testDate, null, []), now).map((r) => r.targetId); // admin preview: nothing saved
       }
       if (!due.length) return engineJson({ questions: [], none: true });
-      return engineJson({ questions: buildAttempt(chapterId, crypto.randomUUID(), due) });
+      return engineJson(attemptBody(chapterId, buildAttempt(chapterId, crypto.randomUUID(), due)));
     }
     const factIds = Array.isArray(attempt.factIds) ? attempt.factIds.filter((x): x is string => typeof x === "string").slice(0, 100) : undefined;
-    return engineJson({ questions: buildAttempt(chapterId, crypto.randomUUID(), factIds) });
+    return engineJson(attemptBody(chapterId, buildAttempt(chapterId, crypto.randomUUID(), factIds)));
   }
   const check = body.check as Record<string, unknown> | undefined;
   if (check && typeof check === "object" && typeof check.qid === "string") {
@@ -62,4 +63,13 @@ export async function POST(req: Request) {
     return engineJson({ saved });
   }
   return engineJson({ error: "bad_request" }, 400);
+}
+
+function attemptBody(chapterId: string, questions: ReturnType<typeof buildAttempt>) {
+  if (chapterId !== COLONIES_CHAPTER_ID) return { questions };
+  const map = coloniesMapPublic();
+  return {
+    questions,
+    map: { viewBox: map.viewBox, oceanX: map.oceanX, compassX: map.compassX, compassY: map.compassY, shapes: map.shapes.map((shape) => ({ id: shape.id, d: shape.d })) },
+  };
 }
