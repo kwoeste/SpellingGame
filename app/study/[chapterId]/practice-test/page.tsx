@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChapterHeader } from "@/components/ChapterHeader";
 import { NotAllowed } from "@/components/NotAllowed";
+import { ColoniesPracticeTest } from "@/components/ColoniesPracticeTest";
 import { PracticeTest } from "@/components/PracticeTest";
+import { COLONIES_CHAPTER_ID, COLONIES_PROMPTS } from "@/lib/content/colonies";
 import { requirePageUser } from "@/lib/auth/server";
 import { getChapter } from "@/lib/content/catalog";
 import { chapterVisibleTo } from "@/lib/content/student";
@@ -36,7 +38,11 @@ export default async function PracticeTestPage({
       <p className="kid-kicker">{mode === "review" ? "Quick review" : "Practice test"}</p>
       <ChapterHeader subject={chapter.subject} title={chapter.titleKid} />
       {testNote ? <p className="story-hook">{testNote}</p> : null}
-      <PracticeTest chapterId={chapter.id} lessons={bank.lessons} intro={bank.intro} startMode={mode} bankSize={bankSize(chapter.id)} />
+      {chapter.id === COLONIES_CHAPTER_ID ? (
+        <ColoniesPracticeTest chapterId={chapter.id} lessons={bank.lessons} intro={bank.intro} startMode={mode} bankSize={bankSize(chapter.id)} sortPrompt={COLONIES_PROMPTS.sort} />
+      ) : (
+        <PracticeTest chapterId={chapter.id} lessons={bank.lessons} intro={bank.intro} startMode={mode} bankSize={bankSize(chapter.id)} />
+      )}
     </div>
   );
 }

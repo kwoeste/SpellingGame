@@ -11,6 +11,7 @@
 import { prewarmSpellingClips } from "@/lib/spelling/clips";
 import { listChapters } from "@/lib/content/catalog";
 import { listRecaps } from "@/lib/content/recaps";
+import { coloniesSpokenLines } from "@/lib/content/colonies";
 import { bankSize, practiceBank, practiceBankIds, practiceHelp } from "@/lib/practice/bank";
 import { DEFAULT_GROK_VOICE, TTS_MAX_CHARS, isGrokVoiceId, normalizeTtsText, rateToSpeed } from "@/lib/tts/core";
 import { synthesize, ttsCacheKey } from "@/lib/tts/server";
@@ -28,8 +29,9 @@ function practiceTexts(): string[] {
     for (const fact of bank.facts) {
       fact.phrasings.forEach((text, p) => {
         const plain = text.replace(/\*\*/g, "");
-        out.push(fact.kind === "match" ? `${plain} ${(fact.prompts ?? []).join(". ")}.` : fact.kind === "choice" ? plain : plain.replace(/___/g, "blank"));
-        if (fact.why) out.push(`${fact.kind === "choice" ? "Yes! That's right." : "Yes! Spelled just right."} ${fact.why}`);
+        const plainChoice = fact.kind === "choice" || fact.kind === "tap";
+        out.push(fact.kind === "match" ? `${plain} ${(fact.prompts ?? []).join(". ")}.` : plainChoice ? plain : plain.replace(/___/g, "blank"));
+        if (fact.why) out.push(`${plainChoice ? "Yes! That's right." : "Yes! Spelled just right."} ${fact.why}`);
         const help = practiceHelp(`${fact.id}~${p}~b`, 99);
         if (help) {
           out.push(help.hint);
@@ -41,6 +43,7 @@ function practiceTexts(): string[] {
       });
     }
   }
+  out.push(...coloniesSpokenLines());
   return out;
 }
 

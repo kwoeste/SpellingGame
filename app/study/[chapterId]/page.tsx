@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChapterPlayer } from "@/components/ChapterPlayer";
 import { ChapterHeader } from "@/components/ChapterHeader";
+import { ColoniesStudio } from "@/components/ColoniesStudio";
 import { NotAllowed } from "@/components/NotAllowed";
 import { WatchListen } from "@/components/WatchListen";
+import { coloniesPlayFrom, coloniesPlayIsGame, coloniesStudioProps } from "@/lib/content/colonies";
 import { watchListenFor } from "@/lib/content/nlm";
 import { requirePageUser } from "@/lib/auth/server";
 import { engineRepo } from "@/lib/engine/repos";
@@ -25,11 +27,12 @@ export default async function ChapterPage({
   searchParams,
 }: {
   params: Promise<{ chapterId: string }>;
-  searchParams?: Promise<{ reteach?: string | string[] }>;
+  searchParams?: Promise<{ reteach?: string | string[]; play?: string | string[] }>;
 }) {
   const { chapterId } = await params;
   const query = (await searchParams) ?? {};
   const reteachParam = Array.isArray(query.reteach) ? query.reteach[0] : query.reteach;
+  const playParam = Array.isArray(query.play) ? query.play[0] : query.play;
   const user = await requirePageUser(["student", "admin"], `/study/${chapterId}`);
   if (!user) return <NotAllowed />;
   const chapter = getChapter(chapterId);
@@ -43,6 +46,8 @@ export default async function ChapterPage({
     ? await chooseReteachModality(engineRepo(), { role: user.role, learnerId: user.learnerId }, reteachItemId).catch(() => null)
     : null;
   const watchListen = watchListenFor(chapter.id);
+  const coloniesPlay = chapter.id === "ss.colonies" ? coloniesPlayFrom(playParam) : null;
+  const inColonyGame = coloniesPlay ? coloniesPlayIsGame(coloniesPlay) : false;
   // First teach: only for a chapter she hasn't answered anything in (the chooser checks).
   const firstTeachStartWith = reteachItemId
     ? null
@@ -56,13 +61,16 @@ export default async function ChapterPage({
           <a className="btn" href={practiceTestHref(chapter.id)}>📝 Practice test (like the Guided Notes)</a>
         </p>
       ) : null}
-      {studentChapter.storyHook ? <p className="story-hook">{studentChapter.storyHook}</p> : null}
+      {coloniesPlay ? <ColoniesStudio {...coloniesStudioProps(coloniesPlay)} /> : null}
+      {studentChapter.storyHook && !inColonyGame ? <p className="story-hook">{studentChapter.storyHook}</p> : null}
       {/* Admin-only banner, rendered on the server so the text never ships in a client bundle. */}
       {isAdmin && chapter.pendingReligionReview ? (
         <p className="notice">Admin note: Religion chapters are hidden from Mae until approved.</p>
       ) : null}
-      <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} reteachStartWith={reteachStartWith} firstTeachStartWith={firstTeachStartWith} media={watchListen} />
-      {watchListen ? <WatchListen data={watchListen} /> : null}
+      {inColonyGame ? null : (
+        <ChapterPlayer chapter={studentChapter} isAdmin={isAdmin} nextChapterHref={nextChapterHref} reteachItemId={reteachItemId} reteachStartWith={reteachStartWith} firstTeachStartWith={firstTeachStartWith} media={watchListen} />
+      )}
+      {watchListen && !inColonyGame ? <WatchListen data={watchListen} /> : null}
     </div>
   );
 }

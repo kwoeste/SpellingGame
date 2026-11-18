@@ -23,10 +23,15 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** Same stream every time for a seed. Safe to call from a render. */
+export function seededRandom(seed: string): () => number {
+  return mulberry32(hashSeed(seed));
+}
+
 /** Stable shuffle keyed by `seed`, so an item renders the same way on every device and reload. */
 export function seededShuffle<T>(values: readonly T[], seed: string): T[] {
   const out = [...values];
-  const random = mulberry32(hashSeed(seed));
+  const random = seededRandom(seed);
   for (let i = out.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
     [out[i], out[j]] = [out[j] as T, out[i] as T];

@@ -1488,6 +1488,18 @@ body { padding-bottom: 64px; }
 @keyframes sp-pop { from { transform: translate(-50%, -50%) scale(0.4); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sp-burst span { animation: none; opacity: 0; } }
 
+.colonies-map { max-width: 420px; margin: 12px auto; }
+.colonies-map svg { width: 100%; height: auto; border-radius: 16px; border: 3px solid #1d7fc4; background: #e7f4fb; }
+.colonies-regions { margin-top: 12px; }
+.region-new-england { background: #c5e4f8; }
+.region-middle { background: #f8e3a8; }
+.region-southern { background: #f8c9d6; }
+.spell-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.spell-fixed { font-size: 1.6rem; font-weight: 800; min-width: 0.7em; text-align: center; }
+.spell-gap { width: 0.8rem; }
+.spell-box { width: 2rem; text-align: center; font-size: 1.4rem; }
+.spell-tile { min-width: 2.4rem; font-size: 1.2rem; }
+
 .watch-paused { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; margin: 8px 0; border-radius: 16px; background: #fff7d6; border: 3px solid #f5c542; }
 .watch-paused-label { font-size: 1.4rem; font-weight: 800; margin: 0; }
 .watch-resume { font-size: 1.8rem; padding: 18px 48px; min-width: 220px; }
